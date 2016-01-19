@@ -76,6 +76,7 @@ JAVA_SRC_DIR = modules/java/src/main/java/org/syslog_ng
 
 JAVA_FILES = \
     $(JAVA_SRC_DIR)/InternalMessageSender.java \
+    $(JAVA_SRC_DIR)/InternalMessageTag.java \
     $(JAVA_SRC_DIR)/SyslogNgClassLoader.java \
     $(JAVA_SRC_DIR)/LogMessage.java \
     $(JAVA_SRC_DIR)/LogTemplate.java \
