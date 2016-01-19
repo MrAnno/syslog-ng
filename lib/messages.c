@@ -221,6 +221,16 @@ msg_event_create_from_desc(gint prio, const char *desc)
   return msg_event_create(prio, desc, NULL);
 }
 
+EVTREC *
+msg_event_add_tag(EVTREC *e, EVTTAG *tag)
+{
+  g_static_mutex_lock(&evtlog_lock);
+  evt_rec_add_tag(e, tag);
+  g_static_mutex_unlock(&evtlog_lock);
+
+  return e;
+}
+
 void
 msg_event_free(EVTREC *e)
 {
