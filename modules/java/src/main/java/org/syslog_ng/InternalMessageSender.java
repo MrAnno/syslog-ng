@@ -32,29 +32,29 @@ public class InternalMessageSender {
   private static final int MsgInfo = 6;
   private static final int MsgDebug = 7;
 
-  public static void fatal(String message) {
-    createInternalMessage(MsgFatal, message);
+  public static void fatal(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgFatal, message, tags);
   }
 
-  public static void error(String message) {
-    createInternalMessage(MsgError, message);
+  public static void error(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgError, message, tags);
   }
   
-  public static void warning(String message) {
-    createInternalMessage(MsgWarning, message);
+  public static void warning(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgWarning, message, tags);
   }
   
-  public static void notice(String message) {
-    createInternalMessage(MsgNotice, message);
+  public static void notice(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgNotice, message, tags);
   }
 
-  public static void info(String message) {
-    createInternalMessage(MsgInfo, message);
+  public static void info(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgInfo, message, tags);
   }
   
-  public static void debug(String message) {
-    createInternalMessage(MsgDebug, message);
+  public static void debug(String message, InternalMessageTag... tags) {
+    createInternalMessage(MsgDebug, message, tags);
   }
   
-  private native static void createInternalMessage(int level, String message);
+  private native static void createInternalMessage(int level, String message, InternalMessageTag[] tags);
 };
