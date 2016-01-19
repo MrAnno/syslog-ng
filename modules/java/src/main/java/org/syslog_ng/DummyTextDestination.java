@@ -45,7 +45,11 @@ public class DummyTextDestination extends TextLogDestination {
       InternalMessageSender.error("Name is a required option for this destination");
       return false;
     }
-    InternalMessageSender.debug("Init " + name);
+
+    InternalMessageSender.error("Init",
+      new InternalMessageTag("name", name)
+    );
+
     return true;
   }
 
