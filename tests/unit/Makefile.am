@@ -15,8 +15,10 @@ tests_unit_TESTS			=  \
 	tests/unit/test_value_pairs     \
 	tests/unit/test_value_pairs_walk   \
 	tests/unit/test_ringbuffer	   \
-	tests/unit/test_hostid
- 
+	tests/unit/test_hostid             \
+	tests/unit/a_gtest_example         \
+	tests/unit/a_gtest_msgsdata
+
 check_PROGRAMS				+= \
 	${tests_unit_TESTS}
 
@@ -78,3 +80,14 @@ tests_unit_test_ringbuffer_LDADD	= \
 tests_unit_test_hostid_CFLAGS	= $(TEST_CFLAGS)
 tests_unit_test_hostid_LDADD	= \
 	$(TEST_LDADD) $(unit_test_extra_modules)
+
+
+tests_unit_a_gtest_example_SOURCES	= tests/unit/a_gtest_example.cc
+tests_unit_a_gtest_example_CXXFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_gtest_example_LDADD	= \
+	$(TEST_LDADD) $(GOOGLETEST_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_gtest_msgsdata_SOURCES	= tests/unit/a_gtest_msgsdata.cc
+tests_unit_a_gtest_msgsdata_CXXFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_gtest_msgsdata_LDADD	= \
+	$(TEST_LDADD) $(GOOGLETEST_LIBS) $(unit_test_extra_modules)

@@ -293,6 +293,7 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
+AC_PROG_CXX
 if test "x$ac_cv_prog_cc_c99" = "xno"; then
 	AC_MSG_ERROR("C99 standard compliant C compiler required. Try GCC 3.x or later.")
 fi
@@ -784,6 +785,18 @@ PKG_CHECK_MODULES(PCRE, libpcre >= $PCRE_MIN_VERSION,, PCRE_LIBS="")
 if test -z "$PCRE_LIBS"; then
 	AC_MSG_ERROR(Cannot find pcre version >= $PCRE_MIN_VERSION it is a hard dependency from syslog-ng 3.6 onwards)
 fi
+
+dnl ***************************************************************************
+dnl googletest headers/libraries
+dnl ***************************************************************************
+
+AC_CHECK_LIB(gtest, main, ,
+             [AC_MSG_ERROR([libgtest not found. This is a hard dependency, unable to build syslog-ng without them.])])
+
+AC_CHECK_LIB(gmock, main, [GOOGLETEST_LIBS="-lgtest -lgmock -lgmock_main -lpthread"],
+             [AC_MSG_ERROR([libgmock not found. This is a hard dependency, unable to build syslog-ng without them.])])
+
+AC_SUBST(GOOGLETEST_LIBS)
 
 dnl ***************************************************************************
 dnl OpenSSL headers/libraries
