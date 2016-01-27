@@ -15,8 +15,13 @@ tests_unit_TESTS			=  \
 	tests/unit/test_value_pairs     \
 	tests/unit/test_value_pairs_walk   \
 	tests/unit/test_ringbuffer	   \
-	tests/unit/test_hostid
- 
+	tests/unit/test_hostid             \
+	tests/unit/a_cgreen_example        \
+	tests/unit/a_cgreen_dnscache       \
+	tests/unit/a_cgreen_bdd            \
+	tests/unit/a_cgreen_tdd            \
+	tests/unit/a_cgreen_soft_mock
+
 check_PROGRAMS				+= \
 	${tests_unit_TESTS}
 
@@ -78,3 +83,23 @@ tests_unit_test_ringbuffer_LDADD	= \
 tests_unit_test_hostid_CFLAGS	= $(TEST_CFLAGS)
 tests_unit_test_hostid_LDADD	= \
 	$(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_cgreen_example_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cgreen_example_LDADD	= \
+	$(TEST_LDADD) $(CGREEN_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_cgreen_dnscache_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cgreen_dnscache_LDADD	= \
+	$(TEST_LDADD) $(CGREEN_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_cgreen_bdd_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cgreen_bdd_LDADD	= \
+	$(TEST_LDADD) $(CGREEN_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_cgreen_tdd_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cgreen_tdd_LDADD	= \
+	$(TEST_LDADD) $(CGREEN_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_cgreen_soft_mock_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cgreen_soft_mock_LDADD	= \
+	$(TEST_LDADD) $(CGREEN_LIBS) $(unit_test_extra_modules)

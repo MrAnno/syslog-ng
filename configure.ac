@@ -786,6 +786,16 @@ if test -z "$PCRE_LIBS"; then
 fi
 
 dnl ***************************************************************************
+dnl cgreen headers/libraries
+dnl ***************************************************************************
+
+AC_CHECK_LIB(cgreen, run_test_suite, [CGREEN_LIBS="-lcgreen"],
+             [AC_MSG_ERROR([libcgreen not found. This is a hard dependency, unable to build syslog-ng without them.])])
+
+AC_SUBST(CGREEN_LIBS)
+
+
+dnl ***************************************************************************
 dnl OpenSSL headers/libraries
 dnl ***************************************************************************
 
