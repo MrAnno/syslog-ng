@@ -786,6 +786,16 @@ if test -z "$PCRE_LIBS"; then
 fi
 
 dnl ***************************************************************************
+dnl cmocka headers/libraries
+dnl ***************************************************************************
+
+AC_CHECK_LIB(cmocka, [_will_return], [CMOCKA_LIBS="-lcmocka"],
+             [AC_MSG_ERROR([libcmocka not found. This is a hard dependency, unable to build syslog-ng without them.])])
+
+AC_SUBST(CMOCKA_LIBS)
+
+
+dnl ***************************************************************************
 dnl OpenSSL headers/libraries
 dnl ***************************************************************************
 

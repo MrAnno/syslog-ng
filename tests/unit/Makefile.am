@@ -15,8 +15,13 @@ tests_unit_TESTS			=  \
 	tests/unit/test_value_pairs     \
 	tests/unit/test_value_pairs_walk   \
 	tests/unit/test_ringbuffer	   \
-	tests/unit/test_hostid
- 
+	tests/unit/test_hostid             \
+	tests/unit/a_cmocka_example        \
+	tests/unit/a_cmocka_ringbuffer     \
+	tests/unit/a_cmocka_key_value
+
+noinst_LIBRARIES += tests/unit/lib_cmocka_key_value.a
+
 check_PROGRAMS				+= \
 	${tests_unit_TESTS}
 
@@ -78,3 +83,19 @@ tests_unit_test_ringbuffer_LDADD	= \
 tests_unit_test_hostid_CFLAGS	= $(TEST_CFLAGS)
 tests_unit_test_hostid_LDADD	= \
 	$(TEST_LDADD) $(unit_test_extra_modules)
+
+
+tests_unit_a_cmocka_example_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cmocka_example_LDADD	= \
+	$(TEST_LDADD) $(CMOCKA_LIBS) $(unit_test_extra_modules)
+
+tests_unit_a_cmocka_ringbuffer_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cmocka_ringbuffer_LDADD	= \
+	$(TEST_LDADD) $(CMOCKA_LIBS) $(unit_test_extra_modules)
+
+tests_unit_lib_cmocka_key_value_a_SOURCES	= tests/unit/d_cmocka_key_value.c
+tests_unit_lib_cmocka_key_value_a_CFLAGS	= $(TEST_CFLAGS)
+
+tests_unit_a_cmocka_key_value_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_cmocka_key_value_LDADD	= \
+	tests/unit/lib_cmocka_key_value.a $(TEST_LDADD) $(CMOCKA_LIBS) $(unit_test_extra_modules)
