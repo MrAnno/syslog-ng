@@ -1,22 +1,28 @@
-tests_unit_TESTS			=  \
-	tests/unit/test_nvtable		   \
-	tests/unit/test_msgsdata	   \
-	tests/unit/test_logqueue	   \
-	tests/unit/test_matcher		   \
-	tests/unit/test_clone_logmsg 	   \
-	tests/unit/test_serialize 	   \
-	tests/unit/test_msgparse	   \
-	tests/unit/test_dnscache	   \
-	tests/unit/test_findcrlf	   \
-	tests/unit/test_tags		   \
-	tests/unit/test_logwriter	   \
-	tests/unit/test_zone		   \
-	tests/unit/test_persist_state	   \
-	tests/unit/test_value_pairs     \
-	tests/unit/test_value_pairs_walk   \
-	tests/unit/test_ringbuffer	   \
-	tests/unit/test_hostid
- 
+tests_unit_TESTS			=          \
+	tests/unit/test_nvtable		           \
+	tests/unit/test_msgsdata	           \
+	tests/unit/test_logqueue	           \
+	tests/unit/test_matcher		           \
+	tests/unit/test_clone_logmsg 	           \
+	tests/unit/test_serialize 	           \
+	tests/unit/test_msgparse	           \
+	tests/unit/test_dnscache	           \
+	tests/unit/test_findcrlf	           \
+	tests/unit/test_tags		           \
+	tests/unit/test_logwriter	           \
+	tests/unit/test_zone		           \
+	tests/unit/test_persist_state	           \
+	tests/unit/test_value_pairs                \
+	tests/unit/test_value_pairs_walk           \
+	tests/unit/test_ringbuffer	           \
+	tests/unit/test_hostid                     \
+	tests/unit/a_criterion_example             \
+	tests/unit/a_criterion_example_report      \
+	tests/unit/a_criterion_example_redirect    \
+	tests/unit/a_criterion_example_timesignal  \
+	tests/unit/a_criterion_matcher             \
+	tests/unit/a_criterion_findcrlf
+
 check_PROGRAMS				+= \
 	${tests_unit_TESTS}
 
@@ -78,3 +84,28 @@ tests_unit_test_ringbuffer_LDADD	= \
 tests_unit_test_hostid_CFLAGS	= $(TEST_CFLAGS)
 tests_unit_test_hostid_LDADD	= \
 	$(TEST_LDADD) $(unit_test_extra_modules)
+
+
+tests_unit_a_criterion_example_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_example_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_criterion_example_report_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_example_report_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_criterion_example_redirect_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_example_redirect_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_criterion_example_timesignal_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_example_timesignal_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_criterion_matcher_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_matcher_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_criterion_findcrlf_CFLAGS	= $(TEST_CFLAGS)
+tests_unit_a_criterion_findcrlf_LDADD	= \
+	$(CRITERION_LIBS) $(TEST_LDADD) $(unit_test_extra_modules)

@@ -786,6 +786,15 @@ if test -z "$PCRE_LIBS"; then
 fi
 
 dnl ***************************************************************************
+dnl criterion headers/libraries
+dnl ***************************************************************************
+
+AC_CHECK_LIB(criterion, cr_redirect_stdout, [CRITERION_LIBS="-lcriterion"],
+             [AC_MSG_ERROR([libcriterion not found. This is a hard dependency, unable to build syslog-ng without them.])])
+
+AC_SUBST(CRITERION_LIBS)
+
+dnl ***************************************************************************
 dnl OpenSSL headers/libraries
 dnl ***************************************************************************
 
