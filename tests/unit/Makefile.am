@@ -15,8 +15,10 @@ tests_unit_TESTS			=  \
 	tests/unit/test_value_pairs     \
 	tests/unit/test_value_pairs_walk   \
 	tests/unit/test_ringbuffer	   \
-	tests/unit/test_hostid
- 
+	tests/unit/test_hostid             \
+	tests/unit/a_unity_example         \
+	tests/unit/a_unity_serialize
+
 check_PROGRAMS				+= \
 	${tests_unit_TESTS}
 
@@ -77,4 +79,20 @@ tests_unit_test_ringbuffer_LDADD	= \
 
 tests_unit_test_hostid_CFLAGS	= $(TEST_CFLAGS)
 tests_unit_test_hostid_LDADD	= \
+	$(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_unity_example_SOURCES	= \
+	tests/unit/a_unity_example.c \
+	tests/unit/a_unity_example_runner.c
+tests_unit_a_unity_example_CFLAGS	= $(TEST_CFLAGS) \
+	-I$(top_srcdir)/libtest/Unity/src -I$(top_srcdir)/libtest/Unity/extras/fixture/src
+tests_unit_a_unity_example_LDADD	= \
+	$(TEST_LDADD) $(unit_test_extra_modules)
+
+tests_unit_a_unity_serialize_SOURCES	= \
+	tests/unit/a_unity_serialize.c \
+	tests/unit/a_unity_serialize_runner.c
+tests_unit_a_unity_serialize_CFLAGS	= $(TEST_CFLAGS) \
+	-I$(top_srcdir)/libtest/Unity/src -I$(top_srcdir)/libtest/Unity/extras/fixture/src
+tests_unit_a_unity_serialize_LDADD	= \
 	$(TEST_LDADD) $(unit_test_extra_modules)

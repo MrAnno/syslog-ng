@@ -11,3 +11,6 @@
 	path = modules/afmongodb/mongo-c-driver
 	url = https://github.com/mongodb/mongo-c-driver.git
 	branch = 1.2.0-dev
+[submodule "libtest/Unity"]
+	path = libtest/Unity
+	url = https://github.com/ThrowTheSwitch/Unity.git

@@ -85,3 +85,7 @@ apt-get install autoconf-archive
 EOF
 	exit 1
 fi
+
+# nasty PoC
+ruby libtest/Unity/auto/generate_test_runner.rb tests/unit/a_unity_example.c tests/unit/a_unity_example_runner.c
+ruby libtest/Unity/auto/generate_test_runner.rb tests/unit/a_unity_serialize.c tests/unit/a_unity_serialize_runner.c
