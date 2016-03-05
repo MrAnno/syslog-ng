@@ -32,4 +32,5 @@ if(LIBRABBITMQ_FOUND)
 
     target_link_libraries(afamqp PRIVATE syslog-ng)
 
+    install(TARGETS afamqp LIBRARY DESTINATION lib/syslog-ng/)
 endif(LIBRABBITMQ_FOUND)

@@ -21,3 +21,5 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(redis MODULE ${REDIS_SOURCES})
 target_link_libraries(redis PRIVATE syslog-ng)
+
+install(TARGETS redis LIBRARY DESTINATION lib/syslog-ng/)

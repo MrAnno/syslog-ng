@@ -19,3 +19,5 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(pseudofile MODULE ${PSEUDOFILE_SOURCES})
 target_link_libraries(pseudofile PRIVATE syslog-ng)
+
+install(TARGETS pseudofile LIBRARY DESTINATION lib/syslog-ng/)

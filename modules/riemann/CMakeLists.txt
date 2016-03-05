@@ -32,4 +32,6 @@ if (BUILD_RIEMANN)
     target_include_directories (riemann PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_include_directories (riemann PRIVATE ${Riemann_INCLUDE_DIR})
     target_link_libraries(riemann PRIVATE syslog-ng ${Riemann_LIBRARIES})
+    
+    install(TARGETS riemann LIBRARY DESTINATION lib/syslog-ng/)
 endif()

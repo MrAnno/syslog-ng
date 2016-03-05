@@ -32,5 +32,7 @@ if(LIBMONGOC_FOUND)
     target_compile_options(afmongodb PUBLIC ${LIBMONGOC_CFLAGS_OTHER})
 
     add_dependencies(afmongodb syslog-ng)
+    
+    install(TARGETS afmongodb LIBRARY DESTINATION lib/syslog-ng/)
 
 endif(LIBMONGOC_FOUND)

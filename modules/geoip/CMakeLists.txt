@@ -31,4 +31,6 @@ if (BUILD_GEOIP)
     target_include_directories (geoip SYSTEM PRIVATE ${LibGeoIP_INCLUDE_DIR})
     target_include_directories (geoip PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(geoip PRIVATE syslog-ng)
+    
+    install(TARGETS geoip LIBRARY DESTINATION lib/syslog-ng/)
 endif()

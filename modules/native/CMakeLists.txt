@@ -31,4 +31,6 @@ if (ENABLE_NATIVE)
   target_include_directories (syslog-ng-native-connector PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
   target_link_libraries(syslog-ng-native-connector PRIVATE syslog-ng)
+  
+  install(TARGETS syslog-ng-native-connector ARCHIVE DESTINATION lib/syslog-ng/)
 endif()

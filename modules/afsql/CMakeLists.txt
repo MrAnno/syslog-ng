@@ -32,4 +32,6 @@ if (BUILD_AFSQL)
     target_include_directories (afsql SYSTEM PRIVATE ${LIBDBI_INCLUDE_DIRS})
     target_include_directories (afsql PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(afsql PRIVATE syslog-ng)
+    
+    install(TARGETS afsql LIBRARY DESTINATION lib/syslog-ng/)
 endif()

@@ -35,4 +35,6 @@ if (BUILD_JSON)
     target_include_directories (json SYSTEM PRIVATE ${JSONC_INCLUDE_DIRS})
     target_include_directories (json PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(json PRIVATE syslog-ng)
+    
+    install(TARGETS json LIBRARY DESTINATION lib/syslog-ng/)
 endif()

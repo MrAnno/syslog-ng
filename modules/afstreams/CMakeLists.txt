@@ -31,4 +31,6 @@ if (BUILD_AFSTREAMS)
     add_library(afstreams MODULE ${AFSTREAMS_SOURCES})
     target_include_directories (afstreams PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(afstreams PRIVATE syslog-ng)
+    
+    install(TARGETS afstreams LIBRARY DESTINATION lib/syslog-ng/)
 endif()

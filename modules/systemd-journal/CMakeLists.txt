@@ -38,4 +38,6 @@ if (BUILD_JOURNALD)
     target_link_libraries(sdjournal PUBLIC ${Libsystemd_LIBRARIES})
     target_link_libraries(sdjournal PUBLIC syslog-ng)
     target_include_directories(sdjournal PRIVATE SYSTEM ${Libsystemd_INCLUDE_DIRS})
+    
+    install(TARGETS sdjournal LIBRARY DESTINATION lib/syslog-ng/)
 endif()

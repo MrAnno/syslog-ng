@@ -21,3 +21,5 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(csvparser MODULE ${CSVPARSER_SOURCES})
 target_link_libraries(csvparser PRIVATE syslog-ng)
+
+install(TARGETS csvparser LIBRARY DESTINATION lib/syslog-ng/)

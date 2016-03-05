@@ -16,4 +16,6 @@ if (ENABLE_PACCT)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     add_library(pacctformat MODULE ${PACCT_FORMAT_SOURCES})
     target_link_libraries(pacctformat PRIVATE syslog-ng)
+    
+    install(TARGETS pacctformat LIBRARY DESTINATION lib/syslog-ng/)
 endif()

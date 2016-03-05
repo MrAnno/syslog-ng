@@ -25,3 +25,5 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(kvformat MODULE ${KVFORMAT_SOURCES})
 target_link_libraries(kvformat PRIVATE syslog-ng)
+
+install(TARGETS kvformat LIBRARY DESTINATION lib/syslog-ng/)
