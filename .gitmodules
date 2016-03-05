@@ -11,3 +11,6 @@
 	path = modules/afmongodb/mongo-c-driver
 	url = https://github.com/mongodb/mongo-c-driver.git
 	branch = 1.2.0-dev
+[submodule "libtest/Criterion"]
+	path = libtest/Criterion
+	url = https://github.com/MrAnno/Criterion.git

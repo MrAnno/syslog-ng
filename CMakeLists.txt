@@ -4,6 +4,11 @@ set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 set (CMAKE_POSITION_INDEPENDENT_CODE 1)
 set (BISON_FLAGS "-Wno-other")
 
+### Submodules
+include (UpdateGitSubmodules)
+add_subdirectory(libtest/Criterion)
+### Submodules
+
 set (SYSLOG_NG_VERSION_MAJOR 3)
 set (SYSLOG_NG_VERSION_MINOR 8)
 set (SYSLOG_NG_VERSION_PATCH alpha0)
@@ -61,10 +66,6 @@ unset (CMAKE_REQUIRED_DEFINITIONS)
 check_symbol_exists (strtoll stdlib.h SYSLOG_NG_HAVE_STRTOLL)
 check_symbol_exists (strtoimax inttypes.h SYSLOG_NG_HAVE_STRTOIMAX)
 check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG_HAVE_INET_ATON)
-
-### Submodules
-include (UpdateGitSubmodules)
-### Submodules
 
 set (WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g. /usr)")
 
