@@ -84,6 +84,7 @@ check_symbol_exists (strtoll stdlib.h SYSLOG_NG_HAVE_STRTOLL)
 check_symbol_exists (strtoimax inttypes.h SYSLOG_NG_HAVE_STRTOIMAX)
 check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG_HAVE_INET_ATON)
 check_symbol_exists (getutent utmp.h SYSLOG_NG_HAVE_GETUTENT)
+check_symbol_exists (getutxent utmpx.h SYSLOG_NG_HAVE_GETUTXENT)
 
 set (WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g. /usr)")
 
