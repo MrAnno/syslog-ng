@@ -1,11 +1,11 @@
 flex_target(CfgLexer
-    ${CMAKE_SOURCE_DIR}/lib/cfg-lex.l
-    ${CMAKE_BINARY_DIR}/lib/cfg-lex.c
-    ${CMAKE_BINARY_DIR}/lib/cfg-lex.h)
+    ${PROJECT_SOURCE_DIR}/lib/cfg-lex.l
+    ${PROJECT_BINARY_DIR}/lib/cfg-lex.c
+    ${PROJECT_BINARY_DIR}/lib/cfg-lex.h)
 
 bison_target(CfgGrammar
-    ${CMAKE_SOURCE_DIR}/lib/cfg-grammar.y
-    ${CMAKE_BINARY_DIR}/lib/cfg-grammar.c
+    ${PROJECT_SOURCE_DIR}/lib/cfg-grammar.y
+    ${PROJECT_BINARY_DIR}/lib/cfg-grammar.c
     COMPILE_FLAGS ${BISON_FLAGS})
 add_flex_bison_dependency(CfgLexer CfgGrammar)
 
@@ -116,10 +116,10 @@ set (LIB_HEADERS
     ${TEMPLATE_HEADERS}
     ${TRANSPORT_HEADERS}
     ${VALUE_PAIRS_HEADERS}
-    ${CMAKE_BINARY_DIR}/lib/cfg-grammar.h
-    ${CMAKE_BINARY_DIR}/lib/block-ref-grammar.h
-    ${CMAKE_BINARY_DIR}/lib/cfg-lex.h
-    ${CMAKE_BINARY_DIR}/lib/pragma-grammar.h
+    ${PROJECT_BINARY_DIR}/lib/cfg-grammar.h
+    ${PROJECT_BINARY_DIR}/lib/block-ref-grammar.h
+    ${PROJECT_BINARY_DIR}/lib/cfg-lex.h
+    ${PROJECT_BINARY_DIR}/lib/pragma-grammar.h
     ${CMAKE_CURRENT_BINARY_DIR}/filter/filter-expr-grammar.h
     ${CMAKE_CURRENT_BINARY_DIR}/rewrite/rewrite-expr-grammar.h
     ${CMAKE_CURRENT_BINARY_DIR}/parser/parser-expr-grammar.h
@@ -211,10 +211,10 @@ set(LIB_SOURCES
     ${TEMPLATE_SOURCES}
     ${TRANSPORT_SOURCES}
     ${VALUE_PAIRS_SOURCES}
-    ${CMAKE_BINARY_DIR}/lib/cfg-grammar.c
-    ${CMAKE_BINARY_DIR}/lib/block-ref-grammar.c
-    ${CMAKE_BINARY_DIR}/lib/cfg-lex.c
-    ${CMAKE_BINARY_DIR}/lib/pragma-grammar.c
+    ${PROJECT_BINARY_DIR}/lib/cfg-grammar.c
+    ${PROJECT_BINARY_DIR}/lib/block-ref-grammar.c
+    ${PROJECT_BINARY_DIR}/lib/cfg-lex.c
+    ${PROJECT_BINARY_DIR}/lib/pragma-grammar.c
     ${CMAKE_CURRENT_BINARY_DIR}/filter/filter-expr-grammar.c
     ${CMAKE_CURRENT_BINARY_DIR}/rewrite/rewrite-expr-grammar.c
     ${CMAKE_CURRENT_BINARY_DIR}/parser/parser-expr-grammar.c
@@ -222,15 +222,15 @@ set(LIB_SOURCES
 
 generate_y_from_ym (lib/block-ref-grammar)
 bison_target(BlockRefGrammar
-    ${CMAKE_BINARY_DIR}/lib/block-ref-grammar.y
-    ${CMAKE_BINARY_DIR}/lib/block-ref-grammar.c
+    ${PROJECT_BINARY_DIR}/lib/block-ref-grammar.y
+    ${PROJECT_BINARY_DIR}/lib/block-ref-grammar.c
     COMPILE_FLAGS ${BISON_FLAGS})
 add_flex_bison_dependency(CfgLexer BlockRefGrammar)
 
 generate_y_from_ym (lib/pragma-grammar)
 bison_target(PragmaGrammar
-    ${CMAKE_BINARY_DIR}/lib/pragma-grammar.y
-    ${CMAKE_BINARY_DIR}/lib/pragma-grammar.c
+    ${PROJECT_BINARY_DIR}/lib/pragma-grammar.y
+    ${PROJECT_BINARY_DIR}/lib/pragma-grammar.c
     COMPILE_FLAGS ${BISON_FLAGS})
 add_flex_bison_dependency(CfgLexer PragmaGrammar)
 

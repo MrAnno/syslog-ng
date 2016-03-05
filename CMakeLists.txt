@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.12)
 project (syslog-ng)
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
+set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 set (CMAKE_POSITION_INDEPENDENT_CODE 1)
 set (BISON_FLAGS "-Wno-other")
 
@@ -123,16 +123,16 @@ set(CORE_LIBRARIES
 include_directories(SYSTEM ${CORE_INCLUDE_DIRS})
 
 function(generate_y_from_ym FileWoExt)
-    add_custom_command (OUTPUT ${CMAKE_BINARY_DIR}/${FileWoExt}.y
-        COMMAND ${CMAKE_SOURCE_DIR}/lib/merge-grammar.pl ${CMAKE_SOURCE_DIR}/${FileWoExt}.ym > ${CMAKE_BINARY_DIR}/${FileWoExt}.y
-        DEPENDS ${CMAKE_SOURCE_DIR}/lib/cfg-grammar.y
-                ${CMAKE_SOURCE_DIR}/${FileWoExt}.ym)
+    add_custom_command (OUTPUT ${PROJECT_BINARY_DIR}/${FileWoExt}.y
+        COMMAND ${PROJECT_SOURCE_DIR}/lib/merge-grammar.pl ${PROJECT_SOURCE_DIR}/${FileWoExt}.ym > ${PROJECT_BINARY_DIR}/${FileWoExt}.y
+        DEPENDS ${PROJECT_SOURCE_DIR}/lib/cfg-grammar.y
+                ${PROJECT_SOURCE_DIR}/${FileWoExt}.ym)
 endfunction()
 
-include_directories (${CMAKE_BINARY_DIR}/lib)
-include_directories (${CMAKE_BINARY_DIR})
-include_directories (${CMAKE_SOURCE_DIR}/lib)
-include_directories (${CMAKE_SOURCE_DIR})
+include_directories (${PROJECT_BINARY_DIR}/lib)
+include_directories (${PROJECT_BINARY_DIR})
+include_directories (${PROJECT_SOURCE_DIR}/lib)
+include_directories (${PROJECT_SOURCE_DIR})
 add_subdirectory(lib)
 add_subdirectory(modules)
 add_subdirectory(syslog-ng)
