@@ -23,3 +23,5 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(afprog MODULE ${AFPROG_SOURCES})
 target_link_libraries(afprog PRIVATE syslog-ng)
+
+install(TARGETS afprog LIBRARY DESTINATION lib/syslog-ng/)
