@@ -83,6 +83,7 @@ unset (CMAKE_REQUIRED_DEFINITIONS)
 check_symbol_exists (strtoll stdlib.h SYSLOG_NG_HAVE_STRTOLL)
 check_symbol_exists (strtoimax inttypes.h SYSLOG_NG_HAVE_STRTOIMAX)
 check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG_HAVE_INET_ATON)
+check_symbol_exists (getutent utmp.h SYSLOG_NG_HAVE_GETUTENT)
 
 set (WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g. /usr)")
 
