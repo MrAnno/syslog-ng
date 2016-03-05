@@ -1,4 +1,18 @@
 cmake_minimum_required (VERSION 2.8.12)
+
+# use, i.e. don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 project (syslog-ng)
 set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 set (CMAKE_POSITION_INDEPENDENT_CODE 1)
@@ -18,7 +32,7 @@ set (SYSLOG_NG_VERSION_PATCH alpha0)
 set (SYSLOG_NG_VERSION "${SYSLOG_NG_VERSION_MAJOR}.${SYSLOG_NG_VERSION_MINOR}.${SYSLOG_NG_VERSION_PATCH}")
 set (SYSLOG_NG_SOURCE_REVISION ${SYSLOG_NG_VERSION})
 
-set (SYSLOG_NG_PATH_PREFIX "/usr/local")
+set (SYSLOG_NG_PATH_PREFIX ${CMAKE_INSTALL_PREFIX})
 set (SYSLOG_NG_PATH_SYSCONFDIR "\${prefix}/etc")
 set (SYSLOG_NG_PATH_DATADIR "\${prefix}/etc")
 set (SYSLOG_NG_PATH_PIDFILEDIR "\${localstatedir}")

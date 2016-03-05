@@ -270,3 +270,8 @@ target_link_libraries(
     syslog-ng
     LINK_PUBLIC
         ${CORE_LIBRARIES})
+
+set_target_properties(syslog-ng PROPERTIES VERSION ${SYSLOG_NG_VERSION}
+SOVERSION ${SYSLOG_NG_VERSION_MAJOR} ) 
+
+    install(TARGETS syslog-ng LIBRARY DESTINATION lib NAMELINK_SKIP)
