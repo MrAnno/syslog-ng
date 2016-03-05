@@ -6,7 +6,10 @@ set (BISON_FLAGS "-Wno-other")
 
 ### Submodules
 include (UpdateGitSubmodules)
+
 add_subdirectory(libtest/Criterion)
+set (CRITERION_LIBRARIES "${PROJECT_BINARY_DIR}/libtest/Criterion/libcriterion.so")
+set (CRITERION_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/libtest/Criterion/include")
 ### Submodules
 
 set (SYSLOG_NG_VERSION_MAJOR 3)
