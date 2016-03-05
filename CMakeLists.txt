@@ -80,6 +80,13 @@ endif()
 unset (CMAKE_EXTRA_INCLUDE_FILES)
 unset (CMAKE_REQUIRED_DEFINITIONS)
 
+include(CheckIPv6)
+
+option(ENABLE_IPV6 "Enable IPv6" ON)
+if (ENABLE_IPV6)
+    set(SYSLOG_NG_ENABLE_IPV6 ${HAVE_IPV6})
+endif()
+
 check_symbol_exists (strtoll stdlib.h SYSLOG_NG_HAVE_STRTOLL)
 check_symbol_exists (strtoimax inttypes.h SYSLOG_NG_HAVE_STRTOIMAX)
 check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG_HAVE_INET_ATON)
