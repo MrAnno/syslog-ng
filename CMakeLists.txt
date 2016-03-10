@@ -164,3 +164,5 @@ add_subdirectory(syslog-ng)
 include (CheckIncludeFiles)
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h)
+
+install(DIRECTORY DESTINATION var)
