@@ -20,7 +20,7 @@ bison_target(AfuserGrammar
 
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
-add_library(afuser MODULE ${AFUSER_SOURCE})
+add_library(afuser MODULE ${AFUSER_SOURCES})
 
 target_link_libraries(afuser PRIVATE syslog-ng)
 
