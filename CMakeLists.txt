@@ -63,10 +63,12 @@ include (CheckSymbolExists)
 
 add_definitions(-D_GNU_SOURCE=1)
 
-set (CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
-check_type_size ("struct sockaddr_storage" STRUCT_SOCKADDR_STORAGE)
-set (SYSLOG_NG_HAVE_STRUCT_SOCKADDR_STORAGE ${HAVE_STRUCT_SOCKADDR_STORAGE})
-set (CMAKE_EXTRA_INCLUDE_FILES)
+include(CheckSockaddrStorage)
+if (HAVE_STRUCT_SOCKADDR_STORAGE)
+    set (SYSLOG_NG_HAVE_STRUCT_SOCKADDR_STORAGE 1)
+else()
+    set (SYSLOG_NG_HAVE_STRUCT_SOCKADDR_STORAGE 0)
+endif()
 
 include(CheckCreds)
 if (HAVE_STRUCT_UCRED OR HAVE_STRUCT_CMSGCRED)
