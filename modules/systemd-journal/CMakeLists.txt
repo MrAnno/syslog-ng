@@ -26,7 +26,7 @@ COMPILE_FLAGS ${BISON_FLAGS})
 find_package(systemd REQUIRED)
 
 if (ENABLE_JOURNALD AND Libsystemd_FOUND)
-    set(BUIDL_JOURNALD TRUE)
+    set(BUILD_JOURNALD TRUE)
 else()
     set(BUILD_JOURNALD FALSE)
 endif()
@@ -38,6 +38,6 @@ if (BUILD_JOURNALD)
     target_link_libraries(sdjournal PUBLIC ${Libsystemd_LIBRARIES})
     target_link_libraries(sdjournal PUBLIC syslog-ng)
     target_include_directories(sdjournal PRIVATE SYSTEM ${Libsystemd_INCLUDE_DIRS})
-    
+
     install(TARGETS sdjournal LIBRARY DESTINATION lib/syslog-ng/)
 endif()
