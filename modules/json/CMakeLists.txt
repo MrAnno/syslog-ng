@@ -30,11 +30,11 @@ if (BUILD_JSON)
         ${CMAKE_CURRENT_BINARY_DIR}/json-parser-grammar.c
         COMPILE_FLAGS ${BISON_FLAGS})
 
-    add_library(json MODULE ${JSON_SOURCES})
-    target_link_libraries (json PUBLIC ${JSONC_LIBRARIES})
-    target_include_directories (json SYSTEM PRIVATE ${JSONC_INCLUDE_DIRS})
-    target_include_directories (json PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(json PRIVATE syslog-ng)
-    
-    install(TARGETS json LIBRARY DESTINATION lib/syslog-ng/)
+    add_library(json-plugin MODULE ${JSON_SOURCES})
+    target_link_libraries (json-plugin PUBLIC ${JSONC_LIBRARIES})
+    target_include_directories (json-plugin SYSTEM PRIVATE ${JSONC_INCLUDE_DIRS})
+    target_include_directories (json-plugin PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(json-plugin PRIVATE syslog-ng)
+
+    install(TARGETS json-plugin LIBRARY DESTINATION lib/syslog-ng/)
 endif()

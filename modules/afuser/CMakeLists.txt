@@ -23,3 +23,5 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_library(afuser MODULE ${AFUSER_SOURCE})
 
 target_link_libraries(afuser PRIVATE syslog-ng)
+
+install(TARGETS afuser LIBRARY DESTINATION lib/syslog-ng)

@@ -22,6 +22,24 @@ add_subdirectory(template)
 add_subdirectory(transport)
 add_subdirectory(value-pairs)
 
+set(LIB_SUBDIR_HEADERS
+    ${COMPAT_HEADERS}
+    ${CONTROL_HEADERS}
+    ${DEBUGGER_HEADERS}
+    ${FILTER_HEADERS}
+    ${LOGMSG_HEADERS}
+    ${LOGPROTO_HEADERS}
+    ${PARSER_HEADERS}
+    ${REWRITE_HEADERS}
+    ${STATS_HEADERS}
+    ${TEMPLATE_HEADERS}
+    ${TRANSPORT_HEADERS}
+    ${VALUE_PAIRS_HEADERS}
+    ${CMAKE_CURRENT_BINARY_DIR}/filter/filter-expr-grammar.h
+    ${CMAKE_CURRENT_BINARY_DIR}/rewrite/rewrite-expr-grammar.h
+    ${CMAKE_CURRENT_BINARY_DIR}/parser/parser-expr-grammar.h
+)
+
 set (LIB_HEADERS
     afinter.h
     alarms.h
@@ -104,25 +122,10 @@ set (LIB_HEADERS
     ack_tracker.h
     host-id.h
     resolved-configurable-paths.h
-    ${COMPAT_HEADERS}
-    ${CONTROL_HEADERS}
-    ${DEBUGGER_HEADERS}
-    ${FILTER_HEADERS}
-    ${LOGMSG_HEADERS}
-    ${LOGPROTO_HEADERS}
-    ${PARSER_HEADERS}
-    ${REWRITE_HEADERS}
-    ${STATS_HEADERS}
-    ${TEMPLATE_HEADERS}
-    ${TRANSPORT_HEADERS}
-    ${VALUE_PAIRS_HEADERS}
     ${PROJECT_BINARY_DIR}/lib/cfg-grammar.h
     ${PROJECT_BINARY_DIR}/lib/block-ref-grammar.h
     ${PROJECT_BINARY_DIR}/lib/cfg-lex.h
     ${PROJECT_BINARY_DIR}/lib/pragma-grammar.h
-    ${CMAKE_CURRENT_BINARY_DIR}/filter/filter-expr-grammar.h
-    ${CMAKE_CURRENT_BINARY_DIR}/rewrite/rewrite-expr-grammar.h
-    ${CMAKE_CURRENT_BINARY_DIR}/parser/parser-expr-grammar.h
     )
 
 set(LIB_SOURCES
@@ -260,7 +263,8 @@ include_directories(SYSTEM ${CORE_INCLUDE_DIRS})
 add_library(syslog-ng
     SHARED
     ${LIB_SOURCES}
-    ${LIB_HEADERS})
+    ${LIB_HEADERS}
+    ${LIB_SUBDIR_HEADERS})
 
 target_include_directories(syslog-ng
     SYSTEM INTERFACE
@@ -272,8 +276,28 @@ target_link_libraries(
         ${CORE_LIBRARIES})
 
 set_target_properties(syslog-ng PROPERTIES VERSION ${SYSLOG_NG_VERSION}
-SOVERSION ${SYSLOG_NG_VERSION_MAJOR} ) 
+SOVERSION ${SYSLOG_NG_VERSION_MAJOR} )
 
     install(TARGETS syslog-ng LIBRARY DESTINATION lib NAMELINK_SKIP)
 
-install(FILES ${LIB_HEADERS} DESTINATION lib/)
+install(FILES ${LIB_HEADERS} DESTINATION include/syslog-ng)
+
+install(FILES ${VALUE_PAIRS_HEADERS} DESTINATION include/syslog-ng/value-pairs)
+install(FILES ${COMPAT_HEADERS} DESTINATION include/syslog-ng/compat)
+install(FILES ${CONTROL_HEADERS} DESTINATION include/syslog-ng/control)
+install(FILES ${DEBUGGER_HEADERS} DESTINATION include/syslog-ng/debugger)
+install(FILES ${FILTER_HEADERS} DESTINATION include/syslog-ng/filter)
+install(FILES ${LOGMSG_HEADERS} DESTINATION include/syslog-ng/logmsg)
+install(FILES ${LOGPROTO_HEADERS} DESTINATION include/syslog-ng/logproto)
+install(FILES ${PARSER_HEADERS} DESTINATION include/syslog-ng/parser)
+install(FILES ${REWRITE_HEADERS} DESTINATION include/syslog-ng/rewrite)
+install(FILES ${STATS_HEADERS} DESTINATION include/syslog-ng/stats)
+install(FILES ${TEMPLATE_HEADERS} DESTINATION include/syslog-ng/template)
+install(FILES ${TRANSPORT_HEADERS} DESTINATION include/syslog-ng/transport)
+
+set(TOOLS
+    merge-grammar.pl
+    cfg-grammar.y
+)
+
+install(FILES ${TOOLS} DESTINATION share/syslog-ng/tools)

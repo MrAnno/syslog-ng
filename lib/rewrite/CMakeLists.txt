@@ -17,4 +17,3 @@ set(REWRITE_SOURCES
     rewrite/rewrite-groupset.c
     PARENT_SCOPE
     )
-

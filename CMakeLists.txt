@@ -18,6 +18,7 @@ set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules")
 set (CMAKE_POSITION_INDEPENDENT_CODE 1)
 set (BISON_FLAGS "-Wno-other")
 
+include (CheckIncludeFiles)
 ### Submodules
 include (UpdateGitSubmodules)
 
@@ -156,13 +157,15 @@ include_directories (${PROJECT_BINARY_DIR}/lib)
 include_directories (${PROJECT_BINARY_DIR})
 include_directories (${PROJECT_SOURCE_DIR}/lib)
 include_directories (${PROJECT_SOURCE_DIR})
+add_subdirectory(Mk)
 add_subdirectory(scl)
 add_subdirectory(lib)
 add_subdirectory(modules)
+add_subdirectory(scripts)
 add_subdirectory(syslog-ng)
 
-include (CheckIncludeFiles)
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h DESTINATION include/syslog-ng)
 
 install(DIRECTORY DESTINATION var)
