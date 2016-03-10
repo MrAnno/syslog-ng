@@ -4,6 +4,13 @@ add_custom_target(BuildPylib
     VERBATIM
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/ DESTINATION lib/python2.7/site-packages/
+add_custom_target(SetupPylib
+    COMMAND python setup.py install --root=/ --prefix=${CMAKE_CURRENT_BINARY_DIR}/install
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS BuildPylib
+    VERBATIM
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/ DESTINATION ${CMAKE_INSTALL_PREFIX}
     PATTERN "*.py"
 )
