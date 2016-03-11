@@ -53,6 +53,9 @@ set (SYSLOG_NG_ENABLE_MEMTRACE 0)
 set (SYSLOG_NG_PATH_MODULEDIR "\${exec_prefix}/lib/syslog-ng")
 set (SYSLOG_NG_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
 set (SYSLOG_NG_PATH_XSDDIR "\${datadir}/syslog-ng/xsd")
+set (LIBDIR "\${exec_prefix}/lib")
+set (INCLUDEDIR "\${prefix}/include")
+set (TOOLSDIR "\${datadir}/syslog-ng/tools")
 
 # CMake will generate tests only if the enable_testing() command has been invoked.
 # The CTest module invokes the command automatically when the BUILD_TESTING option is ON.
@@ -171,3 +174,22 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng-config.h.in ${CMAKE_CURREN
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h DESTINATION include/syslog-ng)
 
 install(DIRECTORY DESTINATION var)
+
+# Package Information for pkg-config
+set (PKG_CONFIG_EXEC_PREFIX ${SYSLOG_NG_PATH_EXECPREFIX})
+set (PKG_CONFIG_DATAROOTDIR ${SYSLOG_NG_PATH_DATAROOTDIR})
+set (PKG_CONFIG_DATADIR ${SYSLOG_NG_PATH_DATAROOTDIR})
+set (PKG_CONFIG_LIBDIR ${LIBDIR})
+set (PKG_CONFIG_INCLUDEDIR ${INCLUDEDIR})
+set (PKG_CONFIG_TOOLSDIR ${TOOLSDIR})
+set (PKG_CONFIG_MODULEDIR ${SYSLOG_NG_PATH_MODULEDIR})
+set (PKG_CONFIG_CONFIG_INCLUDEDIR ${SYSLOG_NG_PATH_CONFIG_INCLUDEDIR})
+set (PKG_CONFIG_SCLDIR ${SYSLOG_NG_PATH_SCLDIR})
+set (PKG_CONFIG_IVYKIS ${Ivykis_INCLUDE_DIRS})
+set (PKG_CONFIG_PACKAGE_VERSION ${SYSLOG_NG_VERSION})
+set (PKG_CONFIG_INTERNAL_IVYKIS_CFLAGS ${Ivykis_INCLUDE_DIRS})
+set (libdir "\${libdir}")
+set (includedir "\${includedir}")
+
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc DESTINATION lib/pkgconfig)
