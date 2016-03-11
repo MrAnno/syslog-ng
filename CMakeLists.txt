@@ -88,10 +88,6 @@ check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG
 check_symbol_exists (getutent utmp.h SYSLOG_NG_HAVE_GETUTENT)
 check_symbol_exists (getutxent utmpx.h SYSLOG_NG_HAVE_GETUTXENT)
 
-### Submodules
-include (UpdateGitSubmodules)
-### Submodules
-
 set (WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g. /usr)")
 
 find_package(BISON 2.4 REQUIRED)
