@@ -19,10 +19,6 @@ set (CMAKE_POSITION_INDEPENDENT_CODE 1)
 set (BISON_FLAGS "-Wno-other")
 
 include (CheckIncludeFiles)
-### Submodules
-include (UpdateGitSubmodules)
-add_subdirectory(libtest/Criterion)
-### Submodules
 
 set (SYSLOG_NG_VERSION_MAJOR 3)
 set (SYSLOG_NG_VERSION_MINOR 8)
@@ -91,6 +87,10 @@ check_symbol_exists (strtoimax inttypes.h SYSLOG_NG_HAVE_STRTOIMAX)
 check_symbol_exists (inet_aton "sys/socket.h;netinet/in.h;arpa/inet.h" SYSLOG_NG_HAVE_INET_ATON)
 check_symbol_exists (getutent utmp.h SYSLOG_NG_HAVE_GETUTENT)
 check_symbol_exists (getutxent utmpx.h SYSLOG_NG_HAVE_GETUTXENT)
+
+### Submodules
+include (UpdateGitSubmodules)
+### Submodules
 
 set (WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g. /usr)")
 
