@@ -10,3 +10,6 @@ add_test(test_matcher test_matcher)
 
 add_executable(test_dnscache ctest_dnscache.c)
 add_test(test_dnscache test_dnscache)
+
+add_executable(test_serialize ctest_serialize.c)
+add_test(test_serialize test_serialize)
