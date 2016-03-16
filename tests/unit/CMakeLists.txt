@@ -16,3 +16,6 @@ add_test(test_serialize test_serialize)
 
 add_executable(test_ringbuffer ctest_ringbuffer.c)
 add_test(test_ringbuffer test_ringbuffer)
+
+add_executable(test_tags ctest_tags.c)
+add_test(test_tags test_tags)
