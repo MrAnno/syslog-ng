@@ -13,3 +13,6 @@ add_test(test_dnscache test_dnscache)
 
 add_executable(test_serialize ctest_serialize.c)
 add_test(test_serialize test_serialize)
+
+add_executable(test_ringbuffer ctest_ringbuffer.c)
+add_test(test_ringbuffer test_ringbuffer)
