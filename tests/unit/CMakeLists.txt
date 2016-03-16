@@ -7,3 +7,6 @@ add_test(test_findcrlf test_findcrlf)
 
 add_executable(test_matcher ctest_matcher.c)
 add_test(test_matcher test_matcher)
+
+add_executable(test_dnscache ctest_dnscache.c)
+add_test(test_dnscache test_dnscache)
