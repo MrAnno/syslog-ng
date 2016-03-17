@@ -65,7 +65,7 @@ bison_target(ModJavaGrammar
 find_package(Java 1.7)
 find_package(JNI)
 
-if (Java_FOUND AND JNI_FOUND)
+if (Java_JAVAH_EXECUTABLE)
   OPTION(ENABLE_JAVA "Enable java module" ON)
 else()
   OPTION(ENABLE_JAVA "Enable java module" OFF)
