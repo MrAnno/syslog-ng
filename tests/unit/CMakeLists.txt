@@ -22,3 +22,6 @@ add_test(test_tags test_tags)
 
 add_executable(test_zone ctest_zone.c)
 add_test(test_zone test_zone)
+
+add_executable(test_hostid ctest_hostid.c)
+add_test(test_hostid test_hostid)
