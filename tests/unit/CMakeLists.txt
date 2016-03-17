@@ -19,3 +19,6 @@ add_test(test_ringbuffer test_ringbuffer)
 
 add_executable(test_tags ctest_tags.c)
 add_test(test_tags test_tags)
+
+add_executable(test_zone ctest_zone.c)
+add_test(test_zone test_zone)
