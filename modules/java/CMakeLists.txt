@@ -68,7 +68,7 @@ find_package(JNI)
 if (Java_FOUND AND JNI_FOUND)
   OPTION(ENABLE_JAVA "Enable java module" ON)
 else()
-  OPTION(ENABLE_JAVA "Enable java module" ON)
+  OPTION(ENABLE_JAVA "Enable java module" OFF)
 endif()
 
 if (ENABLE_JAVA)
