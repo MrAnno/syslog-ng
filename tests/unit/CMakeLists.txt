@@ -25,3 +25,6 @@ add_test(test_zone test_zone --jobs 1)
 
 add_executable(test_hostid ctest_hostid.c)
 add_test(test_hostid test_hostid --jobs 1)
+
+add_executable(test_value_pairs ctest_value_pairs.c)
+add_test(test_value_pairs test_value_pairs --jobs 1)
