@@ -28,3 +28,6 @@ add_test(test_hostid test_hostid --jobs 1)
 
 add_executable(test_value_pairs ctest_value_pairs.c)
 add_test(test_value_pairs test_value_pairs --jobs 1)
+
+add_executable(test_value_pairs_walk ctest_value_pairs_walk.c)
+add_test(test_value_pairs_walk test_value_pairs_walk --jobs 1)
