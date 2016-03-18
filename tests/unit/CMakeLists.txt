@@ -34,3 +34,6 @@ add_test(test_value_pairs_walk test_value_pairs_walk --jobs 1)
 
 add_executable(test_logwriter ctest_logwriter.c)
 add_test(test_logwriter test_logwriter --jobs 1)
+
+add_executable(test_nvtable ctest_nvtable.c)
+add_test(test_nvtable test_nvtable --jobs 1)
