@@ -31,3 +31,6 @@ add_test(test_value_pairs test_value_pairs --jobs 1)
 
 add_executable(test_value_pairs_walk ctest_value_pairs_walk.c)
 add_test(test_value_pairs_walk test_value_pairs_walk --jobs 1)
+
+add_executable(test_logwriter ctest_logwriter.c)
+add_test(test_logwriter test_logwriter --jobs 1)
