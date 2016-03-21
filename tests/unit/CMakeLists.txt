@@ -1,6 +1,5 @@
-include_directories(${CRITERION_INCLUDE_DIRS})
-link_libraries(${CRITERION_LIBRARIES})
-link_libraries(syslog-ng)
+include_directories(${CRITERION_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/libtest)
+link_libraries(${CRITERION_LIBRARIES} syslog-ng-test syslog-ng)
 
 add_executable(test_findcrlf ctest_findcrlf.c)
 add_test(test_findcrlf test_findcrlf --jobs 1)
@@ -37,3 +36,6 @@ add_test(test_logwriter test_logwriter --jobs 1)
 
 add_executable(test_nvtable ctest_nvtable.c)
 add_test(test_nvtable test_nvtable --jobs 1)
+
+add_executable(test_msgsdata ctest_msgsdata.c)
+add_test(test_msgsdata test_msgsdata --jobs 1)
