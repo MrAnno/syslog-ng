@@ -39,3 +39,6 @@ add_test(test_nvtable test_nvtable --jobs 1)
 
 add_executable(test_msgsdata ctest_msgsdata.c)
 add_test(test_msgsdata test_msgsdata --jobs 1)
+
+add_executable(test_logqueue ctest_logqueue.c)
+add_test(test_logqueue test_logqueue --jobs 1)
