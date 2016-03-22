@@ -4,6 +4,8 @@ if (CRITERION_FOUND)
 set(LIBTEST_SOURCES
 	cmsg_parse_lib.c
 	cmsg_parse_lib.h
+	cpersist_lib.c
+	cpersist_lib.h
 	queue_utils_lib.c
 	queue_utils_lib.h
 )
