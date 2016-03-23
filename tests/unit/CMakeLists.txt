@@ -45,3 +45,6 @@ add_test(test_logqueue test_logqueue --jobs 1)
 
 add_executable(test_persist_state ctest_persist_state.c)
 add_test(test_persist_state test_persist_state --jobs 1)
+
+add_executable(test_msgparse ctest_msgparse.c)
+add_test(test_msgparse test_msgparse --jobs 1)
