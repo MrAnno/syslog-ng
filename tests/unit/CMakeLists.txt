@@ -48,3 +48,6 @@ add_test(test_persist_state test_persist_state --jobs 1)
 
 add_executable(test_msgparse ctest_msgparse.c)
 add_test(test_msgparse test_msgparse --jobs 1)
+
+add_executable(test_clone_logmsg ctest_clone_logmsg.c)
+add_test(test_clone_logmsg test_clone_logmsg --jobs 1)
