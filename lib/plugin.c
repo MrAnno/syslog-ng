@@ -318,6 +318,20 @@ plugin_dlopen_module(const gchar *module_name, const gchar *module_path)
   return mod;
 }
 
+static gboolean
+plugin_load_init_call(gboolean (*init_func)(GlobalConfig *, CfgArgs *),
+                      const gchar *module_name, GlobalConfig *cfg, CfgArgs *args)
+{
+  gboolean result = (*init_func)(cfg, args);
+  if (result)
+    msg_verbose("Module loaded and initialized successfully",
+               evt_tag_str("module", module_name));
+  else
+    msg_error("Module initialization failed",
+               evt_tag_str("module", module_name));
+  return result;
+}
+
 gboolean
 plugin_load_module(const gchar *module_name, GlobalConfig *cfg, CfgArgs *args)
 {
@@ -325,7 +339,7 @@ plugin_load_module(const gchar *module_name, GlobalConfig *cfg, CfgArgs *args)
   static GModule *main_module_handle;
   gboolean (*init_func)(GlobalConfig *cfg, CfgArgs *args);
   gchar *module_init_func;
-  const gchar *mp;
+  const gchar *mp = NULL;
   gboolean result;
   ModuleInfo *module_info;
 
@@ -337,26 +351,36 @@ plugin_load_module(const gchar *module_name, GlobalConfig *cfg, CfgArgs *args)
   if (g_module_symbol(main_module_handle, module_init_func, (gpointer *) &init_func))
     {
       /* already linked in, no need to load explicitly */
-      goto call_init;
+      g_free(module_init_func);
+      return plugin_load_init_call(init_func, module_name, cfg, args);
     }
 
   /* try to load it from external .so */
   if (cfg->lexer)
     mp = cfg_args_get(cfg->lexer->globals, "module-path");
-  else
-    mp = NULL;
 
   if (!mp)
     mp = resolvedConfigurablePaths.initial_module_path;
 
-  mod = plugin_dlopen_module(module_name, mp);
+  g_free(module_init_func);
+  return plugin_load_module_from(module_name, mp, cfg, args);
+}
+
+gboolean
+plugin_load_module_from(const gchar *module_name, const gchar *module_path,
+                        GlobalConfig *cfg, CfgArgs *args)
+{
+  gboolean (*init_func)(GlobalConfig *cfg, CfgArgs *args);
+
+  gchar *module_init_func = plugin_get_module_init_name(module_name);
+  GModule *mod = plugin_dlopen_module(module_name, module_path);
   if (!mod)
     {
       g_free(module_init_func);
       return FALSE;
     }
   g_module_make_resident(mod);
-  module_info = plugin_get_module_info(mod);
+  ModuleInfo *module_info = plugin_get_module_info(mod);
 
   if (module_info->canonical_name)
     {
@@ -374,16 +398,8 @@ plugin_load_module(const gchar *module_name, GlobalConfig *cfg, CfgArgs *args)
       return FALSE;
     }
 
- call_init:
   g_free(module_init_func);
-  result = (*init_func)(cfg, args);
-  if (result)
-    msg_verbose("Module loaded and initialized successfully",
-               evt_tag_str("module", module_name));
-  else
-    msg_error("Module initialization failed",
-               evt_tag_str("module", module_name));
-  return result;
+  return plugin_load_init_call(init_func, module_name, cfg, args);
 }
 
 void
