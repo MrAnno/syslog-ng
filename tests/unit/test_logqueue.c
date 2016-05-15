@@ -26,7 +26,6 @@
 #include "apphook.h"
 #include "plugin.h"
 #include "mainloop.h"
-#include "tls-support.h"
 #include "mainloop-io-worker.h"
 #include "libtest/queue_utils_lib.h"
 
