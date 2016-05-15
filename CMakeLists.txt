@@ -115,6 +115,7 @@ find_package(FLEX REQUIRED)
 find_package(LibNet REQUIRED)
 find_package(Resolv REQUIRED)
 find_package(Wrap)
+find_package(Criterion)
 
 pkg_check_modules(LIBPCRE REQUIRED libpcre)
 
@@ -170,6 +171,11 @@ add_subdirectory(modules)
 add_subdirectory(scripts)
 add_subdirectory(syslog-ng)
 add_subdirectory(syslog-ng-ctl)
+
+if (CRITERION_FOUND)
+    add_subdirectory(libtest)
+    add_subdirectory(tests)
+endif()
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng-config.h DESTINATION include/syslog-ng)
