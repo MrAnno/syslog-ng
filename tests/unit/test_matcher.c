@@ -24,6 +24,7 @@
 #include "apphook.h"
 #include "plugin.h"
 #include "cfg.h"
+#include "msg_parse_lib.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -133,11 +134,7 @@ int
 main()
 {
   app_startup();
-
-  configuration = cfg_new(0x0302);
-  plugin_load_module("syslogformat", configuration, NULL);
-  msg_format_options_defaults(&parse_options);
-  msg_format_options_init(&parse_options, configuration);
+  init_and_load_syslogformat_module();
 
   /* POSIX regexp */
   testcase_replace("<155>2006-02-11T10:34:56+01:00 bzorp syslog-ng[23323]: árvíztűrőtükörfúrógép", "árvíz", "favíz", "favíztűrőtükörfúrógép", construct_matcher(0, log_matcher_posix_re_new));
@@ -209,5 +206,7 @@ main()
 
   testcase_replace("<155>2006-02-11T10:34:56+01:00 bzorp syslog-ng[23323]: wikiwiki", "([[:digit:]]{1,3}\\.){3}[[:digit:]]{1,3}", "foo", "wikiwiki", construct_matcher(LMF_GLOBAL, log_matcher_pcre_re_new));
 
+  deinit_syslogformat_module();
+  app_shutdown();
   return 0;
 }

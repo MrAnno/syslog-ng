@@ -26,6 +26,7 @@
 #include "apphook.h"
 #include "cfg.h"
 #include "plugin.h"
+#include "msg_parse_lib.h"
 
 #include <stdlib.h>
 
@@ -143,11 +144,7 @@ main(int argc, char *argv[])
   app_startup();
   putenv("TZ=MET-1METDST");
   tzset();
-
-  configuration = cfg_new(0x0302);
-  plugin_load_module("syslogformat", configuration, NULL);
-  msg_format_options_defaults(&parse_options);
-  msg_format_options_init(&parse_options, configuration);
+  init_and_load_syslogformat_module();
   parse_options.flags |= LP_SYSLOG_PROTOCOL;
 
   testcase("rfc3164", NULL, "DATE,FACILITY,HOST,MESSAGE,PID,PRIORITY,PROGRAM", NULL);
@@ -189,6 +186,7 @@ main(int argc, char *argv[])
   testcase("everything", NULL, ".SDATA.EventData@18372.4.Data,.SDATA.Keywords@18372.4.Keyword,.SDATA.meta.sequenceId,.SDATA.meta.sysUpTime,.SDATA.origin.ip,AMPM,BSDTAG,CC_DATE,CC_DAY,CC_FULLDATE,CC_HOUR,CC_ISODATE,CC_MIN,CC_MONTH,CC_MONTH_ABBREV,CC_MONTH_NAME,CC_MONTH_WEEK,CC_SEC,CC_STAMP,CC_TZ,CC_TZOFFSET,CC_UNIXTIME,CC_WEEK,CC_WEEKDAY,CC_WEEK_DAY,CC_WEEK_DAY_ABBREV,CC_WEEK_DAY_NAME,CC_YEAR,CC_YEAR_DAY,DATE,DAY,FACILITY,FACILITY_NUM,FULLDATE,HOST,HOSTID,HOUR,HOUR12,ISODATE,LEVEL,LEVEL_NUM,LOGHOST,MESSAGE,MIN,MONTH,MONTH_ABBREV,MONTH_NAME,MONTH_WEEK,MSEC,MSG,MSGHDR,MSGID,PID,PRI,PRIORITY,PROGRAM,R_AMPM,R_DATE,R_DAY,R_FULLDATE,R_HOUR,R_HOUR12,R_ISODATE,R_MIN,R_MONTH,R_MONTH_ABBREV,R_MONTH_NAME,R_MONTH_WEEK,R_MSEC,R_SEC,R_STAMP,R_TZ,R_TZOFFSET,R_UNIXTIME,R_USEC,R_WEEK,R_WEEKDAY,R_WEEK_DAY,R_WEEK_DAY_ABBREV,R_WEEK_DAY_NAME,R_YEAR,R_YEAR_DAY,SDATA,SEC,SEQNUM,SOURCEIP,STAMP,SYSUPTIME,S_AMPM,S_DATE,S_DAY,S_FULLDATE,S_HOUR,S_HOUR12,S_ISODATE,S_MIN,S_MONTH,S_MONTH_ABBREV,S_MONTH_NAME,S_MONTH_WEEK,S_MSEC,S_SEC,S_STAMP,S_TZ,S_TZOFFSET,S_UNIXTIME,S_USEC,S_WEEK,S_WEEKDAY,S_WEEK_DAY,S_WEEK_DAY_ABBREV,S_WEEK_DAY_NAME,S_YEAR,S_YEAR_DAY,TAG,TAGS,TZ,TZOFFSET,UNIXTIME,USEC,WEEK,WEEKDAY,WEEK_DAY,WEEK_DAY_ABBREV,WEEK_DAY_NAME,YEAR,YEAR_DAY", transformers);
   g_ptr_array_free(transformers, TRUE);
 
+  deinit_syslogformat_module();
   app_shutdown();
   if (success)
     return 0;

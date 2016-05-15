@@ -28,6 +28,7 @@
 #include "mainloop.h"
 #include "mainloop-io-worker.h"
 #include "libtest/queue_utils_lib.h"
+#include "msg_parse_lib.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -256,11 +257,7 @@ main()
   app_startup();
   putenv("TZ=MET-1METDST");
   tzset();
-
-  configuration = cfg_new(0x0302);
-  plugin_load_module("syslogformat", configuration, NULL);
-  msg_format_options_defaults(&parse_options);
-  msg_format_options_init(&parse_options, configuration);
+  init_and_load_syslogformat_module();
 
   fprintf(stderr,"Start testcase_with_threads\n");
   testcase_with_threads();
@@ -271,5 +268,7 @@ main()
   fprintf(stderr,"Start testcase_zero_diskbuf_and_normal_acks\n");
   testcase_zero_diskbuf_and_normal_acks();
 #endif
+
+  deinit_syslogformat_module();
   return 0;
 }

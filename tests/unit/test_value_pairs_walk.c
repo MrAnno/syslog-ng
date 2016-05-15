@@ -22,6 +22,7 @@
  */
 
 #include <libtest/testutils.h>
+#include <libtest/msg_parse_lib.h>
 #include <value-pairs/value-pairs.h>
 #include <apphook.h>
 #include <plugin.h>
@@ -130,12 +131,10 @@ test_value_pairs_walk_prefix_data(GlobalConfig *cfg)
 int main()
 {
   app_startup();
-
-  configuration = cfg_new(0x0303);
-  plugin_load_module("syslogformat", configuration, NULL);
-  msg_format_options_defaults(&parse_options);
-  msg_format_options_init(&parse_options, configuration);
+  init_and_load_syslogformat_module();
 
   test_value_pairs_walk_prefix_data(configuration);
+
+  deinit_syslogformat_module();
   app_shutdown();
 };

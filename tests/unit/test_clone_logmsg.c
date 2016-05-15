@@ -101,7 +101,6 @@ int
 main(int argc G_GNUC_UNUSED, char *argv[] G_GNUC_UNUSED)
 {
   app_startup();
-
   init_and_load_syslogformat_module();
 
   test_cloning_with_log_message(

@@ -30,6 +30,7 @@
 #include "timeutils.h"
 #include "plugin.h"
 #include "logqueue-fifo.h"
+#include "msg_parse_lib.h"
 
 #include <time.h>
 #include <stdlib.h>
@@ -139,14 +140,10 @@ main(int argc G_GNUC_UNUSED, char *argv[] G_GNUC_UNUSED)
   if (argc > 1)
     verbose = TRUE;
 
-  configuration = cfg_new(0x0300);
   app_startup();
   putenv("TZ=MET-1METDST");
   tzset();
-
-  plugin_load_module("syslogformat", configuration, NULL);
-  msg_format_options_defaults(&parse_options);
-  msg_format_options_init(&parse_options, configuration);
+  init_and_load_syslogformat_module();
 
   testcase(msg_syslog_str,       TRUE, NULL,          LW_SYSLOG_PROTOCOL, expected_msg_syslog_str);
   testcase(msg_syslog_str,       TRUE, "$MSGID $MSG", LW_SYSLOG_PROTOCOL, expected_msg_syslog_str_t);
@@ -168,6 +165,7 @@ main(int argc G_GNUC_UNUSED, char *argv[] G_GNUC_UNUSED)
   testcase(msg_zero_pri, FALSE, NULL,   LW_FORMAT_PROTO, expected_msg_zero_pri_str);
   testcase(msg_zero_pri, FALSE, "$PRI", LW_FORMAT_PROTO, expected_msg_zero_pri_str_t);
 
+  deinit_syslogformat_module();
   app_shutdown();
   return 0;
 }

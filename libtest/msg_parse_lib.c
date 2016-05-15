@@ -29,7 +29,7 @@ void
 init_and_load_syslogformat_module()
 {
   configuration = cfg_new(VERSION_VALUE);
-  plugin_load_module("syslogformat", configuration, NULL);
+  plugin_load_module_from("syslogformat", SYSLOG_NG_BUILD_PATH_PREFIX "/modules/syslogformat", configuration, NULL);
   msg_format_options_defaults(&parse_options);
   msg_format_options_init(&parse_options, configuration);
 }
