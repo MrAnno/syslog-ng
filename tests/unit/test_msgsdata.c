@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 Balabit
+ * Copyright (c) 2008-2016 Balabit
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -20,12 +20,13 @@
  *
  */
 
+#include <criterion/criterion.h>
+
 #include "logmsg/logmsg.h"
 #include "apphook.h"
 #include "cfg.h"
 #include "plugin.h"
 #include "msg_parse_lib.h"
-#include "testutils.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -60,25 +61,35 @@ testcase_update_sdata(const gchar *msg, const gchar *expected_sd_str, gchar *ele
 
   log_msg_format_sdata(logmsg, sd_str, 0);
 
-  assert_string(sd_str->str, expected_sd_str, "sdata update failed");
+  cr_assert_str_eq(sd_str->str, expected_sd_str,
+    "sdata update failed, actual: %s, expected: %s", sd_str->str, expected_sd_str);
 
   g_string_free(sd_str, TRUE);
   log_msg_unref(logmsg);
 }
 
-int
-main(int argc G_GNUC_UNUSED, char *argv[] G_GNUC_UNUSED)
+
+void
+setup(void)
 {
   app_startup();
   init_and_load_syslogformat_module();
+}
 
-  testcase_update_sdata("<132>1 2006-10-29T01:59:59.156+01:00 mymachine evntslog - - [exampleSDID@0 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"][examplePriority@0 class=\"high\"] An application event log entry...",
-                  "[exampleSDID@0 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"][examplePriority@0 class=\"high\"][meta sequenceId=\"11\"][syslog-ng param=\"value\"]",
-                  "meta", "sequenceId", "11",
-                  "syslog-ng", "param", "value",
-                  NULL, NULL, NULL);
-
+void
+teardown(void)
+{
   deinit_syslogformat_module();
   app_shutdown();
-  return 0;
+}
+
+TestSuite(msgsdata, .init = setup, .fini = teardown);
+
+Test(msgsdata, test_update_sdata)
+{
+  testcase_update_sdata("<132>1 2006-10-29T01:59:59.156+01:00 mymachine evntslog - - [exampleSDID@0 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"][examplePriority@0 class=\"high\"] An application event log entry...",
+                        "[exampleSDID@0 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"][examplePriority@0 class=\"high\"][meta sequenceId=\"11\"][syslog-ng param=\"value\"]",
+                        "meta", "sequenceId", "11",
+                        "syslog-ng", "param", "value",
+                        NULL, NULL, NULL);
 }
