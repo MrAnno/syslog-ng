@@ -267,6 +267,35 @@ test_import_with_valid_csv(void)
 }
 
 static void
+test_import_with_valid_csv_crlf(void)
+{
+  gchar csv_content[] = "selector1,name1,value1\r\n"
+                        "selector1,name1.1,value1.1";
+  FILE *fp = fmemopen(csv_content, sizeof(csv_content), "r");
+  ContextInfoDB *db = context_info_db_new();
+  ContextualDataRecordScanner *scanner =
+    create_contextual_data_record_scanner_by_type("csv");
+
+  assert_true(context_info_db_import(db, fp, scanner),
+              "Failed to import valid CSV file.");
+  fclose(fp);
+
+  TestNVPair expected_nvpairs_selector1[2] =
+  {
+    {.name = "name1",.value = "value1"},
+    {.name = "name1.1",.value = "value1.1"},
+  };
+
+  _assert_context_info_db_contains_name_value_pairs_by_selector(db,
+                                                                "selector1",
+                                                                expected_nvpairs_selector1,
+                                                                2);
+
+  context_info_db_free(db);
+  contextual_data_record_scanner_free(scanner);
+}
+
+static void
 test_import_with_invalid_csv_content(void)
 {
   gchar csv_content[] = "xxx";
@@ -321,6 +350,7 @@ main(int argc, char **argv)
   CONTEXT_INFO_DB_TESTCASE(test_get_selectors);
   CONTEXT_INFO_DB_TESTCASE(test_inserted_nv_pairs);
   CONTEXT_INFO_DB_TESTCASE(test_import_with_valid_csv);
+  CONTEXT_INFO_DB_TESTCASE(test_import_with_valid_csv_crlf);
   CONTEXT_INFO_DB_TESTCASE(test_import_with_invalid_csv_content);
   CONTEXT_INFO_DB_TESTCASE(test_import_with_csv_contains_invalid_line);
 
