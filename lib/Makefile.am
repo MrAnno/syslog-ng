@@ -36,14 +36,16 @@ LSNG_REVISION		= 0
 LSNG_AGE		= 0
 
 lib_LTLIBRARIES				+= lib/libsyslog-ng.la
-lib_libsyslog_ng_la_LIBADD		= @CORE_DEPS_LIBS@ $(libsystemd_LIBS)
+noinst_LTLIBRARIES			+= lib/libsyslog-ng-crypto.la
+lib_libsyslog_ng_la_LIBADD		= @CORE_DEPS_LIBS@ $(libsystemd_LIBS) lib/libsyslog-ng-crypto.la
 lib_libsyslog_ng_la_LDFLAGS		= -no-undefined -release ${LSNG_RELEASE} \
 					  -version-info ${LSNG_CURRENT}:${LSNG_REVISION}:${LSNG_AGE}
+lib_libsyslog_ng_la_DEPENDENCIES	= lib/libsyslog-ng-crypto.la
 
 lib_test_subdirs			= lib_filter lib_logproto lib_parser lib_rewrite lib_template lib_stats lib_control
 
 if IVYKIS_INTERNAL
-lib_libsyslog_ng_la_DEPENDENCIES	= lib/ivykis/src/libivykis.la
+lib_libsyslog_ng_la_DEPENDENCIES	+= lib/ivykis/src/libivykis.la
 
 lib/ivykis/src/libivykis.la:
 	${MAKE} CFLAGS="${CFLAGS} -Wno-error" -C lib/ivykis
@@ -224,7 +226,6 @@ lib_libsyslog_ng_la_SOURCES		= \
 	lib/ringbuffer.c		\
 	lib/late_ack_tracker.c		\
 	lib/early_ack_tracker.c		\
-	lib/crypto.c			\
 	lib/tlscontext.c		\
 	lib/uuid.c			\
 	lib/userdb.c			\
@@ -255,6 +256,9 @@ lib_libsyslog_ng_la_CFLAGS		= \
 	$(AM_CFLAGS) \
 	@UUID_CFLAGS@ $(libsystemd_CFLAGS)
 lib_libsyslog_ng_la_LIBADD		+= @OPENSSL_LIBS@ @UUID_LIBS@
+
+lib_libsyslog_ng_crypto_la_SOURCES	= lib/crypto.c
+lib_libsyslog_ng_crypto_la_LIBADD	= @OPENSSL_LIBS@
 
 # each line with closely related files (e.g. the ones generated from the same source)
 BUILT_SOURCES += lib/cfg-lex.c lib/cfg-lex.h						\
