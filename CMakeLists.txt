@@ -195,5 +195,7 @@ set (PKG_CONFIG_INTERNAL_IVYKIS_CFLAGS ${Ivykis_INCLUDE_DIRS})
 set (libdir "\${libdir}")
 set (includedir "\${includedir}")
 
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-initializer-overrides")
+
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc DESTINATION lib/pkgconfig)
