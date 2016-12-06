@@ -19,8 +19,6 @@ set (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 set (CMAKE_POSITION_INDEPENDENT_CODE 1)
 set (BISON_FLAGS "-Wno-other")
 
-add_compile_options("-Wno-initializer-overrides")
-
 include (CheckIncludeFiles)
 
 set (SYSLOG_NG_VERSION_MAJOR 3)
@@ -196,6 +194,8 @@ set (PKG_CONFIG_PACKAGE_VERSION ${SYSLOG_NG_VERSION})
 set (PKG_CONFIG_INTERNAL_IVYKIS_CFLAGS ${Ivykis_INCLUDE_DIRS})
 set (libdir "\${libdir}")
 set (includedir "\${includedir}")
+
+add_compile_options("-Wno-initializer-overrides")
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/syslog-ng.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/syslog-ng.pc DESTINATION lib/pkgconfig)
