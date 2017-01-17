@@ -169,8 +169,9 @@ log_proto_server_options_init(LogProtoServerOptions *options, GlobalConfig *cfg)
     {
       if (options->encoding)
         {
-          /* maximum number of bytes needed to represent an utf8 character is 6 */
-          options->max_buffer_size = 6 * options->max_msg_size;
+          /* maximum number of bytes needed to represent an utf8 character is 6,
+             and additional space for the existing message is required */
+          options->max_buffer_size = 8 * options->max_msg_size;
         }
       else
         options->max_buffer_size = options->max_msg_size;
