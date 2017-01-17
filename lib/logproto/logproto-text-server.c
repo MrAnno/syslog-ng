@@ -382,9 +382,10 @@ log_proto_text_server_fetch_from_buffer(LogProtoBufferedServer *s, const guchar 
 
   const guchar *eol = log_proto_text_server_locate_next_eol(self, state, buffer_start, buffer_bytes);
 
+  gboolean message_reached_max_size = buffer_bytes >= self->super.super.options->max_msg_size;
   if (!eol)
     {
-      if (buffer_bytes == state->buffer_size || log_proto_buffered_server_is_input_closed(&self->super))
+      if (message_reached_max_size || log_proto_buffered_server_is_input_closed(&self->super))
         {
           log_proto_text_server_yield_whole_buffer_as_message(self, state, buffer_start, buffer_bytes, msg, msg_len);
         }
@@ -396,7 +397,7 @@ log_proto_text_server_fetch_from_buffer(LogProtoBufferedServer *s, const guchar 
     }
   else if (!log_proto_text_server_extract(self, state, buffer_start, buffer_bytes, eol, msg, msg_len))
     {
-      if (buffer_bytes == state->buffer_size)
+      if (message_reached_max_size)
         {
           log_proto_text_server_yield_whole_buffer_as_message(self, state, buffer_start, buffer_bytes, msg, msg_len);
         }
