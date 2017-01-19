@@ -129,6 +129,8 @@ log_proto_text_server_prepare(LogProtoServer *s, GIOCondition *cond)
 static gsize
 log_proto_text_server_get_raw_size_of_buffer(LogProtoTextServer *self, const guchar *buffer, gsize buffer_len)
 {
+  /* 1 character can be maximum 6 bytes in UTF-8 encoding */
+  const gsize requried_reverse_buffer_length = buffer_len * 6;
   gchar *out;
   const guchar *in;
   gsize avail_out, avail_in;
@@ -153,12 +155,12 @@ log_proto_text_server_get_raw_size_of_buffer(LogProtoTextServer *self, const guc
   if (self->convert_scale)
     return g_utf8_strlen((gchar *) buffer, buffer_len) * self->convert_scale;
 
-  if (self->reverse_buffer_len < buffer_len * 6)
+  if (self->reverse_buffer_len < requried_reverse_buffer_length)
     {
       /* we free and malloc, since we never need the data still in reverse buffer */
       g_free(self->reverse_buffer);
-      self->reverse_buffer_len = buffer_len * 6;
-      self->reverse_buffer = g_malloc(buffer_len * 6);
+      self->reverse_buffer_len = requried_reverse_buffer_length;
+      self->reverse_buffer = g_malloc(requried_reverse_buffer_length);
     }
 
   avail_out = self->reverse_buffer_len;
