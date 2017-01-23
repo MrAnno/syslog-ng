@@ -371,6 +371,13 @@ log_proto_text_server_locate_next_eol(LogProtoTextServer *self, LogProtoBuffered
   return eol;
 }
 
+static gboolean
+log_proto_text_server_message_size_too_large(LogProtoTextServer *self, gsize buffer_bytes)
+{
+    return buffer_bytes >= self->super.super.options->max_msg_size;
+}
+
+
 /**
  * log_proto_text_server_fetch_from_buffer:
  * @self: LogReader instance
@@ -390,10 +397,9 @@ log_proto_text_server_fetch_from_buffer(LogProtoBufferedServer *s, const guchar 
 
   const guchar *eol = log_proto_text_server_locate_next_eol(self, state, buffer_start, buffer_bytes);
 
-  gboolean message_reached_max_size = buffer_bytes >= self->super.super.options->max_msg_size;
   if (!eol)
     {
-      if (message_reached_max_size || log_proto_buffered_server_is_input_closed(&self->super))
+      if (log_proto_text_server_message_size_too_large(self, buffer_bytes) || log_proto_buffered_server_is_input_closed(&self->super))
         {
           log_proto_text_server_yield_whole_buffer_as_message(self, state, buffer_start, buffer_bytes, msg, msg_len);
         }
@@ -405,7 +411,7 @@ log_proto_text_server_fetch_from_buffer(LogProtoBufferedServer *s, const guchar 
     }
   else if (!log_proto_text_server_extract(self, state, buffer_start, buffer_bytes, eol, msg, msg_len))
     {
-      if (message_reached_max_size)
+      if (log_proto_text_server_message_size_too_large(self, buffer_bytes))
         {
           log_proto_text_server_yield_whole_buffer_as_message(self, state, buffer_start, buffer_bytes, msg, msg_len);
         }
