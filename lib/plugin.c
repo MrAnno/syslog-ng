@@ -196,6 +196,7 @@ plugin_parse_config(Plugin *self, GlobalConfig *cfg, YYLTYPE *yylloc, gpointer a
       YYSTYPE token;
 
       block = cfg_token_block_new();
+      cfg_token_block_set_injected(block, TRUE);
 
       memset(&token, 0, sizeof(token));
       token.type = LL_TOKEN;
