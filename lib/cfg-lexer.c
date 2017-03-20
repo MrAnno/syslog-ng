@@ -44,6 +44,7 @@ struct _CfgTokenBlock
 {
   gint pos;
   GArray *tokens;
+  gboolean injected;
 };
 
 /**
@@ -1130,6 +1131,18 @@ cfg_token_block_get_token(CfgTokenBlock *self)
       return result;
     }
   return NULL;
+}
+
+void
+cfg_token_block_set_injected(CfgTokenBlock *self, gboolean injected)
+{
+  self->injected = injected;
+}
+
+gboolean
+cfg_token_block_is_injected(const CfgTokenBlock *self)
+{
+  return self->injected;
 }
 
 CfgTokenBlock *

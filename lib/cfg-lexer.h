@@ -197,6 +197,8 @@ const gchar *cfg_lexer_lookup_context_name_by_type(gint id);
 void cfg_token_block_add_and_consume_token(CfgTokenBlock *self, YYSTYPE *token);
 void cfg_token_block_add_token(CfgTokenBlock *self, YYSTYPE *token);
 YYSTYPE *cfg_token_block_get_token(CfgTokenBlock *self);
+void cfg_token_block_set_injected(CfgTokenBlock *self, gboolean injected);
+gboolean cfg_token_block_is_injected(const CfgTokenBlock *self);
 
 CfgTokenBlock *cfg_token_block_new(void);
 void cfg_token_block_free(CfgTokenBlock *self);
