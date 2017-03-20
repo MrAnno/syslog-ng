@@ -767,7 +767,9 @@ cfg_lexer_unput_token(CfgLexer *self, YYSTYPE *yylval)
   CfgTokenBlock *block;
 
   block = cfg_token_block_new();
+  cfg_token_block_set_injected(block, TRUE);
   cfg_token_block_add_token(block, yylval);
+
   cfg_lexer_inject_token_block(self, block);
 }
 
@@ -815,6 +817,7 @@ relex:
 
       if (token)
         {
+          injected = cfg_token_block_is_injected(block);
           *yylval = *token;
           *yylloc = self->include_stack[self->include_depth].lloc;
           tok = token->type;
