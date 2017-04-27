@@ -13,7 +13,8 @@ SCL_SUBDIRS	= \
 	hdfs		\
 	apache		\
 	loggly		\
-	logmatic
+	logmatic	\
+	snmptrapd-source
 SCL_CONFIGS	= scl.conf syslog-ng.conf
 
 EXTRA_DIST	+= $(addprefix scl/,$(SCL_CONFIGS) $(SCL_SUBDIRS))
