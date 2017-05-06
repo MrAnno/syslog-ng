@@ -5,7 +5,9 @@ modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES = \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
   modules/snmptrapd-parser/snmptrapd-parser-parser.c        \
   modules/snmptrapd-parser/snmptrapd-parser-parser.h        \
-  modules/snmptrapd-parser/snmptrapd-parser-plugin.c
+  modules/snmptrapd-parser/snmptrapd-parser-plugin.c        \
+  modules/snmptrapd-parser/varbindlist-scanner.h            \
+  modules/snmptrapd-parser/varbindlist-scanner.c
 
 BUILT_SOURCES       +=      \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
@@ -26,3 +28,4 @@ modules_snmptrapd_parser_libsnmptrapd_parser_la_DEPENDENCIES= $(MODULE_DEPS_LIBS
 modules/snmptrapd-parser modules/snmptrapd-parser/ mod-snmptrapd-parser mod-file: modules/snmptrapd-parser/libsnmptrapd-parser.la
 .PHONY: modules/snmptrapd-parser/ mod-snmptrapd-parser mod-file
 
+include modules/snmptrapd-parser/tests/Makefile.am
