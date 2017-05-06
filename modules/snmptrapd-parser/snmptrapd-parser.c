@@ -19,7 +19,9 @@
  * OpenSSL libraries as published by the OpenSSL project. See the file
  * COPYING for details.
  */
+
 #include "snmptrapd-parser.h"
+#include "varbindlist-scanner.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -30,6 +32,8 @@ typedef struct _SnmpTrapdParser
   gchar *prefix;
   LogTemplate *message_template;
   LogTemplateOptions template_options;
+
+  VarBindListScanner *varbindlist_scanner;
 } SnmpTrapdParser;
 
 void
@@ -66,6 +70,29 @@ static gboolean
 snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *path_options,
                          const gchar *input, gsize input_len)
 {
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
+  msg_trace("snmptrapd_parser_process", evt_tag_str("input", input));
+
+  log_msg_make_writable(pmsg, path_options);
+
+  /* header scanner */
+  /* ... */
+
+  /* input_len? nullterminálás garantálva? */
+  const gchar *next_line = strchr(input, '\n');
+  if (!next_line)
+    return FALSE;
+
+  varbindlist_scanner_input(self->varbindlist_scanner, input);
+  while (varbindlist_scanner_scan_next(self->varbindlist_scanner))
+    {
+      msg_trace("varbindlist_scanner_scan_next",
+                evt_tag_str("key", varbindlist_scanner_get_current_key(self->varbindlist_scanner)),
+                evt_tag_str("type", varbindlist_scanner_get_current_type(self->varbindlist_scanner)),
+                evt_tag_str("value", varbindlist_scanner_get_current_value(self->varbindlist_scanner)));
+    }
+
   return TRUE;
 }
 
@@ -82,6 +109,9 @@ snmptrapd_parser_clone(LogPipe *s)
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
 
+  if (self->varbindlist_scanner)
+    cloned->varbindlist_scanner = varbindlist_scanner_clone(self->varbindlist_scanner);
+
   msg_trace("snmptrapd_parser_clone");
 
   return &cloned->super.super;
@@ -97,6 +127,8 @@ snmptrapd_parser_free(LogPipe *s)
   g_free(self->prefix);
   log_template_unref(self->message_template);
 
+  varbindlist_scanner_free(self->varbindlist_scanner);
+
   log_parser_free_method(s);
 }
 
@@ -108,9 +140,21 @@ snmptrapd_parser_init(LogPipe *s)
 
   log_template_options_init(&self->template_options, cfg);
 
+  g_assert(self->varbindlist_scanner == NULL);
+  self->varbindlist_scanner = varbindlist_scanner_new();
+
   return log_parser_init_method(s);
 }
 
+static gboolean
+snmptrapd_parser_deinit(LogPipe *s)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *)s;
+
+  varbindlist_scanner_free(self->varbindlist_scanner);
+  self->varbindlist_scanner = NULL;
+  return TRUE;
+}
 
 LogParser *
 snmptrapd_parser_new(GlobalConfig *cfg)
@@ -119,6 +163,7 @@ snmptrapd_parser_new(GlobalConfig *cfg)
 
   log_parser_init_instance(&self->super, cfg);
   self->super.super.init = snmptrapd_parser_init;
+  self->super.super.deinit = snmptrapd_parser_deinit;
   self->super.super.free_fn = snmptrapd_parser_free;
   self->super.super.clone = snmptrapd_parser_clone;
   self->super.process = snmptrapd_parser_process;
