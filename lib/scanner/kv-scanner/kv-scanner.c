@@ -305,6 +305,7 @@ _clone(KVScanner *self)
                                       self->pair_separator,
                                       self->stray_words != NULL);
   kv_scanner_set_transform_value(scanner, self->transform_value);
+  kv_scanner_set_valid_key_character_func(scanner, self->is_valid_key_character);
   return scanner;
 }
 
