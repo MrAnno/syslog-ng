@@ -266,6 +266,13 @@ _decode_value(KVScanner *self)
 }
 
 static void
+_before_value(KVScanner *self)
+{
+  if (self->before_value)
+    self->before_value(self);
+}
+
+static void
 _extract_value(KVScanner *self)
 {
   self->value_was_quoted = FALSE;
@@ -292,6 +299,7 @@ kv_scanner_scan_next(KVScanner *s)
   if (!_extract_key(self))
     return FALSE;
 
+  _before_value(self);
   _extract_value(self);
   _transform_value(s);
 
@@ -306,6 +314,7 @@ _clone(KVScanner *self)
                                       self->stray_words != NULL);
   kv_scanner_set_transform_value(scanner, self->transform_value);
   kv_scanner_set_valid_key_character_func(scanner, self->is_valid_key_character);
+  kv_scanner_set_before_value_func(scanner, self->before_value);
   return scanner;
 }
 
