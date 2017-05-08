@@ -30,6 +30,7 @@
 typedef struct _KVScanner KVScanner;
 
 typedef gboolean (*KVTransformValueFunc)(KVScanner *);
+typedef void (*KVBeforeValueFunc)(KVScanner *);
 typedef gboolean (*KVIsValidKeyCharFunc)(gchar c);
 
 struct _KVScanner
@@ -47,6 +48,7 @@ struct _KVScanner
   gchar quote_char;
 
   KVTransformValueFunc transform_value;
+  KVBeforeValueFunc before_value;
   KVIsValidKeyCharFunc is_valid_key_character;
   KVScanner* (*clone)(KVScanner *self);
   void (*free_fn)(KVScanner *self);
@@ -92,6 +94,12 @@ static inline void
 kv_scanner_set_transform_value(KVScanner *self, KVTransformValueFunc transform_value)
 {
   self->transform_value = transform_value;
+}
+
+static inline void
+kv_scanner_set_before_value_func(KVScanner *self, KVBeforeValueFunc before_value)
+{
+  self->before_value = before_value;
 }
 
 static inline void kv_scanner_set_valid_key_character_func(KVScanner *self, KVIsValidKeyCharFunc is_valid_key_character)
