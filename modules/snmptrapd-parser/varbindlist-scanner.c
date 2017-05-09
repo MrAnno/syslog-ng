@@ -32,8 +32,7 @@ _is_valid_key_character(gchar c)
          (c == '_') ||
          (c == '.') ||
          (c == '-') ||
-         (c == ':') ||
-         (c == '"');
+         (c == ':');
 }
 
 static KVScanner *
@@ -63,38 +62,26 @@ _skip_whitespaces(const gchar **input)
   *input = current_char;
 }
 
-static const gchar *
-_extract_type(VarBindListScanner *self)
-{
-  const gchar *type_start = kv_scanner_get_current_value(&self->super);
-  const gchar *type_end = strchr(type_start, ':');
-
-  if (type_end)
-    {
-      gsize type_len = type_end - type_start;
-      g_string_assign_len(self->varbind_type, type_start, type_len);
-      ++type_end;
-    }
-  else
-    {
-      /* no type */
-      type_end = type_start;
-      g_string_truncate(self->varbind_type, 0);
-    }
-
-  return type_end;
-}
-
-static gboolean
-_extract_type_and_value(KVScanner *scanner)
+static void
+_extract_type(KVScanner *scanner)
 {
   VarBindListScanner *self = (VarBindListScanner *) scanner;
 
-  const gchar *value_start = _extract_type(self);
-  _skip_whitespaces(&value_start);
+  const gchar *type_start = &scanner->input[scanner->input_pos];
+  _skip_whitespaces(&type_start);
 
-  g_string_assign(scanner->decoded_value, value_start);
-  return TRUE;
+  const gchar *type_end = strpbrk(type_start, ": \t");
+
+  if (!type_end || *type_end != ':')
+    {
+      g_string_truncate(self->varbind_type, 0);
+      return;
+    }
+
+  gsize type_len = type_end - type_start;
+  g_string_assign_len(self->varbind_type, type_start, type_len);
+
+  scanner->input_pos = type_end - scanner->input + 1;
 }
 
 gboolean
@@ -108,7 +95,7 @@ varbindlist_scanner_new(void)
 {
   VarBindListScanner *self = g_new0(VarBindListScanner, 1);
   kv_scanner_init_instance(&self->super, '=', "\t", TRUE);
-  kv_scanner_set_transform_value(&self->super, _extract_type_and_value);
+  kv_scanner_set_before_value_func(&self->super, _extract_type);
   kv_scanner_set_valid_key_character_func(&self->super, _is_valid_key_character);
 
   self->varbind_type = g_string_sized_new(16);

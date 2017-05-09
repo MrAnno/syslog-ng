@@ -68,7 +68,7 @@ Test(varbindlist_scanner, test_poc_spaces)
   _expect_next_key_type_value(scanner,
                               "iso.3.6.1.4.1.18372.3.2.1.1.1.6",
                               "STRING",
-                              "\"svc/w4joHeFNzpFNrC8u9umJhc/ssh_4eyes_user_subjects:3/ssh\"");
+                              "svc/w4joHeFNzpFNrC8u9umJhc/ssh_4eyes_user_subjects:3/ssh");
 
   _expect_no_more_tokens(scanner);
 }
@@ -91,7 +91,7 @@ Test(varbindlist_scanner, test_poc_tabs_and_spaces)
   _expect_next_key_type_value(scanner,
                               "iso.3.6.1.4.1.18372.3.2.1.1.1.6",
                               "STRING",
-                              "\"svc/w4joHeFNzpFNrC8u9umJhc/ssh_4eyes_user_subjects:3/ssh\"");
+                              "svc/w4joHeFNzpFNrC8u9umJhc/ssh_4eyes_user_subjects:3/ssh");
   _expect_next_key_type_value(scanner,
                               "iso.1.2",
                               "INTEGER",
@@ -124,7 +124,7 @@ Test(varbindlist_scanner, test_poc_types)
     "iso.3.5.3 = Hex-STRING: A0 BB CC DD EF     "
     "iso.3.8.8 = NULL        "
     "iso.2.1.1 = Timeticks: (34234234) 3 days, 23:05:42.34   "
-    "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.\"wes\" = IpAddress: 192.168.1.0";
+    "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.wes = IpAddress: 192.168.1.0";
 
   VarBindListScanner *scanner = create_scanner();
 
@@ -145,7 +145,7 @@ Test(varbindlist_scanner, test_poc_types)
   _expect_next_key_type_value(scanner,
                               "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.3.119.101.115",
                               "STRING",
-                              "\"random string\"");
+                              "random string");
   _expect_next_key_type_value(scanner,
                               "iso.3.2.2",
                               "Gauge32",
@@ -167,9 +167,56 @@ Test(varbindlist_scanner, test_poc_types)
                               "Timeticks",
                               "(34234234) 3 days, 23:05:42.34");
   _expect_next_key_type_value(scanner,
-                              "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.\"wes\"",
+                              "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.wes",
                               "IpAddress",
                               "192.168.1.0");
 
+  _expect_no_more_tokens(scanner);
+}
+
+Test(varbindlist_scanner, test_poc_separator_in_quoted)
+{
+  const gchar *input =
+    "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.3.119.101.115 = STRING: \"quoted = string \t innerkey='innervalue'\" \t"
+    "iso.3.8.8 = NULL\t";
+
+  VarBindListScanner *scanner = create_scanner();
+
+  varbindlist_scanner_input(scanner, input);
+
+  _expect_next_key_type_value(scanner,
+                              "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.3.119.101.115",
+                              "STRING",
+                              "quoted = string \t innerkey='innervalue'");
+  _expect_next_key_type_value(scanner,
+                              "iso.3.8.8",
+                              "",
+                              "NULL");
+  _expect_no_more_tokens(scanner);
+}
+
+Test(varbindlist_scanner, test_poc_multiline_trap)
+{
+  const gchar *input =
+    "iso.3.6.1.4.1.18372.3.2.1.1.1.6 = STRING: \"multi \n line\r\nvalue\" \t"
+    "iso.3.8.8 = NULL\t"
+    "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.3.119.101.115 = STRING: \"quoted = string \t innerkey='innervalue'\"";
+
+  VarBindListScanner *scanner = create_scanner();
+
+  varbindlist_scanner_input(scanner, input);
+
+  _expect_next_key_type_value(scanner,
+                              "iso.3.6.1.4.1.18372.3.2.1.1.1.6",
+                              "STRING",
+                              "multi \n line\r\nvalue");
+  _expect_next_key_type_value(scanner,
+                              "iso.3.8.8",
+                              "",
+                              "NULL");
+  _expect_next_key_type_value(scanner,
+                              "SNMP-VIEW-BASED-ACM-MIB::vacmSecurityModel.0.3.119.101.115",
+                              "STRING",
+                              "quoted = string \t innerkey='innervalue'");
   _expect_no_more_tokens(scanner);
 }
