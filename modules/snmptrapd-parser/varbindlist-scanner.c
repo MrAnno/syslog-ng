@@ -69,10 +69,10 @@ _extract_type(KVScanner *scanner)
 
   const gchar *type_start = &scanner->input[scanner->input_pos];
   _skip_whitespaces(&type_start);
-
   const gchar *type_end = strpbrk(type_start, ": \t");
 
-  if (!type_end || *type_end != ':')
+  gboolean type_exists = type_end && *type_end == ':';
+  if (!type_exists)
     {
       g_string_truncate(self->varbind_type, 0);
       return;
