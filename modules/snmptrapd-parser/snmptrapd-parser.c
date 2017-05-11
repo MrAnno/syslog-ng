@@ -30,9 +30,7 @@
 typedef struct _SnmpTrapdParser
 {
   LogParser super;
-  // Use GString instead of prefix+prefixlen
-  gchar *prefix;
-  gsize prefix_len;
+  GString *prefix;
   LogTemplate *message_template;
   LogTemplateOptions template_options;
 
@@ -45,20 +43,12 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
 
-  g_free(self->prefix);
-
   if (!prefix)
-    {
-      self->prefix = NULL;
-      self->prefix_len = 0;
-    }
+    g_string_truncate(self->prefix, 0);
   else
-    {
-      self->prefix = g_strdup(prefix);
-      self->prefix_len = strlen(prefix);
-    }
+    g_string_assign(self->prefix, prefix);
 
-  msg_trace("snmptrapd_parser_set_prefix", evt_tag_str("prefix", self->prefix));
+  msg_trace("snmptrapd_parser_set_prefix", evt_tag_str("prefix", self->prefix->str));
 }
 
 void
@@ -83,12 +73,14 @@ snmptrapd_parser_get_template_options(LogParser *s)
 static const gchar *
 _get_formatted_key(SnmpTrapdParser *self, const gchar *key)
 {
-  if (!self->prefix)
+  if (self->prefix->len == 0)
     return key;
-  else if (self->formatted_key->len > 0)
-    g_string_truncate(self->formatted_key, self->prefix_len);
+
+  if (self->formatted_key->len > 0)
+    g_string_truncate(self->formatted_key, self->prefix->len);
   else
-    g_string_assign(self->formatted_key, self->prefix);
+    g_string_assign(self->formatted_key, self->prefix->str);
+
   g_string_append(self->formatted_key, key);
   return self->formatted_key->str;
 }
@@ -237,7 +229,7 @@ snmptrapd_parser_clone(LogPipe *s)
 
   SnmpTrapdParser *cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
 
-  snmptrapd_parser_set_prefix(&cloned->super, self->prefix);
+  snmptrapd_parser_set_prefix(&cloned->super, self->prefix->str);
   snmptrapd_parser_set_message_template(&cloned->super, self->message_template);
 
   /* log_parser_clone_method() is missing.. */
@@ -258,8 +250,8 @@ snmptrapd_parser_free(LogPipe *s)
 
   log_template_options_destroy(&self->template_options);
 
-  g_free(self->prefix);
   log_template_unref(self->message_template);
+  g_string_free(self->prefix, TRUE);
   g_string_free(self->formatted_key, TRUE);
 
   varbindlist_scanner_free(self->varbindlist_scanner);
@@ -305,6 +297,7 @@ snmptrapd_parser_new(GlobalConfig *cfg)
 
   log_template_options_defaults(&self->template_options);
 
+  self->prefix = g_string_new(".snmp.");
   self->formatted_key = g_string_sized_new(32);
 
   return &self->super;
