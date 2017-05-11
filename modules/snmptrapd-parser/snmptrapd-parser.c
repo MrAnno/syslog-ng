@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Balabit
+ * Copyright (c) 2017 Gabor Nagy <gabor.nagy@balabit.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -138,6 +139,26 @@ _parse_timestamp(LogMessage *msg, const gchar **input, gsize *input_len)
 }
 
 static gboolean
+_parse_hostname(LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  const gchar *hostname_start = *input;
+  gsize input_left = *input_len;
+
+  while (*input_len > 0 && !g_ascii_isspace(**input))
+    {
+      ++(*input);
+      --(*input_len);
+    }
+
+  gsize hostname_length = input_left - *input_len;
+  if (hostname_length == 0)
+    return FALSE;
+
+  log_msg_set_value(msg, LM_V_HOST, hostname_start, hostname_length);
+  return TRUE;
+}
+
+static gboolean
 _parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
 {
   _skip_whitespaces(input, input_len);
@@ -147,8 +168,13 @@ _parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize
 
   _skip_whitespaces(input, input_len);
 
+  if (!_parse_hostname(msg, input, input_len))
+    return FALSE;
+
+  _skip_whitespaces(input, input_len);
+
   /*
-  _parse_hostname();
+
   _parse_transport_info();
   :
   _try_parse_v1_info();*/
