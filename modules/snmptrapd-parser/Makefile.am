@@ -7,7 +7,9 @@ modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES = \
   modules/snmptrapd-parser/snmptrapd-parser-parser.h        \
   modules/snmptrapd-parser/snmptrapd-parser-plugin.c        \
   modules/snmptrapd-parser/varbindlist-scanner.h            \
-  modules/snmptrapd-parser/varbindlist-scanner.c
+  modules/snmptrapd-parser/varbindlist-scanner.c            \
+  modules/snmptrapd-parser/snmptrapd-header-parser.h        \
+  modules/snmptrapd-parser/snmptrapd-header-parser.c
 
 BUILT_SOURCES       +=      \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
