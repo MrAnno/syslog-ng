@@ -102,6 +102,7 @@ Test(snmptrapd_parser, test_asd)
   TestNameValue expected[] =
   {
     { "HOST", "web2-kukorica.syslog_ng.balabit" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
     { ".snmp.iso.3.6.1.2.1.1.3.0", "(875496867) 101 days, 7:56:08.67" },
     { ".snmp.iso.3.6.1.6.3.1.1.4.1.0", "iso.3.6.1.4.1.8072.2.3.0.1" },
     { ".snmp.iso.3.6.1.4.1.8072.2.3.2.1", "60" },

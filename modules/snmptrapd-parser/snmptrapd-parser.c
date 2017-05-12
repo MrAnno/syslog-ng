@@ -177,7 +177,7 @@ _parse_transport_info(SnmpTrapdParser *self, LogMessage *msg, const gchar **inpu
   gsize transport_info_len = curr_char - start_pos;
 
   *input += transport_info_len + 1;
-  log_msg_set_value_by_name(msg, _get_formatted_key(self, "TRANSPORT_INFO"), start_pos, transport_info_len);
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "transport_info"), start_pos, transport_info_len);
   return TRUE;
 }
 
