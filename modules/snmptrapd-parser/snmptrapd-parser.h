@@ -26,9 +26,6 @@
 
 LogParser *snmptrapd_parser_new(GlobalConfig *cfg);
 void snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix);
-void snmptrapd_parser_set_message_template(LogParser *s, LogTemplate *message_template);
-
-LogTemplateOptions *snmptrapd_parser_get_template_options(LogParser *s);
 
 #endif
 

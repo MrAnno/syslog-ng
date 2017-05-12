@@ -32,8 +32,6 @@ typedef struct _SnmpTrapdParser
 {
   LogParser super;
   GString *prefix;
-  LogTemplate *message_template;
-  LogTemplateOptions template_options;
 
   GString *formatted_key;
   VarBindListScanner *varbindlist_scanner;
@@ -50,25 +48,6 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
     g_string_assign(self->prefix, prefix);
 
   msg_trace("snmptrapd_parser_set_prefix", evt_tag_str("prefix", self->prefix->str));
-}
-
-void
-snmptrapd_parser_set_message_template(LogParser *s, LogTemplate *message_template)
-{
-  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
-
-  log_template_unref(self->message_template);
-  self->message_template = log_template_ref(message_template);
-
-  msg_trace("snmptrapd_parser_set_message_template", evt_tag_str("message_template", self->message_template->template));
-}
-
-LogTemplateOptions *
-snmptrapd_parser_get_template_options(LogParser *s)
-{
-  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
-
-  return &self->template_options;
 }
 
 static const gchar *
@@ -388,7 +367,6 @@ snmptrapd_parser_clone(LogPipe *s)
   SnmpTrapdParser *cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
 
   snmptrapd_parser_set_prefix(&cloned->super, self->prefix->str);
-  snmptrapd_parser_set_message_template(&cloned->super, self->message_template);
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
@@ -406,9 +384,6 @@ snmptrapd_parser_free(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
 
-  log_template_options_destroy(&self->template_options);
-
-  log_template_unref(self->message_template);
   g_string_free(self->prefix, TRUE);
   g_string_free(self->formatted_key, TRUE);
 
@@ -421,9 +396,6 @@ static gboolean
 snmptrapd_parser_init(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
-  GlobalConfig *cfg = log_pipe_get_config(s);
-
-  log_template_options_init(&self->template_options, cfg);
 
   g_assert(self->varbindlist_scanner == NULL);
   self->varbindlist_scanner = varbindlist_scanner_new();
@@ -452,8 +424,6 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   self->super.super.free_fn = snmptrapd_parser_free;
   self->super.super.clone = snmptrapd_parser_clone;
   self->super.process = _process_threaded;
-
-  log_template_options_defaults(&self->template_options);
 
   self->prefix = g_string_new(".snmp.");
   self->formatted_key = g_string_sized_new(32);
