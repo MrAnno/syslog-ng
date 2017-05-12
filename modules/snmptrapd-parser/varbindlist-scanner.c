@@ -56,7 +56,7 @@ _skip_whitespaces(const gchar **input)
 {
   const gchar *current_char = *input;
 
-  while (g_ascii_isspace(*current_char))
+  while (*current_char == ' ' || *current_char == '\t')
     ++current_char;
 
   *input = current_char;
