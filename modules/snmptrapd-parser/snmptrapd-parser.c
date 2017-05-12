@@ -92,7 +92,7 @@ _skip_whitespaces(const gchar **input, gsize *input_len)
 {
   const gchar *current_char = *input;
 
-  while (*input_len > 0 && g_ascii_isspace(*current_char))
+  while (*input_len > 0 && (*current_char == ' ' || *current_char == '\t'))
     {
       ++current_char;
       --(*input_len);
@@ -101,15 +101,126 @@ _skip_whitespaces(const gchar **input, gsize *input_len)
   *input = current_char;
 }
 
-/*static
-_try_parse_v1_info()
+static gboolean
+_parse_v1_enterprise_oid(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
 {
-  _try_v1_scan_enterprise_string();
-  \n
-    _try_v1_scan_trap_description_and_subtype();
-    _try_v1_scan_uptime();
-    \n
-}*/
+  const gchar *enterprise_string_start = *input;
+  gsize input_left = *input_len;
+
+  while (*input_len > 0 && !g_ascii_isspace(**input))
+    {
+      ++(*input);
+      --(*input_len);
+    }
+
+  gsize enterprise_string_length = input_left - *input_len;
+  // try
+  if (enterprise_string_length == 0)
+    return TRUE;
+
+  if (**input != '\n')
+    _skip_whitespaces(input, input_len);
+
+  if (**input != '\n')
+    return FALSE;
+
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "enterprise_oid"),
+                            enterprise_string_start, enterprise_string_length);
+
+  return TRUE;
+}
+
+static gboolean
+_parse_v1_trap_type_and_subtype(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  const gchar *type_start = *input;
+
+  const gchar *type_end = strpbrk(type_start, "(\n");
+  gboolean type_exists = type_end && *type_end == '(';
+
+  if (!type_exists)
+    return FALSE;
+
+  const gchar *subtype_start = type_end + 1;
+
+  if (*(type_end - 1) == ' ')
+    --type_end;
+
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "type"),
+                            type_start, type_end - type_start);
+
+  const gchar *subtype_end = strpbrk(subtype_start, ")\n");
+  gboolean subtype_exists = subtype_end && *subtype_end == ')';
+
+  if (!subtype_exists)
+    return FALSE;
+
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "subtype"),
+                            subtype_start, subtype_end - subtype_start);
+
+
+  subtype_end++;
+
+  *input_len -= subtype_end - *input;
+  *input = subtype_end;
+
+  return TRUE;
+}
+
+static gboolean
+_parse_v1_uptime(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  if (!scan_expect_str(input, (gint *)input_len, "Uptime:"))
+    return FALSE;
+
+  _skip_whitespaces(input, input_len);
+
+  const gchar *uptime_start = *input;
+
+  const gchar *uptime_end = strchr(uptime_start, '\n');
+  if (!uptime_end)
+    return FALSE;
+
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "uptime"),
+                            uptime_start, uptime_end - uptime_start);
+
+  *input_len -= uptime_end - uptime_start;
+  *input = uptime_end;
+
+  return TRUE;
+}
+
+static gboolean
+_try_parse_v1_info(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  if (!_parse_v1_enterprise_oid(self, msg, input, input_len))
+    return FALSE;
+
+  //ez megeszi a v2 header újsorát is
+  if(!scan_expect_char(input, (gint *)input_len, '\n'))
+    return FALSE;
+
+  //try
+  if(!scan_expect_char(input, (gint *)input_len, '\t'))
+    return TRUE;
+
+  _skip_whitespaces(input, input_len);
+
+  if (!_parse_v1_trap_type_and_subtype(self, msg, input, input_len))
+    return FALSE;
+
+  _skip_whitespaces(input, input_len);
+
+  if (!_parse_v1_uptime(self, msg, input, input_len))
+    return FALSE;
+
+  _skip_whitespaces(input, input_len);
+
+  if(!scan_expect_char(input, (gint *)input_len, '\n'))
+    return FALSE;
+
+  return TRUE;
+}
 
 static gboolean
 _parse_timestamp(LogMessage *msg, const gchar **input, gsize *input_len)
@@ -201,18 +312,13 @@ _parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize
 
   _skip_whitespaces(input, input_len);
 
-  /*
-  :
-  _try_parse_v1_info();*/
-
-
-
-  const gchar *next_line = strchr(*input, '\n');
-  if (!next_line)
+  if(!scan_expect_char(input, (gint *) input_len, ':'))
     return FALSE;
 
-  *input_len -= (next_line + 1) - *input;
-  *input = next_line + 1;
+  _skip_whitespaces(input, input_len);
+
+  if (!_try_parse_v1_info(self, msg, input, input_len))
+    return FALSE;
 
   return TRUE;
 }

@@ -91,7 +91,7 @@ teardown(void)
 
 TestSuite(snmptrapd_parser, .init = setup, .fini = teardown);
 
-Test(snmptrapd_parser, test_asd)
+Test(snmptrapd_parser, test_general_v2_message_with_oids)
 {
   const gchar *input = "2017-05-10 12:46:14 web2-kukorica.syslog_ng.balabit [UDP: [127.0.0.1]:34257->[127.0.0.1]:162]:\n"
                        "iso.3.6.1.2.1.1.3.0 = Timeticks: (875496867) 101 days, 7:56:08.67\t"
@@ -107,6 +107,27 @@ Test(snmptrapd_parser, test_asd)
     { ".snmp.iso.3.6.1.6.3.1.1.4.1.0", "iso.3.6.1.4.1.8072.2.3.0.1" },
     { ".snmp.iso.3.6.1.4.1.8072.2.3.2.1", "60" },
     { ".snmp.iso.3.6.1.4.1.8072.2.1.3", "" },
+  };
+
+  assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
+}
+
+Test(snmptrapd_parser, test_general_v1_message_with_oids)
+{
+  const gchar *input =
+    "2017-05-10 13:23:16 localhost [UDP: [127.0.0.1]:53831->[127.0.0.1]:162]: iso.3.6.1.4.1.8072.2.3.1\n"
+    "\t Enterprise Specific Trap (.17) Uptime: 18:41:07.83\n"
+    "iso.3.6.1.4.1.8072.2.1.1 = INTEGER: 123456";
+
+  TestNameValue expected[] =
+  {
+    { "HOST", "localhost" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:53831->[127.0.0.1]:162" },
+    { ".snmp.enterprise_oid", "iso.3.6.1.4.1.8072.2.3.1" },
+    { ".snmp.type", "Enterprise Specific Trap" },
+    { ".snmp.subtype", ".17" },
+    { ".snmp.uptime", "18:41:07.83" },
+    { ".snmp.iso.3.6.1.4.1.8072.2.1.1", "123456" }
   };
 
   assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
