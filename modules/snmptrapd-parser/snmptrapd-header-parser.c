@@ -27,50 +27,50 @@
 #include <string.h>
 #include <ctype.h>
 
-typedef gboolean (*SnmpTrapdHeaderParserStep)(SnmpTrapdHeaderParser *header_parser);
+typedef gboolean (*SnmpTrapdHeaderParserStep)(SnmpTrapdHeaderParser *self);
 
 static const gchar *
-_get_formatted_key(SnmpTrapdHeaderParser *header_parser, const gchar *key)
+_get_formatted_key(SnmpTrapdHeaderParser *self, const gchar *key)
 {
-  if (header_parser->key_prefix->len == 0)
+  if (self->key_prefix->len == 0)
     return key;
 
-  if (header_parser->formatted_key->len > 0)
-    g_string_truncate(header_parser->formatted_key, header_parser->key_prefix->len);
+  if (self->formatted_key->len > 0)
+    g_string_truncate(self->formatted_key, self->key_prefix->len);
   else
-    g_string_assign(header_parser->formatted_key, header_parser->key_prefix->str);
+    g_string_assign(self->formatted_key, self->key_prefix->str);
 
-  g_string_append(header_parser->formatted_key, key);
-  return header_parser->formatted_key->str;
+  g_string_append(self->formatted_key, key);
+  return self->formatted_key->str;
 }
 
 static inline void
-_skip_whitespaces(SnmpTrapdHeaderParser *header_parser)
+_skip_whitespaces(SnmpTrapdHeaderParser *self)
 {
-  const gchar *current_char = *header_parser->input;
+  const gchar *current_char = *self->input;
 
-  while (*header_parser->input_len > 0 && *current_char == ' ')
+  while (*self->input_len > 0 && *current_char == ' ')
     {
       ++current_char;
-      --(*header_parser->input_len);
+      --(*self->input_len);
     }
 
-  *header_parser->input = current_char;
+  *self->input = current_char;
 }
 
 
 static gboolean
-_run_header_parser(SnmpTrapdHeaderParser *header_parser,
+_run_header_parser(SnmpTrapdHeaderParser *self,
                    SnmpTrapdHeaderParserStep *parser_steps, gsize parser_steps_size)
 {
   SnmpTrapdHeaderParserStep parser_step;
 
   for (gsize step_index = 0; step_index < parser_steps_size; ++step_index)
     {
-      _skip_whitespaces(header_parser);
+      _skip_whitespaces(self);
 
       parser_step = parser_steps[step_index];
-      if (!parser_step(header_parser))
+      if (!parser_step(self))
         return FALSE;
     }
 
@@ -79,56 +79,56 @@ _run_header_parser(SnmpTrapdHeaderParser *header_parser,
 
 
 static inline gboolean
-_expect_char(SnmpTrapdHeaderParser *header_parser, gchar c)
+_expect_char(SnmpTrapdHeaderParser *self, gchar c)
 {
-  return scan_expect_char(header_parser->input, (gint *) header_parser->input_len, c);
+  return scan_expect_char(self->input, (gint *) self->input_len, c);
 }
 
 static inline gboolean
-_expect_newline(SnmpTrapdHeaderParser *header_parser)
+_expect_newline(SnmpTrapdHeaderParser *self)
 {
-  return _expect_char(header_parser, '\n');
+  return _expect_char(self, '\n');
 }
 
 static inline gboolean
-_expect_colon(SnmpTrapdHeaderParser *header_parser)
+_expect_colon(SnmpTrapdHeaderParser *self)
 {
-  return _expect_char(header_parser, ':');
+  return _expect_char(self, ':');
 }
 
 static inline gboolean
-_expect_tab(SnmpTrapdHeaderParser *header_parser)
+_expect_tab(SnmpTrapdHeaderParser *self)
 {
-  return _expect_char(header_parser, '\t');
+  return _expect_char(self, '\t');
 }
 
 
 static gboolean
-_parse_v1_uptime(SnmpTrapdHeaderParser *header_parser)
+_parse_v1_uptime(SnmpTrapdHeaderParser *self)
 {
-  if (!scan_expect_str(header_parser->input, (gint *) header_parser->input_len, "Uptime:"))
+  if (!scan_expect_str(self->input, (gint *) self->input_len, "Uptime:"))
     return FALSE;
 
-  _skip_whitespaces(header_parser);
+  _skip_whitespaces(self);
 
-  const gchar *uptime_start = *header_parser->input;
+  const gchar *uptime_start = *self->input;
 
   const gchar *uptime_end = strchr(uptime_start, '\n');
   if (!uptime_end)
     return FALSE;
 
-  log_msg_set_value_by_name(header_parser->msg, _get_formatted_key(header_parser, "uptime"),
+  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "uptime"),
                             uptime_start, uptime_end - uptime_start);
 
-  *header_parser->input_len -= uptime_end - *header_parser->input;
-  *header_parser->input = uptime_end;
+  *self->input_len -= uptime_end - *self->input;
+  *self->input = uptime_end;
   return TRUE;
 }
 
 static gboolean
-_parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *header_parser)
+_parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *self)
 {
-  const gchar *type_start = *header_parser->input;
+  const gchar *type_start = *self->input;
 
   const gchar *type_end = strpbrk(type_start, "(\n");
   gboolean type_exists = type_end && *type_end == '(';
@@ -141,7 +141,7 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *header_parser)
   if (*(type_end - 1) == ' ')
     --type_end;
 
-  log_msg_set_value_by_name(header_parser->msg, _get_formatted_key(header_parser, "type"),
+  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "type"),
                             type_start, type_end - type_start);
 
   const gchar *subtype_end = strpbrk(subtype_start, ")\n");
@@ -150,34 +150,34 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *header_parser)
   if (!subtype_exists)
     return FALSE;
 
-  log_msg_set_value_by_name(header_parser->msg, _get_formatted_key(header_parser, "subtype"),
+  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "subtype"),
                             subtype_start, subtype_end - subtype_start);
 
 
-  *header_parser->input_len -= (subtype_end + 1) - *header_parser->input;
-  *header_parser->input = subtype_end + 1;
+  *self->input_len -= (subtype_end + 1) - *self->input;
+  *self->input = subtype_end + 1;
   return TRUE;
 }
 
 static gboolean
-_parse_v1_enterprise_oid(SnmpTrapdHeaderParser *header_parser)
+_parse_v1_enterprise_oid(SnmpTrapdHeaderParser *self)
 {
-  const gchar *enterprise_string_start = *header_parser->input;
-  gsize input_left = *header_parser->input_len;
+  const gchar *enterprise_string_start = *self->input;
+  gsize input_left = *self->input_len;
 
-  while (*header_parser->input_len > 0 && !g_ascii_isspace(**header_parser->input))
+  while (*self->input_len > 0 && !g_ascii_isspace(**self->input))
     {
-      ++(*header_parser->input);
-      --(*header_parser->input_len);
+      ++(*self->input);
+      --(*self->input_len);
     }
 
-  gsize enterprise_string_length = input_left - *header_parser->input_len;
+  gsize enterprise_string_length = input_left - *self->input_len;
 
   /* enterprise_string is optional */
   if (enterprise_string_length == 0)
     return TRUE;
 
-  log_msg_set_value_by_name(header_parser->msg, _get_formatted_key(header_parser, "enterprise_oid"),
+  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "enterprise_oid"),
                             enterprise_string_start, enterprise_string_length);
 
   return TRUE;
@@ -185,14 +185,14 @@ _parse_v1_enterprise_oid(SnmpTrapdHeaderParser *header_parser)
 
 
 static gboolean
-_parse_transport_info(SnmpTrapdHeaderParser *header_parser)
+_parse_transport_info(SnmpTrapdHeaderParser *self)
 {
-  if(!scan_expect_char(header_parser->input, (gint *) header_parser->input_len, '['))
+  if(!scan_expect_char(self->input, (gint *) self->input_len, '['))
     return FALSE;
 
-  _skip_whitespaces(header_parser);
+  _skip_whitespaces(self);
 
-  const gchar *transport_info_start = *header_parser->input;
+  const gchar *transport_info_start = *self->input;
 
   const gchar *transport_info_end = strchr(transport_info_start, '\n');
   if (!transport_info_end)
@@ -207,43 +207,43 @@ _parse_transport_info(SnmpTrapdHeaderParser *header_parser)
 
   gsize transport_info_len = transport_info_end - transport_info_start;
 
-  log_msg_set_value_by_name(header_parser->msg, _get_formatted_key(header_parser, "transport_info"),
+  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "transport_info"),
                             transport_info_start, transport_info_len);
 
 
-  *header_parser->input_len -= (transport_info_end + 1) - *header_parser->input;
-  *header_parser->input = transport_info_end + 1;
+  *self->input_len -= (transport_info_end + 1) - *self->input;
+  *self->input = transport_info_end + 1;
   return TRUE;
 }
 
 static gboolean
-_parse_hostname(SnmpTrapdHeaderParser *header_parser)
+_parse_hostname(SnmpTrapdHeaderParser *self)
 {
-  const gchar *hostname_start = *header_parser->input;
-  gsize input_left = *header_parser->input_len;
+  const gchar *hostname_start = *self->input;
+  gsize input_left = *self->input_len;
 
-  while (*header_parser->input_len > 0 && !g_ascii_isspace(**header_parser->input))
+  while (*self->input_len > 0 && !g_ascii_isspace(**self->input))
     {
-      ++(*header_parser->input);
-      --(*header_parser->input_len);
+      ++(*self->input);
+      --(*self->input_len);
     }
 
-  gsize hostname_length = input_left - *header_parser->input_len;
+  gsize hostname_length = input_left - *self->input_len;
   if (hostname_length == 0)
     return FALSE;
 
-  log_msg_set_value(header_parser->msg, LM_V_HOST, hostname_start, hostname_length);
+  log_msg_set_value(self->msg, LM_V_HOST, hostname_start, hostname_length);
   return TRUE;
 }
 
 static gboolean
-_parse_timestamp(SnmpTrapdHeaderParser *header_parser)
+_parse_timestamp(SnmpTrapdHeaderParser *self)
 {
   GTimeVal now;
   cached_g_current_time(&now);
   time_t now_tv_sec = (time_t) now.tv_sec;
 
-  LogStamp *stamp = &header_parser->msg->timestamps[LM_TS_STAMP];
+  LogStamp *stamp = &self->msg->timestamps[LM_TS_STAMP];
   stamp->tv_usec = 0;
   stamp->zone_offset = -1;
 
@@ -254,7 +254,7 @@ _parse_timestamp(SnmpTrapdHeaderParser *header_parser)
 
   struct tm tm;
   cached_localtime(&now_tv_sec, &tm);
-  if (!scan_std_timestamp(header_parser->input, (gint *)header_parser->input_len, &tm))
+  if (!scan_std_timestamp(self->input, (gint *)self->input_len, &tm))
     return FALSE;
 
   stamp->tv_sec = cached_mktime(&tm);
@@ -264,10 +264,10 @@ _parse_timestamp(SnmpTrapdHeaderParser *header_parser)
 }
 
 static gboolean
-_try_parse_v1_info(SnmpTrapdHeaderParser *header_parser)
+_try_parse_v1_info(SnmpTrapdHeaderParser *self)
 {
   /* detect v1 format */
-  const gchar *new_line = strchr(*header_parser->input, '\n');
+  const gchar *new_line = strchr(*self->input, '\n');
   if (new_line && new_line[1] != '\t')
     return TRUE;
 
@@ -281,12 +281,12 @@ _try_parse_v1_info(SnmpTrapdHeaderParser *header_parser)
     _try_parse_v1_info
   };
 
-  return _run_header_parser(header_parser, v1_info_parser_steps,
+  return _run_header_parser(self, v1_info_parser_steps,
                             sizeof(v1_info_parser_steps) / sizeof(SnmpTrapdHeaderParserStep));
 }
 
 gboolean
-snmptrapd_parse_header(SnmpTrapdHeaderParser *header_parser)
+snmptrapd_header_parser_parse(SnmpTrapdHeaderParser *self)
 {
   SnmpTrapdHeaderParserStep parser_steps[] =
   {
@@ -298,5 +298,5 @@ snmptrapd_parse_header(SnmpTrapdHeaderParser *header_parser)
     _expect_newline
   };
 
-  return _run_header_parser(header_parser, parser_steps, sizeof(parser_steps) / sizeof(SnmpTrapdHeaderParserStep));
+  return _run_header_parser(self, parser_steps, sizeof(parser_steps) / sizeof(SnmpTrapdHeaderParserStep));
 }

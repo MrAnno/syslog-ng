@@ -61,6 +61,21 @@ _get_formatted_key(SnmpTrapdParser *self, const gchar *key)
 }
 
 static gboolean
+_parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  SnmpTrapdHeaderParser header_parser =
+  {
+    .key_prefix = self->prefix,
+    .msg = msg,
+    .input = input,
+    .input_len = input_len,
+    .formatted_key = self->formatted_key
+  };
+
+  return snmptrapd_header_parser_parse(&header_parser);
+}
+
+static gboolean
 _parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
 {
   VarBindListScanner varbindlist_scanner;
@@ -93,23 +108,18 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
                          const gchar *input, gsize input_len)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
   log_msg_make_writable(pmsg, path_options);
 
   /* APPEND_ZERO(input, input, input_len);? */
 
-  SnmpTrapdHeaderParser header_parser =
-  {
-    .key_prefix = self->prefix,
-    .msg = *pmsg,
-    .input = &input,
-    .input_len = &input_len,
-    .formatted_key = self->formatted_key
-  };
+  const gchar *remaining_input = input;
+  gsize remaining_input_len = input_len;
 
-  if (!snmptrapd_parse_header(&header_parser))
+  if (!_parse_header(self, *pmsg, &remaining_input, &remaining_input_len))
     return FALSE;
 
-  if (!_parse_varbindlist(self, *pmsg, &input, &input_len))
+  if (!_parse_varbindlist(self, *pmsg, &remaining_input, &remaining_input_len))
     return FALSE;
 
   /* set default msg */

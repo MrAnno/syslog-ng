@@ -35,7 +35,7 @@ typedef struct
   GString *formatted_key;
 } SnmpTrapdHeaderParser;
 
-gboolean snmptrapd_parse_header(SnmpTrapdHeaderParser *header_parser);
+gboolean snmptrapd_header_parser_parse(SnmpTrapdHeaderParser *self);
 
 #endif
 
