@@ -159,6 +159,29 @@ _parse_hostname(LogMessage *msg, const gchar **input, gsize *input_len)
 }
 
 static gboolean
+_parse_transport_info(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+{
+  if(!scan_expect_char(input, (gint *) input_len, '['))
+    return FALSE;
+
+  _skip_whitespaces(input, input_len);
+
+  const gchar *start_pos = *input;
+  gchar *curr_char = strchr(start_pos, '\n');
+  while(*curr_char != ']')
+    {
+      --curr_char;
+      if(curr_char == start_pos)
+        return FALSE;
+    }
+  gsize transport_info_len = curr_char - start_pos;
+
+  *input += transport_info_len + 1;
+  log_msg_set_value_by_name(msg, _get_formatted_key(self, "TRANSPORT_INFO"), start_pos, transport_info_len);
+  return TRUE;
+}
+
+static gboolean
 _parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
 {
   _skip_whitespaces(input, input_len);
@@ -173,9 +196,12 @@ _parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize
 
   _skip_whitespaces(input, input_len);
 
-  /*
+  if(!_parse_transport_info(self, msg, input, input_len))
+    return FALSE;
 
-  _parse_transport_info();
+  _skip_whitespaces(input, input_len);
+
+  /*
   :
   _try_parse_v1_info();*/
 
