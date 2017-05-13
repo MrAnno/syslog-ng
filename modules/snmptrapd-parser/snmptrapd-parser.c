@@ -30,7 +30,6 @@ typedef struct _SnmpTrapdParser
   GString *prefix;
 
   GString *formatted_key;
-  VarBindListScanner *varbindlist_scanner;
 } SnmpTrapdParser;
 
 void
@@ -64,13 +63,16 @@ _get_formatted_key(SnmpTrapdParser *self, const gchar *key)
 static gboolean
 _parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
 {
+  VarBindListScanner varbindlist_scanner;
   const gchar *key, *value;
 
-  varbindlist_scanner_input(self->varbindlist_scanner, *input);
-  while (varbindlist_scanner_scan_next(self->varbindlist_scanner))
+  varbindlist_scanner_init(&varbindlist_scanner);
+
+  varbindlist_scanner_input(&varbindlist_scanner, *input);
+  while (varbindlist_scanner_scan_next(&varbindlist_scanner))
     {
-      key = _get_formatted_key(self, varbindlist_scanner_get_current_key(self->varbindlist_scanner));
-      value = varbindlist_scanner_get_current_value(self->varbindlist_scanner);
+      key = _get_formatted_key(self, varbindlist_scanner_get_current_key(&varbindlist_scanner));
+      value = varbindlist_scanner_get_current_value(&varbindlist_scanner);
 
       log_msg_set_value_by_name(msg, key, value, -1);
 
@@ -78,10 +80,11 @@ _parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, 
 
       msg_trace("varbindlist_scanner_scan_next",
                 evt_tag_str("key", key),
-                evt_tag_str("type", varbindlist_scanner_get_current_type(self->varbindlist_scanner)),
+                evt_tag_str("type", varbindlist_scanner_get_current_type(&varbindlist_scanner)),
                 evt_tag_str("value", value));
     }
 
+  varbindlist_scanner_deinit(&varbindlist_scanner);
   return TRUE;
 }
 
@@ -114,19 +117,6 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
   return TRUE;
 }
 
-/* WORKAROUND, TODO: threadsafe scanner, formatted_key, etc. */
-static gboolean
-_process_threaded(LogParser *s, LogMessage **pmsg, const LogPathOptions *path_options,
-                  const gchar *input, gsize input_len)
-{
-  LogParser *self = (LogParser *)log_pipe_clone(&s->super);
-
-  gboolean ok = snmptrapd_parser_process(self, pmsg, path_options, input, input_len);
-
-  log_pipe_unref(&self->super);
-  return ok;
-}
-
 static LogPipe *
 snmptrapd_parser_clone(LogPipe *s)
 {
@@ -138,9 +128,6 @@ snmptrapd_parser_clone(LogPipe *s)
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
-
-  if (self->varbindlist_scanner)
-    cloned->varbindlist_scanner = varbindlist_scanner_clone(self->varbindlist_scanner);
 
   msg_trace("snmptrapd_parser_clone");
 
@@ -155,30 +142,7 @@ snmptrapd_parser_free(LogPipe *s)
   g_string_free(self->prefix, TRUE);
   g_string_free(self->formatted_key, TRUE);
 
-  varbindlist_scanner_free(self->varbindlist_scanner);
-
   log_parser_free_method(s);
-}
-
-static gboolean
-snmptrapd_parser_init(LogPipe *s)
-{
-  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
-
-  g_assert(self->varbindlist_scanner == NULL);
-  self->varbindlist_scanner = varbindlist_scanner_new();
-
-  return log_parser_init_method(s);
-}
-
-static gboolean
-snmptrapd_parser_deinit(LogPipe *s)
-{
-  SnmpTrapdParser *self = (SnmpTrapdParser *)s;
-
-  varbindlist_scanner_free(self->varbindlist_scanner);
-  self->varbindlist_scanner = NULL;
-  return TRUE;
 }
 
 LogParser *
@@ -187,11 +151,9 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   SnmpTrapdParser *self = g_new0(SnmpTrapdParser, 1);
 
   log_parser_init_instance(&self->super, cfg);
-  self->super.super.init = snmptrapd_parser_init;
-  self->super.super.deinit = snmptrapd_parser_deinit;
   self->super.super.free_fn = snmptrapd_parser_free;
   self->super.super.clone = snmptrapd_parser_clone;
-  self->super.process = _process_threaded;
+  self->super.process = snmptrapd_parser_process;
 
   self->prefix = g_string_new(".snmp.");
   self->formatted_key = g_string_sized_new(32);

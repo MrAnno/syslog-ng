@@ -73,4 +73,7 @@ varbindlist_scanner_get_current_value(VarBindListScanner *self)
 gboolean varbindlist_scanner_scan_next(VarBindListScanner *self);
 VarBindListScanner *varbindlist_scanner_new(void);
 
+void varbindlist_scanner_init(VarBindListScanner *self);
+void varbindlist_scanner_deinit(VarBindListScanner *self);
+
 #endif

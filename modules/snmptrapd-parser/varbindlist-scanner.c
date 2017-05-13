@@ -35,22 +35,6 @@ _is_valid_key_character(gchar c)
          (c == ':');
 }
 
-static KVScanner *
-_clone(KVScanner *s)
-{
-  VarBindListScanner *scanner = varbindlist_scanner_new();
-  return &scanner->super;
-}
-
-static void
-_free(KVScanner *s)
-{
-  VarBindListScanner *self = (VarBindListScanner *) s;
-
-  kv_scanner_free_method(&self->super);
-  g_string_free(self->varbind_type, TRUE);
-}
-
 static inline void
 _skip_whitespaces(const gchar **input)
 {
@@ -84,6 +68,40 @@ _extract_type(KVScanner *scanner)
   scanner->input_pos = type_end - scanner->input + 1;
 }
 
+static KVScanner *
+_clone(KVScanner *s)
+{
+  VarBindListScanner *scanner = varbindlist_scanner_new();
+  return &scanner->super;
+}
+
+static void
+_free(KVScanner *s)
+{
+  VarBindListScanner *self = (VarBindListScanner *) s;
+  varbindlist_scanner_deinit(self);
+}
+
+void
+varbindlist_scanner_init(VarBindListScanner *self)
+{
+  memset(self, 0, sizeof(VarBindListScanner));
+  kv_scanner_init_instance(&self->super, '=', "\t", TRUE);
+  kv_scanner_set_before_value_func(&self->super, _extract_type);
+  kv_scanner_set_valid_key_character_func(&self->super, _is_valid_key_character);
+
+  self->varbind_type = g_string_sized_new(16);
+  self->super.clone = _clone;
+  self->super.free_fn = _free;
+}
+
+void
+varbindlist_scanner_deinit(VarBindListScanner *self)
+{
+  kv_scanner_free_method(&self->super);
+  g_string_free(self->varbind_type, TRUE);
+}
+
 gboolean
 varbindlist_scanner_scan_next(VarBindListScanner *self)
 {
@@ -93,14 +111,7 @@ varbindlist_scanner_scan_next(VarBindListScanner *self)
 VarBindListScanner *
 varbindlist_scanner_new(void)
 {
-  VarBindListScanner *self = g_new0(VarBindListScanner, 1);
-  kv_scanner_init_instance(&self->super, '=', "\t", TRUE);
-  kv_scanner_set_before_value_func(&self->super, _extract_type);
-  kv_scanner_set_valid_key_character_func(&self->super, _is_valid_key_character);
-
-  self->varbind_type = g_string_sized_new(16);
-  self->super.clone = _clone;
-  self->super.free_fn = _free;
-
+  VarBindListScanner *self = g_new(VarBindListScanner, 1);
+  varbindlist_scanner_init(self);
   return self;
 }
