@@ -41,8 +41,6 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
     g_string_truncate(self->prefix, 0);
   else
     g_string_assign(self->prefix, prefix);
-
-  msg_trace("snmptrapd_parser_set_prefix", evt_tag_str("prefix", self->prefix->str));
 }
 
 static const gchar *
@@ -90,13 +88,6 @@ _parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, 
       value = varbindlist_scanner_get_current_value(&varbindlist_scanner);
 
       log_msg_set_value_by_name(msg, key, value, -1);
-
-      msg_debug("----------------", evt_tag_str("key", key), evt_tag_str("value", log_msg_get_value_by_name(msg, key, NULL)));
-
-      msg_trace("varbindlist_scanner_scan_next",
-                evt_tag_str("key", key),
-                evt_tag_str("type", varbindlist_scanner_get_current_type(&varbindlist_scanner)),
-                evt_tag_str("value", value));
     }
 
   varbindlist_scanner_deinit(&varbindlist_scanner);
@@ -138,8 +129,6 @@ snmptrapd_parser_clone(LogPipe *s)
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
-
-  msg_trace("snmptrapd_parser_clone");
 
   return &cloned->super.super;
 }
