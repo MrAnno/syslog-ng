@@ -24,18 +24,9 @@
 
 #include "syslog-ng.h"
 #include "logmsg/logmsg.h"
+#include "snmptrapd-parser.h"
 
-typedef struct
-{
-  GString *key_prefix;
-
-  const gchar **input;
-  gsize *input_len;
-  LogMessage *msg;
-  GString *formatted_key;
-} SnmpTrapdHeaderParser;
-
-gboolean snmptrapd_header_parser_parse(SnmpTrapdHeaderParser *self);
+gboolean snmptrapd_header_parser_parse(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len);
 
 #endif
 

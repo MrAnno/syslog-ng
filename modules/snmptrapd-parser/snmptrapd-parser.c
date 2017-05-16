@@ -22,6 +22,7 @@
 #include "snmptrapd-parser.h"
 #include "snmptrapd-header-parser.h"
 #include "varbindlist-scanner.h"
+#include "scratch-buffers2.h"
 
 typedef struct _SnmpTrapdParser
 {
@@ -52,37 +53,22 @@ snmptrapd_parser_set_generate_message(LogParser *s, gboolean generate_message)
 }
 
 static const gchar *
-_get_formatted_key(SnmpTrapdParser *self, const gchar *key)
+_get_formatted_key(const gchar *key, const GString *prefix, GString *formatted_key)
 {
-  if (self->prefix->len == 0)
+  if (prefix->len == 0)
     return key;
 
-  if (self->formatted_key->len > 0)
-    g_string_truncate(self->formatted_key, self->prefix->len);
+  if (formatted_key->len > 0)
+    g_string_truncate(formatted_key, prefix->len);
   else
-    g_string_assign(self->formatted_key, self->prefix->str);
+    g_string_assign(formatted_key, prefix->str);
 
-  g_string_append(self->formatted_key, key);
-  return self->formatted_key->str;
+  g_string_append(formatted_key, key);
+  return formatted_key->str;
 }
 
 static gboolean
-_parse_header(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
-{
-  SnmpTrapdHeaderParser header_parser =
-  {
-    .key_prefix = self->prefix,
-    .msg = msg,
-    .input = input,
-    .input_len = input_len,
-    .formatted_key = self->formatted_key
-  };
-
-  return snmptrapd_header_parser_parse(&header_parser);
-}
-
-static gboolean
-_parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, gsize *input_len)
+_parse_varbindlist(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len)
 {
   VarBindListScanner varbindlist_scanner;
   const gchar *key, *value;
@@ -92,10 +78,10 @@ _parse_varbindlist(SnmpTrapdParser *self, LogMessage *msg, const gchar **input, 
   varbindlist_scanner_input(&varbindlist_scanner, *input);
   while (varbindlist_scanner_scan_next(&varbindlist_scanner))
     {
-      key = _get_formatted_key(self, varbindlist_scanner_get_current_key(&varbindlist_scanner));
+      key = varbindlist_scanner_get_current_key(&varbindlist_scanner);
       value = varbindlist_scanner_get_current_value(&varbindlist_scanner);
 
-      log_msg_set_value_by_name(msg, key, value, -1);
+      snmptrapd_parser_add_name_value(nv_context, key, value, -1);
     }
 
   varbindlist_scanner_deinit(&varbindlist_scanner);
@@ -112,17 +98,29 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
 
   /* APPEND_ZERO(input, input, input_len);? */
 
-  const gchar *remaining_input = input;
-  gsize remaining_input_len = input_len;
+  ScratchBuffersMarker marker;
 
-  if (!_parse_header(self, *pmsg, &remaining_input, &remaining_input_len))
+  GString *generated_message = NULL;
+  if (self->generate_message)
+    generated_message = scratch_buffers2_alloc_and_mark(&marker);
+
+
+  SnmpTrapdNVContext nv_context =
+  {
+    .key_prefix = self->prefix,
+    .msg = *pmsg,
+    .generated_message = generated_message
+  };
+
+  if (!snmptrapd_header_parser_parse(&nv_context, &input, &input_len))
     return FALSE;
 
-  if (!_parse_varbindlist(self, *pmsg, &remaining_input, &remaining_input_len))
+  if (!_parse_varbindlist(&nv_context, &input, &input_len))
     return FALSE;
 
-  /* set default msg */
 
+  if (self->generate_message)
+    scratch_buffers2_reclaim_marked(marker);
   return TRUE;
 }
 
@@ -168,4 +166,18 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   self->generate_message = TRUE;
 
   return &self->super;
+}
+
+
+void
+snmptrapd_parser_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key,
+                                const gchar *value, gsize value_length)
+{
+  ScratchBuffersMarker marker;
+  GString *formatted_key = scratch_buffers2_alloc_and_mark(&marker);
+
+  const gchar *prefixed_key = _get_formatted_key(key, nv_context->key_prefix, formatted_key);
+  log_msg_set_value_by_name(nv_context->msg, prefixed_key, value, value_length);
+
+  scratch_buffers2_reclaim_marked(marker);
 }

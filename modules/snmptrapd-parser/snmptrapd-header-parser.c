@@ -27,22 +27,15 @@
 #include <string.h>
 #include <ctype.h>
 
+typedef struct
+{
+  SnmpTrapdNVContext *nv_context;
+  const gchar **input;
+  gsize *input_len;
+} SnmpTrapdHeaderParser;
+
 typedef gboolean (*SnmpTrapdHeaderParserStep)(SnmpTrapdHeaderParser *self);
 
-static const gchar *
-_get_formatted_key(SnmpTrapdHeaderParser *self, const gchar *key)
-{
-  if (self->key_prefix->len == 0)
-    return key;
-
-  if (self->formatted_key->len > 0)
-    g_string_truncate(self->formatted_key, self->key_prefix->len);
-  else
-    g_string_assign(self->formatted_key, self->key_prefix->str);
-
-  g_string_append(self->formatted_key, key);
-  return self->formatted_key->str;
-}
 
 static inline void
 _skip_whitespaces(SnmpTrapdHeaderParser *self)
@@ -117,8 +110,7 @@ _parse_v1_uptime(SnmpTrapdHeaderParser *self)
   if (!uptime_end)
     return FALSE;
 
-  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "uptime"),
-                            uptime_start, uptime_end - uptime_start);
+  snmptrapd_parser_add_name_value(self->nv_context, "uptime", uptime_start, uptime_end - uptime_start);
 
   *self->input_len -= uptime_end - *self->input;
   *self->input = uptime_end;
@@ -141,8 +133,7 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *self)
   if (*(type_end - 1) == ' ')
     --type_end;
 
-  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "type"),
-                            type_start, type_end - type_start);
+  snmptrapd_parser_add_name_value(self->nv_context, "type", type_start, type_end - type_start);
 
   const gchar *subtype_end = strpbrk(subtype_start, ")\n");
   gboolean subtype_exists = subtype_end && *subtype_end == ')';
@@ -150,9 +141,7 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *self)
   if (!subtype_exists)
     return FALSE;
 
-  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "subtype"),
-                            subtype_start, subtype_end - subtype_start);
-
+  snmptrapd_parser_add_name_value(self->nv_context, "subtype", subtype_start, subtype_end - subtype_start);
 
   *self->input_len -= (subtype_end + 1) - *self->input;
   *self->input = subtype_end + 1;
@@ -177,8 +166,8 @@ _parse_v1_enterprise_oid(SnmpTrapdHeaderParser *self)
   if (enterprise_string_length == 0)
     return TRUE;
 
-  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "enterprise_oid"),
-                            enterprise_string_start, enterprise_string_length);
+  snmptrapd_parser_add_name_value(self->nv_context, "enterprise_oid",
+                                  enterprise_string_start, enterprise_string_length);
 
   return TRUE;
 }
@@ -207,9 +196,7 @@ _parse_transport_info(SnmpTrapdHeaderParser *self)
 
   gsize transport_info_len = transport_info_end - transport_info_start;
 
-  log_msg_set_value_by_name(self->msg, _get_formatted_key(self, "transport_info"),
-                            transport_info_start, transport_info_len);
-
+  snmptrapd_parser_add_name_value(self->nv_context, "transport_info", transport_info_start, transport_info_len);
 
   *self->input_len -= (transport_info_end + 1) - *self->input;
   *self->input = transport_info_end + 1;
@@ -232,7 +219,7 @@ _parse_hostname(SnmpTrapdHeaderParser *self)
   if (hostname_length == 0)
     return FALSE;
 
-  log_msg_set_value(self->msg, LM_V_HOST, hostname_start, hostname_length);
+  log_msg_set_value(self->nv_context->msg, LM_V_HOST, hostname_start, hostname_length);
   return TRUE;
 }
 
@@ -243,7 +230,7 @@ _parse_timestamp(SnmpTrapdHeaderParser *self)
   cached_g_current_time(&now);
   time_t now_tv_sec = (time_t) now.tv_sec;
 
-  LogStamp *stamp = &self->msg->timestamps[LM_TS_STAMP];
+  LogStamp *stamp = &self->nv_context->msg->timestamps[LM_TS_STAMP];
   stamp->tv_usec = 0;
   stamp->zone_offset = -1;
 
@@ -286,8 +273,15 @@ _try_parse_v1_info(SnmpTrapdHeaderParser *self)
 }
 
 gboolean
-snmptrapd_header_parser_parse(SnmpTrapdHeaderParser *self)
+snmptrapd_header_parser_parse(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len)
 {
+  SnmpTrapdHeaderParser self =
+  {
+    .nv_context = nv_context,
+    .input = input,
+    .input_len = input_len
+  };
+
   SnmpTrapdHeaderParserStep parser_steps[] =
   {
     _parse_timestamp,
@@ -298,5 +292,5 @@ snmptrapd_header_parser_parse(SnmpTrapdHeaderParser *self)
     _expect_newline
   };
 
-  return _run_header_parser(self, parser_steps, sizeof(parser_steps) / sizeof(SnmpTrapdHeaderParserStep));
+  return _run_header_parser(&self, parser_steps, sizeof(parser_steps) / sizeof(SnmpTrapdHeaderParserStep));
 }
