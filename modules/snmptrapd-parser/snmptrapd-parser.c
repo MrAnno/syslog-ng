@@ -55,12 +55,9 @@ snmptrapd_parser_set_generate_message(LogParser *s, gboolean generate_message)
 static const gchar *
 _get_formatted_key(const gchar *key, const GString *prefix, GString *formatted_key)
 {
-  if (prefix->len == 0)
-    return key;
+  g_string_truncate(formatted_key, 0);
 
-  if (formatted_key->len > 0)
-    g_string_truncate(formatted_key, prefix->len);
-  else
+  if (prefix->len > 0)
     g_string_assign(formatted_key, prefix->str);
 
   g_string_append(formatted_key, key);
