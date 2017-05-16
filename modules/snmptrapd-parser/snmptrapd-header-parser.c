@@ -264,8 +264,7 @@ _try_parse_v1_info(SnmpTrapdHeaderParser *self)
     _expect_newline,
     _expect_tab,
     _parse_v1_trap_type_and_subtype,
-    _parse_v1_uptime,
-    _try_parse_v1_info
+    _parse_v1_uptime
   };
 
   return _run_header_parser(self, v1_info_parser_steps,
