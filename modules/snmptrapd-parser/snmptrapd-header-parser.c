@@ -38,7 +38,7 @@ typedef gboolean (*SnmpTrapdHeaderParserStep)(SnmpTrapdHeaderParser *self);
 
 
 static inline void
-_skip_whitespaces(SnmpTrapdHeaderParser *self)
+_skip_spaces(SnmpTrapdHeaderParser *self)
 {
   const gchar *current_char = *self->input;
 
@@ -60,7 +60,7 @@ _run_header_parser(SnmpTrapdHeaderParser *self,
 
   for (gsize step_index = 0; step_index < parser_steps_size; ++step_index)
     {
-      _skip_whitespaces(self);
+      _skip_spaces(self);
 
       parser_step = parser_steps[step_index];
       if (!parser_step(self))
@@ -102,7 +102,7 @@ _parse_v1_uptime(SnmpTrapdHeaderParser *self)
   if (!scan_expect_str(self->input, (gint *) self->input_len, "Uptime:"))
     return FALSE;
 
-  _skip_whitespaces(self);
+  _skip_spaces(self);
 
   const gchar *uptime_start = *self->input;
 
@@ -179,7 +179,7 @@ _parse_transport_info(SnmpTrapdHeaderParser *self)
   if(!scan_expect_char(self->input, (gint *) self->input_len, '['))
     return FALSE;
 
-  _skip_whitespaces(self);
+  _skip_spaces(self);
 
   const gchar *transport_info_start = *self->input;
 
