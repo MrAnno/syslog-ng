@@ -64,6 +64,23 @@ _get_formatted_key(const gchar *key, const GString *prefix, GString *formatted_k
   return formatted_key->str;
 }
 
+static void
+_append_name_value_to_generated_message(GString *generated_message, const gchar *key,
+                                        const gchar *value, gsize value_length)
+{
+  if (generated_message->len == 0)
+    {
+      g_string_assign(generated_message, "snmptrap: ");
+    }
+  else
+    {
+      g_string_append(generated_message, ", ");
+    }
+
+  // escape
+  g_string_append_printf(generated_message, "%s='%.*s'", key, (int) value_length, value);
+}
+
 static gboolean
 _parse_varbindlist(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len)
 {
@@ -117,7 +134,15 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
 
 
   if (self->generate_message)
-    scratch_buffers2_reclaim_marked(marker);
+    {
+      log_msg_set_value(nv_context.msg, LM_V_MESSAGE, nv_context.generated_message->str, -1);
+      scratch_buffers2_reclaim_marked(marker);
+    }
+  else
+    {
+      log_msg_unset_value(nv_context.msg, LM_V_MESSAGE);
+    }
+
   return TRUE;
 }
 
@@ -175,6 +200,9 @@ snmptrapd_parser_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key
 
   const gchar *prefixed_key = _get_formatted_key(key, nv_context->key_prefix, formatted_key);
   log_msg_set_value_by_name(nv_context->msg, prefixed_key, value, value_length);
+
+  if (nv_context->generated_message)
+    _append_name_value_to_generated_message(nv_context->generated_message, key, value, value_length);
 
   scratch_buffers2_reclaim_marked(marker);
 }
