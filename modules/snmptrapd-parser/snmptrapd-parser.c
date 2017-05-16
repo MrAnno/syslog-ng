@@ -29,6 +29,7 @@ typedef struct _SnmpTrapdParser
   GString *prefix;
 
   GString *formatted_key;
+  gboolean generate_message;
 } SnmpTrapdParser;
 
 void
@@ -40,6 +41,14 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
     g_string_truncate(self->prefix, 0);
   else
     g_string_assign(self->prefix, prefix);
+}
+
+void
+snmptrapd_parser_set_generate_message(LogParser *s, gboolean generate_message)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
+  self->generate_message = generate_message;
 }
 
 static const gchar *
@@ -125,6 +134,7 @@ snmptrapd_parser_clone(LogPipe *s)
   SnmpTrapdParser *cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
 
   snmptrapd_parser_set_prefix(&cloned->super, self->prefix->str);
+  snmptrapd_parser_set_generate_message(&cloned->super, self->generate_message);
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
@@ -155,6 +165,7 @@ snmptrapd_parser_new(GlobalConfig *cfg)
 
   self->prefix = g_string_new(".snmp.");
   self->formatted_key = g_string_sized_new(32);
+  self->generate_message = TRUE;
 
   return &self->super;
 }
