@@ -262,3 +262,24 @@ Test(snmptrapd_parser, test_v2_with_generated_message_escaped)
 
   assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
 }
+
+Test(snmptrapd_parser, test_v2_without_prefix)
+{
+  TestParserOptions options =
+  {
+    .key_prefix = ""
+  };
+
+  const gchar *input =
+    "2017-05-17 13:26:04 localhost [UDP: [127.0.0.1]:34257->[127.0.0.1]:162]:\n"
+    "iso.3.6.1.4.1.18372.3.2.1.1.1.6 = test";
+
+  TestNameValue expected[] =
+  {
+    { "hostname", "localhost" },
+    { "transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
+    { "iso.3.6.1.4.1.18372.3.2.1.1.1.6", "test" }
+  };
+
+  assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
+}
