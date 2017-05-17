@@ -68,14 +68,8 @@ static void
 _append_name_value_to_generated_message(GString *generated_message, const gchar *key,
                                         const gchar *value, gsize value_length)
 {
-  if (generated_message->len == 0)
-    {
-      g_string_assign(generated_message, "snmptrap: ");
-    }
-  else
-    {
-      g_string_append(generated_message, ", ");
-    }
+  if (generated_message->len > 0)
+    g_string_append(generated_message, ", ");
 
   // escape
   g_string_append_printf(generated_message, "%s='%.*s'", key, (int) value_length, value);
@@ -125,6 +119,8 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
     .msg = *pmsg,
     .generated_message = generated_message
   };
+
+  log_msg_set_value(nv_context.msg, LM_V_PROGRAM, "snmptrapd", -1);
 
   if (!snmptrapd_header_parser_parse(&nv_context, &input, &input_len))
     return FALSE;
