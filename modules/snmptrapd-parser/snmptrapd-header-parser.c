@@ -219,7 +219,7 @@ _parse_hostname(SnmpTrapdHeaderParser *self)
   if (hostname_length == 0)
     return FALSE;
 
-  log_msg_set_value(self->nv_context->msg, LM_V_HOST, hostname_start, hostname_length);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "hostname", hostname_start, hostname_length);
   return TRUE;
 }
 

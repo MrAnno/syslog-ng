@@ -124,7 +124,7 @@ Test(snmptrapd_parser, test_general_v2_message_with_oids)
 
   TestNameValue expected[] =
   {
-    { "HOST", "web2-kukorica.syslog_ng.balabit" },
+    { ".snmp.hostname", "web2-kukorica.syslog_ng.balabit" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
     { ".snmp.iso.3.6.1.2.1.1.3.0", "(875496867) 101 days, 7:56:08.67" },
     { ".snmp.iso.3.6.1.6.3.1.1.4.1.0", "iso.3.6.1.4.1.8072.2.3.0.1" },
@@ -144,7 +144,7 @@ Test(snmptrapd_parser, test_general_v1_message_with_oids)
 
   TestNameValue expected[] =
   {
-    { "HOST", "localhost" },
+    { ".snmp.hostname", "localhost" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:53831->[127.0.0.1]:162" },
     { ".snmp.enterprise_oid", "iso.3.6.1.4.1.8072.2.3.1" },
     { ".snmp.type", "Enterprise Specific Trap" },
@@ -173,7 +173,7 @@ Test(snmptrapd_parser, test_v2_with_symbolic_names_and_various_types)
 
   TestNameValue expected[] =
   {
-    { "HOST", "localhost" },
+    { ".snmp.hostname", "localhost" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:52407->[127.0.0.1]:162" },
     { ".snmp.snmpModules.1.1.4.1.0", "netSnmpExampleHeartbeatNotification" },
     { ".snmp.netSnmpExampleHeartbeatRate", "60" },
@@ -198,7 +198,7 @@ Test(snmptrapd_parser, test_v1_with_symbolic_names)
 
   TestNameValue expected[] =
   {
-    { "HOST", "localhost" },
+    { ".snmp.hostname", "localhost" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:58143->[127.0.0.1]:162" },
     { ".snmp.enterprise_oid", "netSnmpExampleNotification" },
     { ".snmp.type", "Warm Start Trap" },
@@ -224,11 +224,14 @@ Test(snmptrapd_parser, test_v2_with_generated_message)
 
   TestNameValue expected[] =
   {
-    { "HOST", "localhost" },
+    { ".snmp.hostname", "localhost" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
     { ".snmp.iso.3.6.1.4.1.18372.3.2.1.1.1.6", "test" },
 
-    { "MESSAGE", "transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', iso.3.6.1.4.1.18372.3.2.1.1.1.6='test'"}
+    {
+      "MESSAGE", "hostname='localhost', transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', "
+      "iso.3.6.1.4.1.18372.3.2.1.1.1.6='test'"
+    }
   };
 
   assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
@@ -247,11 +250,14 @@ Test(snmptrapd_parser, test_v2_with_generated_message_escaped)
 
   TestNameValue expected[] =
   {
-    { "HOST", "localhost" },
+    { ".snmp.hostname", "localhost" },
     { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
     { ".snmp.iso.3.6.1.4.1.18372.3.2.1.1.1.6", "test 'escaped'" },
 
-    { "MESSAGE", "transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', iso.3.6.1.4.1.18372.3.2.1.1.1.6='test \\'escaped\\''"}
+    {
+      "MESSAGE", "hostname='localhost', transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', "
+      "iso.3.6.1.4.1.18372.3.2.1.1.1.6='test \\'escaped\\''"
+    }
   };
 
   assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
