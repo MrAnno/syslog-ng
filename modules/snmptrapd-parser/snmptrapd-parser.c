@@ -23,6 +23,7 @@
 #include "snmptrapd-header-parser.h"
 #include "varbindlist-scanner.h"
 #include "scratch-buffers2.h"
+#include "utf8utils.h"
 
 typedef struct _SnmpTrapdParser
 {
@@ -68,11 +69,16 @@ static void
 _append_name_value_to_generated_message(GString *generated_message, const gchar *key,
                                         const gchar *value, gsize value_length)
 {
+  ScratchBuffersMarker marker;
+  GString *escaped_value = scratch_buffers2_alloc_and_mark(&marker);
+
   if (generated_message->len > 0)
     g_string_append(generated_message, ", ");
 
-  // escape
-  g_string_append_printf(generated_message, "%s='%.*s'", key, (int) value_length, value);
+  append_unsafe_utf8_as_escaped_text(escaped_value, value, value_length, "'");
+  g_string_append_printf(generated_message, "%s='%s'", key, escaped_value->str);
+
+  scratch_buffers2_reclaim_marked(marker);
 }
 
 static gboolean

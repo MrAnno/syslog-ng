@@ -34,10 +34,25 @@ typedef struct
   const gchar *value;
 } TestNameValue;
 
+typedef struct
+{
+  const gchar *key_prefix;
+  gboolean generate_message;
+} TestParserOptions;
+
 static LogParser *
-create_parser(void)
+create_parser(TestParserOptions *options)
 {
   LogParser *snmptrapd_parser = snmptrapd_parser_new(configuration);
+
+  if (options)
+    {
+      if (options->key_prefix)
+        snmptrapd_parser_set_prefix(snmptrapd_parser, options->key_prefix);
+
+      snmptrapd_parser_set_generate_message(snmptrapd_parser, options->generate_message);
+    }
+
   log_pipe_init((LogPipe *)snmptrapd_parser);
   return snmptrapd_parser;
 }
@@ -63,9 +78,10 @@ parse_str_into_log_message(LogParser *parser, const gchar *message)
 }
 
 static void
-assert_log_message_name_values(const gchar *input, TestNameValue *expected, gsize number_of_expected)
+assert_log_message_name_values_with_options(TestParserOptions *options, const gchar *input,
+                                            TestNameValue *expected, gsize number_of_expected)
 {
-  LogParser *parser = create_parser();
+  LogParser *parser = create_parser(options);
   LogMessage *msg = parse_str_into_log_message(parser, input);
 
   for (int i=0; i < number_of_expected; i++)
@@ -73,6 +89,12 @@ assert_log_message_name_values(const gchar *input, TestNameValue *expected, gsiz
 
   log_msg_unref(msg);
   destroy_parser(parser);
+}
+
+static void
+assert_log_message_name_values(const gchar *input, TestNameValue *expected, gsize number_of_expected)
+{
+  assert_log_message_name_values_with_options(NULL, input, expected, number_of_expected);
 }
 
 void
@@ -187,4 +209,50 @@ Test(snmptrapd_parser, test_v1_with_symbolic_names)
   };
 
   assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
+}
+
+Test(snmptrapd_parser, test_v2_with_generated_message)
+{
+  TestParserOptions options =
+  {
+    .generate_message = TRUE
+  };
+
+  const gchar *input =
+    "2017-05-17 13:26:04 localhost [UDP: [127.0.0.1]:34257->[127.0.0.1]:162]:\n"
+    "iso.3.6.1.4.1.18372.3.2.1.1.1.6 = STRING: \"test\"";
+
+  TestNameValue expected[] =
+  {
+    { "HOST", "localhost" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
+    { ".snmp.iso.3.6.1.4.1.18372.3.2.1.1.1.6", "test" },
+
+    { "MESSAGE", "transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', iso.3.6.1.4.1.18372.3.2.1.1.1.6='test'"}
+  };
+
+  assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
+}
+
+Test(snmptrapd_parser, test_v2_with_generated_message_escaped)
+{
+  TestParserOptions options =
+  {
+    .generate_message = TRUE
+  };
+
+  const gchar *input =
+    "2017-05-17 13:26:04 localhost [UDP: [127.0.0.1]:34257->[127.0.0.1]:162]:\n"
+    "iso.3.6.1.4.1.18372.3.2.1.1.1.6 = STRING: \"test 'escaped'\"";
+
+  TestNameValue expected[] =
+  {
+    { "HOST", "localhost" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:34257->[127.0.0.1]:162" },
+    { ".snmp.iso.3.6.1.4.1.18372.3.2.1.1.1.6", "test 'escaped'" },
+
+    { "MESSAGE", "transport_info='UDP: [127.0.0.1]:34257->[127.0.0.1]:162', iso.3.6.1.4.1.18372.3.2.1.1.1.6='test \\'escaped\\''"}
+  };
+
+  assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
 }
