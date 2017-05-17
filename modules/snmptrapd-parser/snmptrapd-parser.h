@@ -28,17 +28,4 @@ LogParser *snmptrapd_parser_new(GlobalConfig *cfg);
 void snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix);
 void snmptrapd_parser_set_generate_message(LogParser *s, gboolean generate_message);
 
-
-
-typedef struct _SnmpTrapdNVContext
-{
-  GString *key_prefix;
-  LogMessage *msg;
-  GString *generated_message;
-} SnmpTrapdNVContext;
-
-void snmptrapd_parser_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key,
-                                     const gchar *value, gsize value_length);
-
 #endif
-

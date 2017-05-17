@@ -1,5 +1,5 @@
 module_LTLIBRARIES      += modules/snmptrapd-parser/libsnmptrapd-parser.la
-modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES = \
+modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES =   \
   modules/snmptrapd-parser/snmptrapd-parser.c               \
   modules/snmptrapd-parser/snmptrapd-parser.h               \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
@@ -9,19 +9,20 @@ modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES = \
   modules/snmptrapd-parser/varbindlist-scanner.h            \
   modules/snmptrapd-parser/varbindlist-scanner.c            \
   modules/snmptrapd-parser/snmptrapd-header-parser.h        \
-  modules/snmptrapd-parser/snmptrapd-header-parser.c
+  modules/snmptrapd-parser/snmptrapd-header-parser.c        \
+  modules/snmptrapd-parser/snmptrapd-nv-context.h
 
-BUILT_SOURCES       +=      \
+BUILT_SOURCES       += \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.c       \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.h
 
-EXTRA_DIST        +=      \
+EXTRA_DIST          += \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.ym
 
-modules_snmptrapd_parser_libsnmptrapd_parser_la_CPPFLAGS  =     \
-  $(AM_CPPFLAGS)            \
-  -I$(top_srcdir)/modules/snmptrapd-parser        \
+modules_snmptrapd_parser_libsnmptrapd_parser_la_CPPFLAGS =  \
+  $(AM_CPPFLAGS)                                            \
+  -I$(top_srcdir)/modules/snmptrapd-parser                  \
   -I$(top_builddir)/modules/snmptrapd-parser
 modules_snmptrapd_parser_libsnmptrapd_parser_la_LIBADD  = $(MODULE_DEPS_LIBS)
 modules_snmptrapd_parser_libsnmptrapd_parser_la_LDFLAGS = $(MODULE_LDFLAGS)

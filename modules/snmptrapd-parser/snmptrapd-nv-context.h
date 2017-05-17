@@ -19,14 +19,25 @@
  * COPYING for details.
  */
 
-#ifndef SNMPTRAPD_HEADER_PARSER_H_INCLUDED
-#define SNMPTRAPD_HEADER_PARSER_H_INCLUDED
+#ifndef SNMPTRAPD_NV_CONTEXT_H_INCLUDED
+#define SNMPTRAPD_NV_CONTEXT_H_INCLUDED
 
-#include "syslog-ng.h"
-#include "logmsg/logmsg.h"
-#include "snmptrapd-nv-context.h"
+typedef struct _SnmpTrapdNVContext SnmpTrapdNVContext;
 
-gboolean snmptrapd_header_parser_parse(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len);
+struct _SnmpTrapdNVContext
+{
+  GString *key_prefix;
+  LogMessage *msg;
+  GString *generated_message;
+
+  void (*add_name_value)(SnmpTrapdNVContext *nv_context, const gchar *key, const gchar *value, gsize value_length);
+};
+
+static inline void
+snmptrapd_nv_context_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key,
+                                    const gchar *value, gsize value_length)
+{
+  nv_context->add_name_value(nv_context, key, value, value_length);
+}
 
 #endif
-

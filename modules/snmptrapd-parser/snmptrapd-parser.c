@@ -21,6 +21,7 @@
 
 #include "snmptrapd-parser.h"
 #include "snmptrapd-header-parser.h"
+#include "snmptrapd-nv-context.h"
 #include "varbindlist-scanner.h"
 #include "scratch-buffers2.h"
 #include "utf8utils.h"
@@ -81,6 +82,22 @@ _append_name_value_to_generated_message(GString *generated_message, const gchar 
   scratch_buffers2_reclaim_marked(marker);
 }
 
+static void
+_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key,
+                const gchar *value, gsize value_length)
+{
+  ScratchBuffersMarker marker;
+  GString *formatted_key = scratch_buffers2_alloc_and_mark(&marker);
+
+  const gchar *prefixed_key = _get_formatted_key(key, nv_context->key_prefix, formatted_key);
+  log_msg_set_value_by_name(nv_context->msg, prefixed_key, value, value_length);
+
+  if (nv_context->generated_message)
+    _append_name_value_to_generated_message(nv_context->generated_message, key, value, value_length);
+
+  scratch_buffers2_reclaim_marked(marker);
+}
+
 static gboolean
 _parse_varbindlist(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *input_len)
 {
@@ -95,7 +112,7 @@ _parse_varbindlist(SnmpTrapdNVContext *nv_context, const gchar **input, gsize *i
       key = varbindlist_scanner_get_current_key(&varbindlist_scanner);
       value = varbindlist_scanner_get_current_value(&varbindlist_scanner);
 
-      snmptrapd_parser_add_name_value(nv_context, key, value, -1);
+      snmptrapd_nv_context_add_name_value(nv_context, key, value, -1);
     }
 
   varbindlist_scanner_deinit(&varbindlist_scanner);
@@ -123,7 +140,8 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
   {
     .key_prefix = self->prefix,
     .msg = *pmsg,
-    .generated_message = generated_message
+    .generated_message = generated_message,
+    .add_name_value = _add_name_value
   };
 
   log_msg_set_value(nv_context.msg, LM_V_PROGRAM, "snmptrapd", -1);
@@ -190,21 +208,4 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   self->generate_message = TRUE;
 
   return &self->super;
-}
-
-
-void
-snmptrapd_parser_add_name_value(SnmpTrapdNVContext *nv_context, const gchar *key,
-                                const gchar *value, gsize value_length)
-{
-  ScratchBuffersMarker marker;
-  GString *formatted_key = scratch_buffers2_alloc_and_mark(&marker);
-
-  const gchar *prefixed_key = _get_formatted_key(key, nv_context->key_prefix, formatted_key);
-  log_msg_set_value_by_name(nv_context->msg, prefixed_key, value, value_length);
-
-  if (nv_context->generated_message)
-    _append_name_value_to_generated_message(nv_context->generated_message, key, value, value_length);
-
-  scratch_buffers2_reclaim_marked(marker);
 }

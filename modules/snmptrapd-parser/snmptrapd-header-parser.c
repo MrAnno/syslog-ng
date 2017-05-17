@@ -110,7 +110,7 @@ _parse_v1_uptime(SnmpTrapdHeaderParser *self)
   if (!uptime_end)
     return FALSE;
 
-  snmptrapd_parser_add_name_value(self->nv_context, "uptime", uptime_start, uptime_end - uptime_start);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "uptime", uptime_start, uptime_end - uptime_start);
 
   *self->input_len -= uptime_end - *self->input;
   *self->input = uptime_end;
@@ -133,7 +133,7 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *self)
   if (*(type_end - 1) == ' ')
     --type_end;
 
-  snmptrapd_parser_add_name_value(self->nv_context, "type", type_start, type_end - type_start);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "type", type_start, type_end - type_start);
 
   const gchar *subtype_end = strpbrk(subtype_start, ")\n");
   gboolean subtype_exists = subtype_end && *subtype_end == ')';
@@ -141,7 +141,7 @@ _parse_v1_trap_type_and_subtype(SnmpTrapdHeaderParser *self)
   if (!subtype_exists)
     return FALSE;
 
-  snmptrapd_parser_add_name_value(self->nv_context, "subtype", subtype_start, subtype_end - subtype_start);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "subtype", subtype_start, subtype_end - subtype_start);
 
   *self->input_len -= (subtype_end + 1) - *self->input;
   *self->input = subtype_end + 1;
@@ -166,8 +166,8 @@ _parse_v1_enterprise_oid(SnmpTrapdHeaderParser *self)
   if (enterprise_string_length == 0)
     return TRUE;
 
-  snmptrapd_parser_add_name_value(self->nv_context, "enterprise_oid",
-                                  enterprise_string_start, enterprise_string_length);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "enterprise_oid",
+                                      enterprise_string_start, enterprise_string_length);
 
   return TRUE;
 }
@@ -196,7 +196,7 @@ _parse_transport_info(SnmpTrapdHeaderParser *self)
 
   gsize transport_info_len = transport_info_end - transport_info_start;
 
-  snmptrapd_parser_add_name_value(self->nv_context, "transport_info", transport_info_start, transport_info_len);
+  snmptrapd_nv_context_add_name_value(self->nv_context, "transport_info", transport_info_start, transport_info_len);
 
   *self->input_len -= (transport_info_end + 1) - *self->input;
   *self->input = transport_info_end + 1;
