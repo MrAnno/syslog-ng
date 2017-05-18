@@ -84,6 +84,12 @@ _expect_newline(SnmpTrapdHeaderParser *self)
 }
 
 static inline gboolean
+_expect_newline_or_eom(SnmpTrapdHeaderParser *self)
+{
+  return _expect_newline(self) || *self->input_len == 0;
+}
+
+static inline gboolean
 _expect_colon(SnmpTrapdHeaderParser *self)
 {
   return _expect_char(self, ':');
@@ -95,6 +101,15 @@ _expect_tab(SnmpTrapdHeaderParser *self)
   return _expect_char(self, '\t');
 }
 
+static inline void
+_scroll_to_eom(SnmpTrapdHeaderParser *self)
+{
+  while (*self->input_len > 0 || **self->input)
+    {
+      ++(*self->input);
+      --(*self->input_len);
+    }
+}
 
 static gboolean
 _parse_v1_uptime(SnmpTrapdHeaderParser *self)
@@ -108,7 +123,11 @@ _parse_v1_uptime(SnmpTrapdHeaderParser *self)
 
   const gchar *uptime_end = strchr(uptime_start, '\n');
   if (!uptime_end)
-    return FALSE;
+    {
+      snmptrapd_nv_context_add_name_value(self->nv_context, "uptime", uptime_start, -1);
+      _scroll_to_eom(self);
+      return TRUE;
+    }
 
   snmptrapd_nv_context_add_name_value(self->nv_context, "uptime", uptime_start, uptime_end - uptime_start);
 
@@ -288,7 +307,7 @@ snmptrapd_header_parser_parse(SnmpTrapdNVContext *nv_context, const gchar **inpu
     _parse_transport_info,
     _expect_colon,
     _try_parse_v1_info,
-    _expect_newline
+    _expect_newline_or_eom
   };
 
   return _run_header_parser(&self, parser_steps, sizeof(parser_steps) / sizeof(SnmpTrapdHeaderParserStep));

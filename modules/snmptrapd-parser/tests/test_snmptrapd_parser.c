@@ -307,3 +307,22 @@ Test(snmptrapd_parser, test_v2_key_normalization)
 
   assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
 }
+
+Test(snmptrapd_parser, test_general_v1_message_without_varbindlist)
+{
+  const gchar *input =
+    "2017-05-10 13:23:16 localhost [UDP: [127.0.0.1]:53831->[127.0.0.1]:162]: iso.3.6.1.4.1.8072.2.3.1\n"
+    "\t Enterprise Specific Trap (.17) Uptime: 18:41:07.83";
+
+  TestNameValue expected[] =
+  {
+    { ".snmp.hostname", "localhost" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:53831->[127.0.0.1]:162" },
+    { ".snmp.enterprise_oid", "iso.3.6.1.4.1.8072.2.3.1" },
+    { ".snmp.type", "Enterprise Specific Trap" },
+    { ".snmp.subtype", ".17" },
+    { ".snmp.uptime", "18:41:07.83" }
+  };
+
+  assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
+}
