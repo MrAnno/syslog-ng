@@ -54,6 +54,53 @@ snmptrapd_parser_set_generate_message(LogParser *s, gboolean generate_message)
   self->generate_message = generate_message;
 }
 
+static inline gboolean
+_is_unwanted_key_char(gchar c)
+{
+  return (c == ':');
+}
+
+static inline void
+_move_and_replace_unwanted_key_chars(GString *key, gsize unwanted_key_count, gchar **curr_char_addr)
+{
+  gsize number_of_removed_chars = unwanted_key_count - 1;
+  gchar *curr_pos = *curr_char_addr;
+  gchar *end_of_str = key->str + key->len;
+  gchar *replace_pos = curr_pos - unwanted_key_count;
+
+  if (unwanted_key_count > 1)
+    {
+      memmove(replace_pos, curr_pos - 1, end_of_str - (curr_pos - 1));
+      g_string_truncate(key, key->len - number_of_removed_chars);
+    }
+  *replace_pos = '_';
+  *curr_char_addr -= unwanted_key_count;
+}
+
+static const gchar *
+_normalize_key(GString *key)
+{
+  gsize unwanted_key_count = 0;
+  gchar *curr_char = key->str;
+  while (*curr_char)
+    {
+      if (_is_unwanted_key_char(*curr_char))
+        {
+          unwanted_key_count++;
+        }
+      else if (unwanted_key_count > 0)
+        {
+          _move_and_replace_unwanted_key_chars(key, unwanted_key_count, &curr_char);
+          unwanted_key_count = 0;
+        }
+      curr_char++;
+    }
+  if (unwanted_key_count)
+    _move_and_replace_unwanted_key_chars(key, unwanted_key_count, &curr_char);
+
+  return key->str;
+}
+
 static const gchar *
 _get_formatted_key(const gchar *key, const GString *prefix, GString *formatted_key)
 {
@@ -63,6 +110,9 @@ _get_formatted_key(const gchar *key, const GString *prefix, GString *formatted_k
     g_string_assign(formatted_key, prefix->str);
 
   g_string_append(formatted_key, key);
+
+  _normalize_key(formatted_key);
+
   return formatted_key->str;
 }
 

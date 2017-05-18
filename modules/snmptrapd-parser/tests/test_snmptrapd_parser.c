@@ -283,3 +283,27 @@ Test(snmptrapd_parser, test_v2_without_prefix)
 
   assert_log_message_name_values_with_options(&options, input, expected, SIZE_OF_ARRAY(expected));
 }
+
+
+Test(snmptrapd_parser, test_v2_key_normalization)
+{
+  const gchar *input =
+    "2017-05-13 12:17:32 localhost [UDP: [127.0.0.1]:52407->[127.0.0.1]:162]:  \n "
+    "mib-2.1.3.0 = Timeticks: (875496867) 101 days, 7:56:08.67 \t"
+    "NET-SNMP-EXAMPLES-MIB:netSnmpExampleString = STRING: \"random fact\" \t"
+    "NET-SNMP-EXAMPLES-MIB::netSnmpColons = STRING: \"Colossus colons\" \t"
+    "NET-SNMP-EXAMPLES-MIB::::::::::::::::::::::::::Trail = STRING: \"Gary Indiana\" \t"
+    ":NET-SNMP-EXAMPLES::::::::::::::::::::::::::::::MIB: = INTEGER: 1234 \t";
+
+  TestNameValue expected[] =
+  {
+    { ".snmp.hostname", "localhost" },
+    { ".snmp.transport_info", "UDP: [127.0.0.1]:52407->[127.0.0.1]:162" },
+    { ".snmp.NET-SNMP-EXAMPLES-MIB_netSnmpExampleString", "random fact" },
+    { ".snmp.NET-SNMP-EXAMPLES-MIB_netSnmpColons", "Colossus colons" },
+    { ".snmp.NET-SNMP-EXAMPLES-MIB_Trail", "Gary Indiana" },
+    { ".snmp._NET-SNMP-EXAMPLES_MIB_", "1234" }
+  };
+
+  assert_log_message_name_values(input, expected, SIZE_OF_ARRAY(expected));
+}
