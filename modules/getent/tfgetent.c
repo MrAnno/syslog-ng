@@ -62,7 +62,7 @@ _getent_format_array(gchar *member_name, gpointer member, GString *result)
       sep = ",";
       p = *((char **)o + ++i);
     }
-  while (p != NULL && p != '\0');
+  while (p != NULL && *p != '\0');
 
   return TRUE;
 }
