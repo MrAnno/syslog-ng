@@ -33,6 +33,7 @@ struct _ContextInfoDB
   GArray *data;
   GHashTable *index;
   gboolean is_data_indexed;
+  gboolean is_ordering_enabled;
   GList *ordered_selectors;
 };
 
@@ -162,6 +163,15 @@ context_info_db_new()
 }
 
 ContextInfoDB *
+context_info_db_ordered_new()
+{
+  ContextInfoDB *self = context_info_db_new();
+  self->is_ordering_enabled = TRUE;
+
+  return self;
+}
+
+ContextInfoDB *
 context_info_db_ref(ContextInfoDB *self)
 {
   g_assert(!self || g_atomic_counter_get(&self->ref_cnt) > 0);
@@ -217,7 +227,7 @@ context_info_db_insert(ContextInfoDB *self,
 {
   g_array_append_val(self->data, *record);
   self->is_data_indexed = FALSE;
-  if (!g_list_find_custom(self->ordered_selectors, record->selector->str, _g_strcmp))
+  if (self->is_ordering_enabled && !g_list_find_custom(self->ordered_selectors, record->selector->str, _g_strcmp))
     self->ordered_selectors = g_list_append(self->ordered_selectors, record->selector->str);
 }
 
