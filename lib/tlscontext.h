@@ -97,6 +97,16 @@ struct _TLSContext
 
 
 TLSSession *tls_context_setup_session(TLSContext *self);
+
+gint tls_context_get_verify_mode(const TLSContext *self);
+gboolean tls_context_set_verify_mode(TLSContext *self, const gchar *mode_str);
+void tls_context_set_verify_mode_explicit(TLSContext *self, gint verify_mode);
+void tls_context_set_key_file(TLSContext *self, const gchar *key_file);
+void tls_context_set_cert_file(TLSContext *self, const gchar *cert_file);
+void tls_context_set_ca_dir(TLSContext *self, const gchar *ca_dir);
+void tls_context_set_crl_dir(TLSContext *self, const gchar *crl_dir);
+void tls_context_set_cipher_suite(TLSContext *self, const gchar *cipher_suite);
+gboolean tls_context_set_ssl_options(TLSContext *self, GList *ssl_options);
 void tls_session_set_trusted_fingerprints(TLSContext *self, GList *fingerprints);
 void tls_session_set_trusted_dn(TLSContext *self, GList *dns);
 TLSContext *tls_context_new(TLSMode mode);
