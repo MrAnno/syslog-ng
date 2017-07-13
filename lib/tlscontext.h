@@ -80,21 +80,6 @@ typedef struct _TLSSession
 void tls_session_set_verify(TLSSession *self, TLSSessionVerifyFunc verify_func, gpointer verify_data, GDestroyNotify verify_destroy);
 void tls_session_free(TLSSession *self);
 
-struct _TLSContext
-{
-  TLSMode mode;
-  gint verify_mode;
-  gchar *key_file;
-  gchar *cert_file;
-  gchar *ca_dir;
-  gchar *crl_dir;
-  gchar *cipher_suite;
-  SSL_CTX *ssl_ctx;
-  GList *trusted_fingerpint_list;
-  GList *trusted_dn_list;
-  gint ssl_options;
-};
-
 
 TLSSession *tls_context_setup_session(TLSContext *self);
 
@@ -111,9 +96,6 @@ void tls_session_set_trusted_fingerprints(TLSContext *self, GList *fingerprints)
 void tls_session_set_trusted_dn(TLSContext *self, GList *dns);
 TLSContext *tls_context_new(TLSMode mode);
 void tls_context_free(TLSContext *s);
-
-gboolean tls_lookup_verify_mode(const gchar *mode_str, gint *verify_mode);
-gboolean tls_lookup_options(GList *options, gint *ssl_options);
 
 void tls_log_certificate_validation_progress(int ok, X509_STORE_CTX *ctx);
 gboolean tls_verify_certificate_name(X509 *cert, const gchar *hostname);
