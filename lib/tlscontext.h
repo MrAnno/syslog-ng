@@ -80,7 +80,7 @@ typedef struct _TLSSession
 void tls_session_set_verify(TLSSession *self, TLSSessionVerifyFunc verify_func, gpointer verify_data, GDestroyNotify verify_destroy);
 void tls_session_free(TLSSession *self);
 
-
+gboolean tls_context_setup_context(TLSContext *self);
 TLSSession *tls_context_setup_session(TLSContext *self);
 
 gint tls_context_get_verify_mode(const TLSContext *self);
