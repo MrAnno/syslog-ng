@@ -92,6 +92,7 @@ void tls_context_set_ca_dir(TLSContext *self, const gchar *ca_dir);
 void tls_context_set_crl_dir(TLSContext *self, const gchar *crl_dir);
 void tls_context_set_cipher_suite(TLSContext *self, const gchar *cipher_suite);
 void tls_context_set_curve_list(TLSContext *self, const gchar *curve_list);
+void tls_context_set_dhparam_file(TLSContext *self, const gchar *dhparam_file);
 gboolean tls_context_set_ssl_options(TLSContext *self, GList *ssl_options);
 void tls_session_set_trusted_fingerprints(TLSContext *self, GList *fingerprints);
 void tls_session_set_trusted_dn(TLSContext *self, GList *dns);

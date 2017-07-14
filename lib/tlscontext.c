@@ -39,6 +39,7 @@ struct _TLSContext
   gint verify_mode;
   gchar *key_file;
   gchar *cert_file;
+  gchar *dhparam_file;
   gchar *ca_dir;
   gchar *crl_dir;
   gchar *cipher_suite;
@@ -407,6 +408,79 @@ _set_optional_curve_list(SSL_CTX *ctx, const gchar *curve_list)
   return TRUE;
 }
 
+static gboolean
+_is_dh_valid(DH *dh)
+{
+  if (!dh)
+    return FALSE;
+
+  gint check_flags;
+  if (!DH_check(dh, &check_flags))
+    return FALSE;
+
+  gboolean error_flag_is_set = check_flags &
+                               (DH_CHECK_P_NOT_PRIME
+                                | DH_UNABLE_TO_CHECK_GENERATOR
+                                | DH_CHECK_P_NOT_SAFE_PRIME
+                                | DH_NOT_SUITABLE_GENERATOR);
+
+  return !error_flag_is_set;
+}
+
+static DH *
+_load_dh_from_file(const gchar *dhparam_file)
+{
+  if (!file_exists(dhparam_file))
+    return NULL;
+
+  BIO *bio = BIO_new_file(dhparam_file, "r");
+  if (!bio)
+    return NULL;
+
+  DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+  BIO_free(bio);
+
+  if (!_is_dh_valid(dh))
+    {
+      msg_error("Error setting up TLS session context, invalid DH parameters",
+                evt_tag_str("dhparam_file", dhparam_file),
+                NULL);
+
+      DH_free(dh);
+      return NULL;
+    }
+
+  return dh;
+}
+
+static DH *
+_load_dh_fallback(void)
+{
+  DH *dh = DH_new();
+
+  if (!dh)
+    return NULL;
+
+  /*
+   * "2048-bit MODP Group" from RFC3526, Section 3.
+   *
+   * The prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }
+   *
+   * RFC3526 specifies a generator of 2.
+   */
+
+  dh->p = get_rfc3526_prime_2048(NULL);
+  BN_dec2bn(&dh->g, "2");
+
+  if (!dh->p || !dh->g)
+    {
+      DH_free(dh);
+      return NULL;
+    }
+
+  return dh;
+}
+
 static void
 _setup_ecdh(SSL_CTX *ctx)
 {
@@ -449,6 +523,20 @@ tls_context_setup_ecdh(TLSContext *self)
   return TRUE;
 }
 
+static gboolean
+tls_context_setup_dh(TLSContext *self)
+{
+  DH *dh = self->dhparam_file ? _load_dh_from_file(self->dhparam_file) : _load_dh_fallback();
+
+  if (!dh)
+    return FALSE;
+
+  gboolean ctx_dh_success = SSL_CTX_set_tmp_dh(self->ssl_ctx, dh);
+
+  DH_free(dh);
+  return ctx_dh_success;
+}
+
 gboolean
 tls_context_setup_context(TLSContext *self)
 {
@@ -484,6 +572,8 @@ tls_context_setup_context(TLSContext *self)
       return FALSE;
     }
 
+  if (!tls_context_setup_dh(self))
+    goto error;
 
   if (self->cipher_suite)
     {
@@ -546,6 +636,7 @@ tls_context_free(TLSContext *self)
   g_list_foreach(self->trusted_dn_list, (GFunc) g_free, NULL);
   g_free(self->key_file);
   g_free(self->cert_file);
+  g_free(self->dhparam_file);
   g_free(self->ca_dir);
   g_free(self->crl_dir);
   g_free(self->cipher_suite);
@@ -662,6 +753,13 @@ tls_context_set_curve_list(TLSContext *self, const gchar *curve_list)
 {
   g_free(self->curve_list);
   self->curve_list = g_strdup(curve_list);
+}
+
+void
+tls_context_set_dhparam_file(TLSContext *self, const gchar *dhparam_file)
+{
+  g_free(self->dhparam_file);
+  self->dhparam_file = g_strdup(dhparam_file);
 }
 
 gboolean
