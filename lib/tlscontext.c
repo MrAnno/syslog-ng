@@ -42,6 +42,7 @@ struct _TLSContext
   gchar *ca_dir;
   gchar *crl_dir;
   gchar *cipher_suite;
+  gchar *curve_list;
   SSL_CTX *ssl_ctx;
   GList *trusted_fingerpint_list;
   GList *trusted_dn_list;
@@ -391,19 +392,31 @@ tls_context_setup_ssl_options(TLSContext *self)
     }
 }
 
-static void
-tls_context_setup_ecdh(TLSContext *self)
+static gboolean
+_set_optional_curve_list(SSL_CTX *ctx, const gchar *curve_list)
 {
-  if (self->mode != TM_SERVER)
-    return;
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+  if (curve_list && !SSL_CTX_set1_curves_list(ctx, curve_list))
+    {
+      msg_error("Error setting up TLS session context, invalid curve name in list",
+                evt_tag_str("curve_list", curve_list));
+      return FALSE;
+    }
+#endif
 
+  return TRUE;
+}
+
+static void
+_setup_ecdh(SSL_CTX *ctx)
+{
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 
   /* No need to setup as ECDH auto is the default */
 
 #elif OPENSSL_VERSION_NUMBER >= 0x10002000L
 
-  SSL_CTX_set_ecdh_auto(self->ssl_ctx, 1);
+  SSL_CTX_set_ecdh_auto(ctx, 1);
 
 #elif OPENSSL_VERSION_NUMBER >= 0x10001000L
 
@@ -415,10 +428,25 @@ tls_context_setup_ecdh(TLSContext *self)
   if (!ecdh)
     return;
 
-  SSL_CTX_set_tmp_ecdh(self->ssl_ctx, ecdh);
+  SSL_CTX_set_tmp_ecdh(ctx, ecdh);
   EC_KEY_free(ecdh);
 
 #endif
+}
+
+static gboolean
+tls_context_setup_ecdh(TLSContext *self)
+{
+  /* server only */
+  if (self->mode != TM_SERVER)
+    return TRUE;
+
+  if (!_set_optional_curve_list(self->ssl_ctx, self->curve_list))
+    return FALSE;
+
+  _setup_ecdh(self->ssl_ctx);
+
+  return TRUE;
 }
 
 gboolean
@@ -449,7 +477,13 @@ tls_context_setup_context(TLSContext *self)
 
   tls_context_setup_verify_mode(self);
   tls_context_setup_ssl_options(self);
-  tls_context_setup_ecdh(self);
+  if (!tls_context_setup_ecdh(self))
+    {
+      SSL_CTX_free(self->ssl_ctx);
+      self->ssl_ctx = NULL;
+      return FALSE;
+    }
+
 
   if (self->cipher_suite)
     {
@@ -515,6 +549,7 @@ tls_context_free(TLSContext *self)
   g_free(self->ca_dir);
   g_free(self->crl_dir);
   g_free(self->cipher_suite);
+  g_free(self->curve_list);
   g_free(self);
 }
 
@@ -620,6 +655,13 @@ tls_context_set_cipher_suite(TLSContext *self, const gchar *cipher_suite)
 {
   g_free(self->cipher_suite);
   self->cipher_suite = g_strdup(cipher_suite);
+}
+
+void
+tls_context_set_curve_list(TLSContext *self, const gchar *curve_list)
+{
+  g_free(self->curve_list);
+  self->curve_list = g_strdup(curve_list);
 }
 
 gboolean
