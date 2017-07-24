@@ -36,6 +36,7 @@ install:
       libmaxminddb-dev
   - sudo pip install -r requirements.txt
 before_script:
+  - xmllint
   - ./autogen.sh
   - unset PYTHON_CFLAGS # HACK
   - CONFIGURE_FLAGS="
