@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2017 László Várady
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 as published
+ * by the Free Software Foundation, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * As an additional exemption you are allowed to compile & link against the
+ * OpenSSL libraries as published by the OpenSSL project. See the file
+ * COPYING for details.
+ *
+ */
+
+%code top {
+#include "mranno-parser.h"
+
+}
+
+
+%code {
+
+#include "mranno.h"
+#include "mranno-source-options.h"
+#include "cfg-parser.h"
+#include "mranno-grammar.h"
+#include "syslog-names.h"
+#include "messages.h"
+#include "plugin.h"
+#include "cfg-grammar.h"
+
+#include <string.h>
+
+MrAnnoSourceOptions *last_mranno_source_options;
+
+}
+
+%name-prefix "mranno_"
+
+/* this parameter is needed in order to instruct bison to use a complete
+ * argument list for yylex/yyerror */
+
+%lex-param {CfgLexer *lexer}
+%parse-param {CfgLexer *lexer}
+%parse-param {LogDriver **instance}
+%parse-param {gpointer arg}
+
+/* INCLUDE_DECLS */
+
+%token KW_MRANNO
+%token KW_MESSAGE_INTERVAL
+
+%type <ptr> source_mranno
+
+%%
+
+start
+  : LL_CONTEXT_SOURCE source_mranno          { YYACCEPT; }
+  ;
+
+source_mranno
+  : KW_MRANNO
+    {
+      last_driver = *instance = mranno_sd_new(configuration);
+      last_mranno_source_options = mranno_sd_get_source_options(last_driver);
+      last_source_options = &last_mranno_source_options->super;
+    }
+    '(' source_mranno_options ')' { $$ = last_driver; }
+  ;
+
+source_mranno_options
+  : source_mranno_option source_mranno_options
+  |
+  ;
+
+source_mranno_option
+  : KW_MESSAGE_INTERVAL '(' positive_integer ')'
+    {
+      mranno_source_options_set_message_interval(last_mranno_source_options, $3);
+    }
+  | source_option
+  ;
+
+/* INCLUDE_RULES */
+
+%%
+

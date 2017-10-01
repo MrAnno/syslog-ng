@@ -1,4 +1,5 @@
  ignore
+modules/mranno
 scl/syslogconf/convert-syslogconf.awk$
 .*/.*\.am$
 .*\.(yml|md|y|l|txt|xml|xsd|log|key|crt|files|in|conf\.example|gradle|mk|supp|sub|guess|list|pc\.cmake)$
