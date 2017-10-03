@@ -45,6 +45,7 @@ include modules/appmodel/Makefile.am
 include modules/openbsd/Makefile.am
 include modules/hook-commands/Makefile.am
 include modules/examples/Makefile.am
+include modules/wec/Makefile.am
 
 SYSLOG_NG_CORE_JAR=$(top_builddir)/modules/java/syslog-ng-core/libs/syslog-ng-core.jar
 
@@ -58,7 +59,7 @@ SYSLOG_NG_MODULES	=	\
 	mod-python mod-java mod-java-modules mod-kvformat mod-date \
 	mod-native mod-cef mod-add-contextual-data mod-diskq mod-getent \
 	mod-map-value-pairs mod-snmptrapd-parser mod-tags-parser mod-xml \
-	mod-appmodel mod-openbsd
+	mod-appmodel mod-openbsd mod-wec
 
 modules modules/: ${SYSLOG_NG_MODULES}
 
