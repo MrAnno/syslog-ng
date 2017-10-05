@@ -24,7 +24,6 @@
 #ifndef WEC_SOURCE_H_INCLUDED
 #define WEC_SOURCE_H_INCLUDED
 
-#include "wec.h"
 #include "socket-options.h"
 #include "transport-mapper.h"
 #include "driver.h"

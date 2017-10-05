@@ -31,95 +31,15 @@ static Plugin wec_plugins[] =
 {
   {
     .type = LL_CONTEXT_SOURCE,
-    .name = "unix-stream",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "unix-stream",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "unix-dgram",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "unix-dgram",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "tcp",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "tcp",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "tcp6",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "tcp6",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "udp",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "udp",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "udp6",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "udp6",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "syslog",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "syslog",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "network",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_DESTINATION,
-    .name = "network",
-    .parser = &wec_parser,
-  },
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "systemd-syslog",
+    .name = "wec",
     .parser = &wec_parser,
   },
 };
 
 gboolean
-wec_module_init(GlobalConfig *cfg, CfgArgs *args)
+wec_module_init(PluginContext *context, CfgArgs *args)
 {
-  plugin_register(cfg, wec_plugins, G_N_ELEMENTS(wec_plugins));
+  plugin_register(context, wec_plugins, G_N_ELEMENTS(wec_plugins));
   return TRUE;
 }
 
@@ -127,8 +47,7 @@ const ModuleInfo module_info =
 {
   .canonical_name = "wec",
   .version = SYSLOG_NG_VERSION,
-  .preference = 100,
-  .description = "The wec module provides socket based transports for syslog-ng, such as the udp(), tcp() and syslog() drivers. This module is compiled with SSL support.",
+  .description = "The wec module just an example.",
   .core_revision = SYSLOG_NG_SOURCE_REVISION,
   .plugins = wec_plugins,
   .plugins_len = G_N_ELEMENTS(wec_plugins),

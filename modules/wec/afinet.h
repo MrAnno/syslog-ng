@@ -24,7 +24,6 @@
 #ifndef AFINET_H_INCLUDED
 #define AFINET_H_INCLUDED
 
-#include "wec.h"
 #include "transport-mapper.h"
 
 guint16 afinet_lookup_service(TransportMapper *transport_mapper, const gchar *service);

@@ -21,7 +21,6 @@
  *
  */
 
-#include "wec.h"
 #include "driver.h"
 #include "cfg-parser.h"
 #include "wec-grammar.h"
@@ -32,16 +31,8 @@ int wec_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
 
 static CfgLexerKeyword wec_keywords[] =
 {
-  { "unix_dgram", KW_UNIX_DGRAM },
-  { "unix_stream",  KW_UNIX_STREAM },
-  { "udp",                KW_UDP },
+  { "wec",                KW_WEC },
   { "tcp",                KW_TCP },
-  { "syslog",             KW_SYSLOG },
-  { "network",            KW_NETWORK },
-#if SYSLOG_NG_ENABLE_IPV6
-  { "udp6",               KW_UDP6 },
-  { "tcp6",               KW_TCP6 },
-#endif
   /* ssl */
   { "tls",                KW_TLS },
   { "peer_verify",        KW_PEER_VERIFY },
@@ -81,7 +72,6 @@ static CfgLexerKeyword wec_keywords[] =
   { "max_connections",    KW_MAX_CONNECTIONS },
   { "listen_backlog",     KW_LISTEN_BACKLOG },
   { "keep_alive",         KW_KEEP_ALIVE },
-  { "systemd_syslog",     KW_SYSTEMD_SYSLOG  },
   { NULL }
 };
 
