@@ -119,9 +119,9 @@ afinet_sd_new_instance(TransportMapper *transport_mapper, GlobalConfig *cfg)
   AFInetSourceDriver *self = g_new0(AFInetSourceDriver, 1);
 
   wec_sd_init_instance(&self->super,
-                            socket_options_inet_new(),
-                            transport_mapper,
-                            cfg);
+                       socket_options_inet_new(),
+                       transport_mapper,
+                       cfg);
   self->super.super.super.super.init = afinet_sd_init;
   self->super.super.super.super.free_fn = afinet_sd_free;
   self->super.setup_addresses = afinet_sd_setup_addresses;

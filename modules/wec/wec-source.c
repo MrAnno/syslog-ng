@@ -22,6 +22,7 @@
  */
 
 #include "wec-source.h"
+#include "http/logproto-http-server.h"
 #include "messages.h"
 #include "fdhelpers.h"
 #include "gsocket.h"
@@ -93,8 +94,7 @@ wec_sc_init(LogPipe *s)
       if (!transport)
         return FALSE;
 
-      proto = log_proto_server_factory_construct(self->owner->proto_factory, transport,
-                                                 &self->owner->reader_options.proto_options.super);
+      proto = log_proto_http_server_new(transport, &self->owner->reader_options.proto_options.super);
       self->reader = log_reader_new(s->cfg);
       log_reader_reopen(self->reader, proto, poll_fd_events_new(self->sock));
       log_reader_set_peer_addr(self->reader, self->peer_addr);
@@ -493,14 +493,6 @@ wec_sd_setup_transport(AFSocketSourceDriver *self)
   if (!transport_mapper_apply_transport(self->transport_mapper, cfg))
     return FALSE;
 
-  self->proto_factory = log_proto_server_get_factory(cfg, self->transport_mapper->logproto);
-  if (!self->proto_factory)
-    {
-      msg_error("Unknown value specified in the transport() option, no such LogProto plugin found",
-                evt_tag_str("transport", self->transport_mapper->logproto));
-      return FALSE;
-    }
-
   wec_sd_setup_reader_options(self);
   return TRUE;
 }
@@ -717,9 +709,9 @@ wec_sd_free_method(LogPipe *s)
 
 void
 wec_sd_init_instance(AFSocketSourceDriver *self,
-                          SocketOptions *socket_options,
-                          TransportMapper *transport_mapper,
-                          GlobalConfig *cfg)
+                     SocketOptions *socket_options,
+                     TransportMapper *transport_mapper,
+                     GlobalConfig *cfg)
 {
   log_src_driver_init_instance(&self->super, cfg);
 

@@ -143,34 +143,27 @@ transport_mapper_inet_new_instance(const gchar *transport)
 static gboolean
 transport_mapper_syslog_apply_transport(TransportMapper *s, GlobalConfig *cfg)
 {
+  // TODO: remove, clean-up
   TransportMapperInet *self = (TransportMapperInet *) s;
   const gchar *transport = self->super.transport;
 
   if (!transport_mapper_apply_transport_method(s, cfg))
     return FALSE;
 
-  if (strcasecmp(transport, "tcp") == 0)
-    {
-      self->server_port = SYSLOG_TRANSPORT_TCP_PORT;
-      self->super.logproto = "text";
-      self->super.sock_type = SOCK_STREAM;
-      self->super.sock_proto = IPPROTO_TCP;
-    }
-  else if (strcasecmp(transport, "tls") == 0)
+  if (strcasecmp(transport, "tls") == 0)
     {
       self->server_port = SYSLOG_TRANSPORT_TLS_PORT;
-      self->super.logproto = "text";
+      self->super.logproto = "http";
       self->super.sock_type = SOCK_STREAM;
       self->super.sock_proto = IPPROTO_TCP;
       self->require_tls = TRUE;
     }
   else
     {
-      self->super.logproto = self->super.transport;
-      self->super.sock_type = SOCK_STREAM;
       self->server_port = SYSLOG_TRANSPORT_TCP_PORT;
+      self->super.logproto = "http";
+      self->super.sock_type = SOCK_STREAM;
       self->super.sock_proto = IPPROTO_TCP;
-      self->allow_tls = TRUE;
     }
 
   if (!transport_mapper_inet_validate_tls_options(self))
