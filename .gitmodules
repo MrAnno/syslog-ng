@@ -6,3 +6,6 @@
         path = lib/jsonc
         url = https://github.com/json-c/json-c.git
         ignore = dirty
+[submodule "lib/http/http-parser"]
+	path = lib/http/http-parser
+	url = https://github.com/nodejs/http-parser.git
