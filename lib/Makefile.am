@@ -20,6 +20,7 @@ include lib/scanner/kv-scanner/Makefile.am
 include lib/str-repr/Makefile.am
 include lib/secret-storage/Makefile.am
 include lib/logthrsource/Makefile.am
+include lib/http/Makefile.am
 
 LSNG_RELEASE		= $(shell echo @PACKAGE_VERSION@ | cut -d. -f1,2)
 
@@ -279,7 +280,8 @@ lib_libsyslog_ng_la_SOURCES		= \
 	$(compat_sources)     		\
 	$(logmsg_sources)		\
 	$(str_repr_sources)		\
-	$(logthrsource_sources)
+	$(logthrsource_sources)	\
+	$(http_sources)
 
 lib_libsyslog_ng_la_CFLAGS		= \
 	$(AM_CFLAGS) \
