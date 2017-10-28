@@ -12,6 +12,9 @@ scl/syslogconf/convert-syslogconf.awk$
 (.*/)?(README|\.gitignore|pylintrc)$
 lib/ivykis
 lib/eventlog
+lib/http/http-parser
+lib/http/images
+lib/http/source
 modules/java/org_syslog_ng_[^./_-]+\.h$
 modules/(afmongodb|afamqp)/dummy\.c$
 modules/kafka/tests/sample\.properties
@@ -128,6 +131,7 @@ Makefile\.am$
 lib/(compat|str-repr|timeutils|control|debugger|filter|logproto|multi-line|parser|rewrite|stats|template|tests|transport|logmsg|value-pairs|secret-storage|logthrdest|logthrsource|ack-tracker|signal-slot-connector|[^/]*$)
 lib/scanner/(csv-scanner|list-scanner|kv-scanner|xml-scanner|[^/]*$)
 libtest
+lib/http
 syslog-ng(-ctl)?
 modules/java-modules/common
 modules/java/(native|proxies|src)
