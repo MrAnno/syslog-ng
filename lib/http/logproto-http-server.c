@@ -333,7 +333,7 @@ log_proto_http_server_extract_log_messages_and_create_response(LogProtoHTTPServe
 }
 
 static LogMessage *
-log_proto_http_server_process_log_messages(LogProtoHTTPServer *self)
+log_proto_http_server_pop_next_log_message(LogProtoHTTPServer *self)
 {
   LogMessage *log_message = g_queue_pop_head(self->pending_messages);
   if (!log_message)
@@ -374,7 +374,7 @@ log_proto_http_server_process(LogProtoServer *s, const guchar **msg, gsize *msg_
 
         case STATE_PROCESS_LOG_MESSAGES:
           ;
-          LogMessage *log_message = log_proto_http_server_process_log_messages(self);
+          LogMessage *log_message = log_proto_http_server_pop_next_log_message(self);
           (void) log_message;
           if (log_message)
             return LPS_SUCCESS;
