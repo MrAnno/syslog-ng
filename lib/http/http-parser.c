@@ -194,7 +194,7 @@ http_parser_reset_header(HTTPParser *self)
 }
 
 static void
-http_parser_handle_previous_header(HTTPParser *self)
+http_parser_finalize_previous_header(HTTPParser *self)
 {
   if (!http_parser_previous_header_exists(self))
     return;
@@ -221,7 +221,7 @@ _headers_complete(http_parser *parser)
 {
   HTTPParser *self = parser->data;
 
-  http_parser_handle_previous_header(self);
+  http_parser_finalize_previous_header(self);
 
   if (parser->type == HTTP_RESPONSE)
     {
@@ -264,7 +264,7 @@ _header_field(http_parser *parser, const gchar *data, gsize length)
 {
   HTTPParser *self = parser->data;
 
-  http_parser_handle_previous_header(self);
+  http_parser_finalize_previous_header(self);
 
   g_string_append_len(self->current_header_field_name, data, length);
   return 0;
