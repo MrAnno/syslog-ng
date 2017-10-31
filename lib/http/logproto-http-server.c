@@ -383,32 +383,43 @@ log_proto_http_server_process(LogProtoServer *s, const guchar **msg, gsize *msg_
   LogProtoHTTPServer *self = (LogProtoHTTPServer *) s;
   LogProtoStatus status = LPS_SUCCESS;
 
-  switch (self->state)
+  // the loop decreases the load of main loop
+  while(1)
     {
-    case STATE_RECEIVE_HTTP_REQUEST:
-      ;
-      HTTPRequest *http_request = log_proto_http_server_receive_request(self, aux, &status);
-      if (http_request)
+      switch (self->state)
         {
-          log_proto_http_server_extract_log_messages_and_create_response(self, http_request);
-          http_request_free(http_request);
+        case STATE_RECEIVE_HTTP_REQUEST:
+          ;
+          HTTPRequest *http_request = log_proto_http_server_receive_request(self, aux, &status);
+          if (http_request)
+            {
+              log_proto_http_server_extract_log_messages_and_create_response(self, http_request);
+              http_request_free(http_request);
+            }
+          else
+            {
+              return status;
+            }
+          break;
+
+        case STATE_PROCESS_LOG_MESSAGES:
+          ;
+          LogMessage *log_message = log_proto_http_server_process_log_messages(self);
+          (void) log_message;
+          if (log_message)
+            return LPS_SUCCESS;
+          break;
+
+        case STATE_SEND_HTTP_RESPONSE:
+        case STATE_HTTP_ERROR:
+          status = log_proto_http_server_send_response(self);
+          if (self->state != STATE_RECEIVE_HTTP_REQUEST)
+            return status;
+          break;
+
+        default:
+          g_assert_not_reached();
         }
-      break;
-
-    case STATE_PROCESS_LOG_MESSAGES:
-      ;
-      LogMessage *log_message = log_proto_http_server_process_log_messages(self);
-      (void) log_message;
-      //TODO return it (even with NULL)
-      break;
-
-    case STATE_SEND_HTTP_RESPONSE:
-    case STATE_HTTP_ERROR:
-      status = log_proto_http_server_send_response(self);
-      break;
-
-    default:
-      g_assert_not_reached();
     }
 
   if (status != LPS_SUCCESS)
