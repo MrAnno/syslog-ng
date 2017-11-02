@@ -44,11 +44,11 @@ typedef enum _State
   STATE_PROCESS_LOG_MESSAGES
 } State;
 
-typedef struct _ExtractMessagesCallback
+typedef struct _ExtractLogMessagesCallback
 {
-  LPHTTPExtractMessagesFunc func;
+  LPHTTPExtractLogMessagesFunc func;
   gpointer user_data;
-} ExtractMessagesCallback;
+} ExtractLogMessagesCallback;
 
 typedef struct _CreateResponseCallback
 {
@@ -65,9 +65,9 @@ struct _LogProtoHTTPServer
   Buffer out_buffer;
   HTTPParser *http_parser;
 
-  GQueue *pending_messages;
+  GQueue *pending_log_messages;
 
-  ExtractMessagesCallback extract_messages;
+  ExtractLogMessagesCallback extract_log_messages;
   CreateResponseCallback create_response;
 };
 
@@ -280,20 +280,20 @@ log_proto_http_server_send_response(LogProtoHTTPServer *self)
 }
 
 static void
-log_proto_http_server_extract_messages(LogProtoHTTPServer *self, const HTTPRequest *http_request)
+log_proto_http_server_extract_log_messages(LogProtoHTTPServer *self, const HTTPRequest *http_request)
 {
-  if (!self->extract_messages.func)
+  if (!self->extract_log_messages.func)
     goto skip_log_message_processing;
 
-  self->pending_messages = self->extract_messages.func(http_request, self->extract_messages.user_data);
+  self->pending_log_messages = self->extract_log_messages.func(http_request, self->extract_log_messages.user_data);
 
-  if (!self->pending_messages)
+  if (!self->pending_log_messages)
     goto skip_log_message_processing;
 
-  if (g_queue_get_length(self->pending_messages) == 0)
+  if (g_queue_get_length(self->pending_log_messages) == 0)
     {
-      g_queue_free(self->pending_messages);
-      self->pending_messages = NULL;
+      g_queue_free(self->pending_log_messages);
+      self->pending_log_messages = NULL;
       goto skip_log_message_processing;
     }
 
@@ -328,18 +328,18 @@ log_proto_http_server_create_response(LogProtoHTTPServer *self, const HTTPReques
 static void
 log_proto_http_server_extract_log_messages_and_create_response(LogProtoHTTPServer *self, HTTPRequest *http_request)
 {
-  log_proto_http_server_extract_messages(self, http_request);
+  log_proto_http_server_extract_log_messages(self, http_request);
   log_proto_http_server_create_response(self, http_request);
 }
 
 static LogMessage *
 log_proto_http_server_pop_next_log_message(LogProtoHTTPServer *self)
 {
-  LogMessage *log_message = g_queue_pop_head(self->pending_messages);
+  LogMessage *log_message = g_queue_pop_head(self->pending_log_messages);
   if (!log_message)
     {
-      g_queue_free(self->pending_messages);
-      self->pending_messages = NULL;
+      g_queue_free(self->pending_log_messages);
+      self->pending_log_messages = NULL;
       self->state = STATE_SEND_HTTP_RESPONSE;
     }
 
@@ -411,11 +411,11 @@ log_proto_http_server_free(LogProtoServer *s)
 }
 
 void
-log_proto_http_server_set_extract_messages(LogProtoHTTPServer *self, LPHTTPExtractMessagesFunc extract_messages,
-                                           gpointer user_data)
+log_proto_http_server_set_extract_log_messages(LogProtoHTTPServer *self,
+                                               LPHTTPExtractLogMessagesFunc extract_log_messages, gpointer user_data)
 {
-  self->extract_messages.func = extract_messages;
-  self->extract_messages.user_data = user_data;
+  self->extract_log_messages.func = extract_log_messages;
+  self->extract_log_messages.user_data = user_data;
 }
 
 void
