@@ -29,6 +29,7 @@
 #include "persist-state.h"
 #include "transport/transport-aux-data.h"
 #include "bookmark.h"
+#include "syslog-ng.h"
 
 typedef struct _LogProtoServer LogProtoServer;
 typedef struct _LogProtoServerOptions LogProtoServerOptions;
@@ -81,12 +82,14 @@ struct _LogProtoServer
   LogTransport *transport;
   AckTracker *ack_tracker;
   LogProtoServerWakeupCallback wakeup_callback;
+  gboolean is_structured;
   /* FIXME: rename to something else */
   gboolean (*is_position_tracked)(LogProtoServer *s);
   LogProtoPrepareAction (*prepare)(LogProtoServer *s, GIOCondition *cond, gint *timeout);
   gboolean (*restart_with_state)(LogProtoServer *s, PersistState *state, const gchar *persist_name);
   LogProtoStatus (*fetch)(LogProtoServer *s, const guchar **msg, gsize *msg_len, gboolean *may_read,
                           LogTransportAuxData *aux, Bookmark *bookmark);
+  LogProtoStatus (*fetch_structured)(LogProtoServer *s, LogMessage **msg, LogTransportAuxData *aux, Bookmark *bookmark);
   gboolean (*validate_options)(LogProtoServer *s);
   gboolean (*handshake_in_progess)(LogProtoServer *s);
   LogProtoStatus (*handshake)(LogProtoServer *s);
@@ -184,6 +187,21 @@ log_proto_server_wakeup_cb_call(LogProtoServerWakeupCallback *wakeup_callback)
 {
   if (wakeup_callback->func)
     wakeup_callback->func(wakeup_callback->user_data);
+}
+
+static inline gboolean
+log_proto_server_is_structured(LogProtoServer *s)
+{
+  return s->is_structured;
+}
+
+static inline LogProtoStatus
+log_proto_server_fetch_structured(LogProtoServer *s, LogMessage **msg, LogTransportAuxData *aux, Bookmark *bookmark)
+{
+  if (s->status == LPS_SUCCESS)
+    return s->fetch_structured(s, msg, aux, bookmark);
+
+  return s->status;
 }
 
 gboolean log_proto_server_validate_options_method(LogProtoServer *s);
