@@ -273,6 +273,8 @@ log_proto_http_server_send_response(LogProtoHTTPServer *self)
   if (!buffer_is_empty(&self->out_buffer))
     return status;
 
+  buffer_deallocate(&self->out_buffer);
+
   if (self->state == STATE_HTTP_ERROR)
     return LPS_ERROR;
 
