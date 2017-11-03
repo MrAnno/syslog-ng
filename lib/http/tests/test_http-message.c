@@ -58,3 +58,35 @@ Test(http_message, test_headers)
 
   http_message_free(message);
 }
+
+Test(http_message, test_status_code_to_status_line)
+{
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_OK), "200 OK");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_MULTIPLE_CHOICES), "300 Multiple Choices");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_BAD_REQUEST), "400 Bad Request");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_INTERNAL_SERVER_ERROR), "500 Internal Server Error");
+
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_ALREADY_REPORTED), "208 Already Reported");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_PERMANENT_REDIRECT), "308 Permanent Redirect");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE),
+                   "431 Request Header Fields Too Large");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_NETWORK_AUTHENTICATION_REQUIRED),
+                   "511 Network Authentication Required");
+
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_NO_CONTENT), "204 No Content");
+  cr_assert_str_eq(http_response_status_code_to_status_line(HTTP_FOUND), "302 Found");
+  cr_assert_str_eq(http_response_status_code_to_status_line(404), "404 Not Found");
+  cr_assert_str_eq(http_response_status_code_to_status_line(501), "501 Not Implemented");
+}
+
+Test(http_message, test_invalid_status_code_to_status_line)
+{
+  cr_assert_null(http_response_status_code_to_status_line(0));
+  cr_assert_null(http_response_status_code_to_status_line(99));
+  cr_assert_null(http_response_status_code_to_status_line(128));
+  cr_assert_null(http_response_status_code_to_status_line(209));
+  cr_assert_null(http_response_status_code_to_status_line(309));
+  cr_assert_null(http_response_status_code_to_status_line(432));
+  cr_assert_null(http_response_status_code_to_status_line(512));
+  cr_assert_null(http_response_status_code_to_status_line(1024));
+}

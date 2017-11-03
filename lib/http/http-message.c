@@ -438,3 +438,78 @@ http_response_upcast(HTTPResponse *self)
 {
   return &self->super;
 }
+
+
+/*
+ * "200 OK",
+ * "404 Not Found",
+ * ...
+ */
+static const gchar *http_status_lines_200[] =
+{
+#define T(code, name, reason_phrase) #code " " #reason_phrase,
+  HTTP_STATUS_MAP_200(T)
+#undef T
+};
+
+static const gchar *http_status_lines_300[] =
+{
+#define T(code, name, reason_phrase) #code " " #reason_phrase,
+  HTTP_STATUS_MAP_300(T)
+#undef T
+};
+
+static const gchar *http_status_lines_400[] =
+{
+#define T(code, name, reason_phrase) #code " " #reason_phrase,
+  HTTP_STATUS_MAP_400(T)
+#undef T
+};
+
+static const gchar *http_status_lines_500[] =
+{
+#define T(code, name, reason_phrase) #code " " #reason_phrase,
+  HTTP_STATUS_MAP_500(T)
+#undef T
+};
+
+const gchar *
+http_response_status_code_to_status_line(HTTPStatusCode code)
+{
+  gsize status_lines_array_size;
+  const gchar **status_lines;
+  gsize offset;
+
+  if (code < HTTP_OK)
+    return NULL;
+  else if (code < HTTP_MULTIPLE_CHOICES)
+    {
+      status_lines = http_status_lines_200;
+      status_lines_array_size = G_N_ELEMENTS(http_status_lines_200);
+      offset = 200;
+    }
+  else if (code < HTTP_BAD_REQUEST)
+    {
+      status_lines = http_status_lines_300;
+      status_lines_array_size = G_N_ELEMENTS(http_status_lines_300);
+      offset = 300;
+    }
+  else if (code < HTTP_INTERNAL_SERVER_ERROR)
+    {
+      status_lines = http_status_lines_400;
+      status_lines_array_size = G_N_ELEMENTS(http_status_lines_400);
+      offset = 400;
+    }
+  else
+    {
+      status_lines = http_status_lines_500;
+      status_lines_array_size = G_N_ELEMENTS(http_status_lines_500);
+      offset = 500;
+    }
+
+  gsize status_line_index = code - offset;
+  if (status_line_index >= status_lines_array_size)
+    return NULL;
+
+  return status_lines[status_line_index];
+}
