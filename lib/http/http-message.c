@@ -129,8 +129,8 @@ http_message_get_http_version(HTTPMessage *self, gushort *major, gushort *minor)
   *minor = self->http_minor;
 }
 
-GString *
-http_message_get_header_using_normalized_key(HTTPMessage *self, const gchar *normalized_key)
+static const HTTPHeaderValuePosition *
+http_message_get_header_value_position(HTTPMessage *self, const gchar *normalized_key)
 {
   HTTPHeaderKey key_wrapper =
   {
@@ -139,7 +139,13 @@ http_message_get_header_using_normalized_key(HTTPMessage *self, const gchar *nor
     .length = strlen(normalized_key)
   };
 
-  const HTTPHeaderValuePosition *value_position = g_hash_table_lookup(self->header_positions, &key_wrapper);
+  return g_hash_table_lookup(self->header_positions, &key_wrapper);
+}
+
+GString *
+http_message_get_header_using_normalized_key(HTTPMessage *self, const gchar *normalized_key)
+{
+  const HTTPHeaderValuePosition *value_position = http_message_get_header_value_position(self, normalized_key);
   if (!value_position)
     return NULL;
 
@@ -187,6 +193,22 @@ http_message_add_header(HTTPMessage *self, const gchar *key, const gchar *value)
   gchar *normalized_key = g_ascii_strdown(key, strlen(key));
   http_message_add_normalized_header(self, normalized_key, value);
   g_free(normalized_key);
+}
+
+gboolean
+http_message_normalized_header_exists(HTTPMessage *self, const gchar *normalized_key)
+{
+  return http_message_get_header_value_position(self, normalized_key) != NULL;
+}
+
+gboolean
+http_message_header_exists(HTTPMessage *self, const gchar *key)
+{
+  gchar *normalized_key = g_ascii_strdown(key, strlen(key));
+  gboolean exists = http_message_normalized_header_exists(self, normalized_key);
+  g_free(normalized_key);
+
+  return exists;
 }
 
 void
@@ -308,6 +330,18 @@ http_request_add_header(HTTPRequest *self, const gchar *key, const gchar *value)
   http_message_add_header(&self->super, key, value);
 }
 
+gboolean
+http_request_header_exists(HTTPRequest *self, const gchar *key)
+{
+  return http_message_header_exists(&self->super, key);
+}
+
+gboolean
+http_request_normalized_header_exists(HTTPRequest *self, const gchar *normalized_key)
+{
+  return http_message_normalized_header_exists(&self->super, normalized_key);
+}
+
 void
 http_request_set_method(HTTPRequest *self, const gchar *method)
 {
@@ -406,6 +440,18 @@ void
 http_response_add_header(HTTPResponse *self, const gchar *key, const gchar *value)
 {
   http_message_add_header(&self->super, key, value);
+}
+
+gboolean
+http_response_header_exists(HTTPResponse *self, const gchar *key)
+{
+  return http_message_header_exists(&self->super, key);
+}
+
+gboolean
+http_response_normalized_header_exists(HTTPResponse *self, const gchar *normalized_key)
+{
+  return http_message_normalized_header_exists(&self->super, normalized_key);
 }
 
 void

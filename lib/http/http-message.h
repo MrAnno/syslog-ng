@@ -36,6 +36,8 @@ void http_message_get_http_version(HTTPMessage *self, gushort *major, gushort *m
 void http_message_add_header(HTTPMessage *self, const gchar *key, const gchar *value);
 GString *http_message_get_header(HTTPMessage *self, const gchar *key);
 GString *http_message_get_header_using_normalized_key(HTTPMessage *self, const gchar *normalized_key);
+gboolean http_message_header_exists(HTTPMessage *self, const gchar *key);
+gboolean http_message_normalized_header_exists(HTTPMessage *self, const gchar *normalized_key);
 void http_message_take_body(HTTPMessage *self, GByteArray *body);
 const GByteArray *http_message_get_body(HTTPMessage *self);
 void http_message_free(HTTPMessage *self);
@@ -50,6 +52,8 @@ void http_request_get_http_version(HTTPRequest *self, gushort *major, gushort *m
 void http_request_add_header(HTTPRequest *self, const gchar *key, const gchar *value);
 GString *http_request_get_header(HTTPRequest *self, const gchar *key);
 GString *http_request_get_header_using_normalized_key(HTTPRequest *self, const gchar *normalized_key);
+gboolean http_request_header_exists(HTTPRequest *self, const gchar *key);
+gboolean http_request_normalized_header_exists(HTTPRequest *self, const gchar *normalized_key);
 void http_request_take_body(HTTPRequest *self, GByteArray *body);
 const GByteArray *http_request_get_body(HTTPRequest *self);
 void http_request_set_url(HTTPRequest *self, const gchar *url);
@@ -68,6 +72,8 @@ void http_response_get_http_version(HTTPResponse *self, gushort *major, gushort 
 void http_response_add_header(HTTPResponse *self, const gchar *key, const gchar *value);
 GString *http_response_get_header(HTTPResponse *self, const gchar *key);
 GString *http_response_get_header_using_normalized_key(HTTPResponse *self, const gchar *normalized_key);
+gboolean http_response_header_exists(HTTPResponse *self, const gchar *key);
+gboolean http_response_normalized_header_exists(HTTPResponse *self, const gchar *normalized_key);
 void http_response_take_body(HTTPResponse *self, GByteArray *body);
 const GByteArray *http_response_get_body(HTTPResponse *self);
 void http_response_set_status_code(HTTPResponse *self, HTTPStatusCode status_code);
