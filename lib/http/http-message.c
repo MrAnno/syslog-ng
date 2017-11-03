@@ -30,7 +30,8 @@
 #define INITIAL_RAW_HEADERS_BUFFER_SIZE 64
 #define INITIAL_URL_BUFFER_SIZE 64
 #define HTTP_HEADER_KEY_VALUE_SEPARATOR ": "
-#define HTTP_HEADER_SEPARATOR "\r\n"
+#define HTTP_CRLF "\r\n"
+#define HTTP_HEADER_SEPARATOR HTTP_CRLF
 
 struct _HTTPMessage
 {
@@ -505,4 +506,28 @@ http_response_status_code_to_status_line(HTTPStatusCode code)
     return NULL;
 
   return status_lines[status_line_index];
+}
+
+GByteArray *
+http_response_generate_raw_response(HTTPResponse *self)
+{
+  GByteArray *raw_response = g_byte_array_sized_new(self->super.body->len + self->super.raw_headers->len + 64);
+
+  {
+    gsize http_version_length = 9;
+    gchar http_version[http_version_length + 1];
+    g_snprintf(http_version, http_version_length + 1, "HTTP/%u.%u ", self->super.http_major, self->super.http_minor);
+    g_byte_array_append(raw_response, (const guint8 *) http_version, http_version_length);
+  }
+
+  const gchar *status_line = http_response_status_code_to_status_line(self->status_code);
+  gsize status_line_length = strlen(status_line);
+
+  g_byte_array_append(raw_response, (const guint8 *) status_line, status_line_length);
+  g_byte_array_append(raw_response, (const guint8 *) HTTP_CRLF, sizeof(HTTP_CRLF) - 1);
+  g_byte_array_append(raw_response, (const guint8 *) self->super.raw_headers->str, self->super.raw_headers->len);
+  g_byte_array_append(raw_response, (const guint8 *) HTTP_CRLF, sizeof(HTTP_CRLF) - 1);
+  g_byte_array_append(raw_response, self->super.body->data, self->super.body->len);
+
+  return raw_response;
 }

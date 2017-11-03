@@ -24,7 +24,8 @@
 
 #include "http-message.h"
 
-/* low-level API for the parser */
+/* low-level API for the parser and proto */
 void http_message_append_body(HTTPMessage *self, const guint8 *data, gsize length);
 void http_request_append_url(HTTPRequest *self, const gchar *data, gsize length);
 void http_message_add_header_normalized_in_place(HTTPMessage *self, GString *key, GString *value);
+GByteArray *http_response_generate_raw_response(HTTPResponse *self);
