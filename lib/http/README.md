@@ -23,6 +23,7 @@ Q
 Framework
 ---------
 
+- https is supported (TODO: peer-verify(optional-untrusted) as default)
 - http upgrade is not supported
 - http pipelining is supported
 - http keep-alive is supported (performance will be terrible without keep-alive)
