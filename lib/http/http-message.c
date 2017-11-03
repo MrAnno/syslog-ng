@@ -584,3 +584,18 @@ http_response_generate_raw_response(HTTPResponse *self)
 
   return raw_response;
 }
+
+void http_response_add_mandatory_headers(HTTPResponse *self)
+{
+  if (!http_response_normalized_header_exists(self, "content-length"))
+    {
+      gsize body_length = http_response_get_body(self) ? http_response_get_body(self)->len : 0;
+      gchar content_length[32];
+      g_snprintf(content_length, sizeof(content_length), "%zu", body_length);
+
+      http_message_add_normalized_header(&self->super, "content-length", content_length);
+    }
+
+  if (!http_response_normalized_header_exists(self, "server"))
+    http_message_add_normalized_header(&self->super, "server", "syslog-ng");
+}
