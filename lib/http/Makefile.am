@@ -2,7 +2,6 @@ httpincludedir = ${pkgincludedir}/http
 
 httpinclude_HEADERS = \
   lib/http/buffer.h \
-  lib/http/http-errors.h \
   lib/http/logproto-http-server.h \
   lib/http/http-parser/http_parser.h \
   lib/http/http-parser.h \

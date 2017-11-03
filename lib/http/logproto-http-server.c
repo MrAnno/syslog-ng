@@ -26,7 +26,6 @@
 #include "buffer.h"
 #include "http-parser.h"
 #include "http-message-internal.h"
-#include "http-errors.h"
 #include "syslog-ng.h"
 #include "messages.h"
 
@@ -151,18 +150,39 @@ log_proto_http_server_fetch_data(LogProtoHTTPServer *self, LogTransportAuxData *
   return G_IO_STATUS_NORMAL;
 }
 
+#define HTTP_ERROR_PAGE_FRONT "<html><head><title>syslog-ng</title></head><body><center><h1>"
+#define HTTP_ERROR_PAGE_BACK "</h1></center><hr><center>syslog-ng</center></body></html>"
+
+static GByteArray *
+_generate_error_page(HTTPStatusCode error_code)
+{
+  const gchar *status_line = http_response_status_code_to_status_line(error_code);
+
+  GByteArray *error_page = g_byte_array_sized_new(192);
+  g_byte_array_append(error_page, (const guint8 *) HTTP_ERROR_PAGE_FRONT, sizeof(HTTP_ERROR_PAGE_FRONT) - 1);
+  g_byte_array_append(error_page, (const guint8 *) status_line, strlen(status_line));
+  g_byte_array_append(error_page, (const guint8 *) HTTP_ERROR_PAGE_BACK, sizeof(HTTP_ERROR_PAGE_BACK) - 1);
+
+  return error_page;
+}
+
 static void
 log_proto_http_server_set_error_response(LogProtoHTTPServer *self, HTTPStatusCode error)
 {
-  //TODO: remove
-  if (G_UNLIKELY(!buffer_allocated(&self->out_buffer)))
-    buffer_allocate(&self->out_buffer, MAX(self->super.options->init_buffer_size, 512));
+  HTTPResponse *http_error_response = http_response_new_empty();
+  http_response_set_http_version(http_error_response, 1, 1);
+  http_response_set_status_code(http_error_response, error);
+  http_response_add_header(http_error_response, "content-type", "text/html");
+  http_response_add_header(http_error_response, "connection", "close");
+  GByteArray *error_page = _generate_error_page(error);
+  http_response_take_body(http_error_response, error_page);
+  http_response_add_mandatory_headers(http_error_response);
 
-  //TODO: HTTPStatusCode is not used
-  buffer_reset(&self->out_buffer);
-  gsize response_length = sizeof(HTTP_ERROR_500_PAGE) - 1;
-  memcpy(self->out_buffer.buffer, HTTP_ERROR_500_PAGE, response_length);
-  buffer_increase_size(&self->out_buffer, response_length);
+  GByteArray *raw_http_response = http_response_generate_raw_response(http_error_response);
+  buffer_assign(&self->out_buffer, raw_http_response->data, raw_http_response->len);
+  g_byte_array_free(raw_http_response, FALSE);
+
+  http_response_free(http_error_response);
 
   self->state = STATE_HTTP_ERROR;
 }
