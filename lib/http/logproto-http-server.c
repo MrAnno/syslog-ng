@@ -25,7 +25,7 @@
 #include "logproto-http-server.h"
 #include "buffer.h"
 #include "http-parser.h"
-#include "http-message.h"
+#include "http-message-internal.h"
 #include "http-errors.h"
 #include "syslog-ng.h"
 #include "messages.h"
@@ -154,6 +154,7 @@ log_proto_http_server_fetch_data(LogProtoHTTPServer *self, LogTransportAuxData *
 static void
 log_proto_http_server_set_error_response(LogProtoHTTPServer *self, HTTPStatusCode error)
 {
+  //TODO: remove
   if (G_UNLIKELY(!buffer_allocated(&self->out_buffer)))
     buffer_allocate(&self->out_buffer, MAX(self->super.options->init_buffer_size, 512));
 
@@ -190,7 +191,7 @@ log_proto_http_server_parse_request(LogProtoHTTPServer *self, LogProtoStatus sta
     {
       buffer_split(&self->in_buffer);
 
-      msg_debug("Message is complete");
+      msg_debug("Incoming HTTP request");
       return (HTTPRequest *) http_parser_steal_message(self->http_parser);
     }
 
@@ -306,20 +307,29 @@ skip_log_message_processing:
 static void
 log_proto_http_server_create_response(LogProtoHTTPServer *self, const HTTPRequest *http_request)
 {
-  if (G_UNLIKELY(!buffer_allocated(&self->out_buffer)))
-    buffer_allocate(&self->out_buffer, MAX(self->super.options->init_buffer_size, 512));
+  HTTPResponse *http_response = NULL;
+  if (self->create_response.func)
+    http_response = self->create_response.func(http_request, self->create_response.user_data);
 
-  if (!self->create_response.func)
+  if (!http_response)
     {
-      buffer_reset(&self->out_buffer);
-      memcpy(self->out_buffer.buffer, "HTTP/1.1 200 OK\r\nContent-Length:5\r\n\r\nhello", 42);
-      buffer_increase_size(&self->out_buffer, 42);
-      return;
+      http_response = http_response_new_empty();
+      http_response_set_http_version(http_response, 1, 1);
+      http_response_set_status_code(http_response, HTTP_OK);
+      http_response_add_header(http_response, "Content-Type", "text/html");
+
+      GByteArray *body = g_byte_array_new();
+      g_byte_array_append(body, (const guint8 *) "<center><h3>Aand HTTPS</h3><hr>syslog-ng/3.1x</center>", 54);
+
+      http_response_take_body(http_response, body);
     }
 
-  HTTPResponse *http_response = self->create_response.func(http_request, self->create_response.user_data);
+  http_response_add_mandatory_headers(http_response);
 
-  //TODO: bufi összeállít
+  GByteArray *raw_http_response = http_response_generate_raw_response(http_response);
+  buffer_assign(&self->out_buffer, raw_http_response->data, raw_http_response->len);
+  g_byte_array_free(raw_http_response, FALSE);
+
   //TODO: 500 ha nincs response vagy nincs callback beállítva
 
   http_response_free(http_response);
