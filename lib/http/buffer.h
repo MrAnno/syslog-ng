@@ -27,7 +27,7 @@
 
 typedef struct _Buffer
 {
-  guchar *buffer;
+  guint8 *buffer;
   gsize size;
   gsize capacity;
   gsize consumed;
@@ -62,13 +62,13 @@ buffer_deallocate(Buffer *buffer)
   g_free(buffer->buffer);
 }
 
-static inline guchar *
+static inline guint8 *
 buffer_start(const Buffer *buffer)
 {
   return &buffer->buffer[buffer->consumed];
 }
 
-static inline guchar *
+static inline guint8 *
 buffer_end(const Buffer *buffer)
 {
   return &buffer->buffer[buffer->size];
