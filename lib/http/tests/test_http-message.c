@@ -24,7 +24,8 @@
 
 #include <criterion/criterion.h>
 
-#include "http/http-message.h"
+#include "http/http-message-internal.h"
+#include <glib.h>
 
 Test(http_message, test_headers)
 {
@@ -89,4 +90,26 @@ Test(http_message, test_invalid_status_code_to_status_line)
   cr_assert_null(http_response_status_code_to_status_line(432));
   cr_assert_null(http_response_status_code_to_status_line(512));
   cr_assert_null(http_response_status_code_to_status_line(1024));
+}
+
+Test(http_message, test_generate_raw_response)
+{
+  HTTPResponse *response = http_response_new_empty();
+  http_response_set_http_version(response, 1, 1);
+  http_response_set_status_code(response, HTTP_OK);
+  http_response_add_header(response, "Content-Length", "5");
+
+  GByteArray *body = g_byte_array_new();
+  g_byte_array_append(body, (const guint8 *) "hello", 5);
+
+  http_response_take_body(response, body);
+
+  GByteArray *raw_response = http_response_generate_raw_response(response);
+
+  const gchar *expected_response = "HTTP/1.1 200 OK\r\ncontent-length: 5\r\n\r\nhello";
+  gsize expected_response_length = strlen(expected_response);
+  cr_assert_arr_eq(raw_response->data, expected_response, expected_response_length);
+
+  g_byte_array_free(raw_response, TRUE);
+  http_response_free(response);
 }
