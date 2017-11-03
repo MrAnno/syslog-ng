@@ -60,6 +60,15 @@ buffer_deallocate(Buffer *buffer)
   buffer_reset(buffer);
   buffer->capacity = 0;
   g_free(buffer->buffer);
+  buffer->buffer = NULL;
+}
+
+static inline void
+buffer_assign(Buffer *buffer, guint8 *data, gsize size)
+{
+  buffer_deallocate(buffer);
+  buffer->buffer = data;
+  buffer->capacity = buffer->size = size;
 }
 
 static inline guint8 *
