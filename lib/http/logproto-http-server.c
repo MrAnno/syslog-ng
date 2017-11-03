@@ -377,8 +377,7 @@ log_proto_http_server_pop_next_log_message(LogProtoHTTPServer *self)
 }
 
 static LogProtoStatus
-log_proto_http_server_process(LogProtoServer *s, const guchar **msg, gsize *msg_len, gboolean *may_read,
-                              LogTransportAuxData *aux, Bookmark *bookmark)
+log_proto_http_server_process(LogProtoServer *s, LogMessage **log_message, LogTransportAuxData *aux, Bookmark *bookmark)
 {
   LogProtoHTTPServer *self = (LogProtoHTTPServer *) s;
   LogProtoStatus status = LPS_SUCCESS;
@@ -403,10 +402,8 @@ log_proto_http_server_process(LogProtoServer *s, const guchar **msg, gsize *msg_
           break;
 
         case STATE_PROCESS_LOG_MESSAGES:
-          ;
-          LogMessage *log_message = log_proto_http_server_pop_next_log_message(self);
-          (void) log_message;
-          if (log_message)
+          *log_message = log_proto_http_server_pop_next_log_message(self);
+          if (*log_message)
             return LPS_SUCCESS;
           break;
 
@@ -463,7 +460,8 @@ log_proto_http_server_new(LogTransport *transport, const LogProtoServerOptions *
 
   log_proto_server_init(&self->super, transport, options);
   self->super.prepare = log_proto_http_server_prepare;
-  self->super.fetch = log_proto_http_server_process;
+  self->super.is_structured = TRUE;
+  self->super.fetch_structured = log_proto_http_server_process;
   self->super.free_fn = log_proto_http_server_free;
 
   self->http_parser = http_request_parser_new();
