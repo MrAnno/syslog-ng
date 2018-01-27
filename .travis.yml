@@ -1,47 +1,55 @@
+os: linux
+dist: trusty
+sudo: false
+
 language: c
+compiler:
+  - gcc
+  - clang
+
 git:
   submodules: false
 
 env: B=autotools
 
-os: linux
-
 cache:
   apt: true
 
+addons:
+  apt:
+    sources:
+      - sourceline: 'deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./'
+        key_url: 'http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key'
+    packages:
+      - autoconf-archive
+      - bison
+      - docbook-xsl
+      - flex
+      - gradle-2.2.1
+      - libcap-dev
+      - libdbd-sqlite3
+      - libdbi0-dev
+      - libesmtp-dev
+      - libevtlog-dev
+      - libgeoip-dev
+      - libglib2.0-dev
+      - libhiredis-dev
+      - libivykis-dev
+      - libjson0-dev
+      - libnet1-dev
+      - libriemann-client-dev
+      - libwrap0-dev
+      - pkg-config
+      - sqlite3
+      - xsltproc
+      - criterion-dev
+      - libmaxminddb-dev
+      - libxml2-utils
+
 install:
-  - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key | sudo apt-key add -
-  - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq
-      autoconf-archive
-      bison
-      docbook-xsl
-      flex
-      gradle-2.2.1
-      libcap-dev
-      libdbd-sqlite3
-      libdbi0-dev
-      libesmtp-dev
-      libevtlog-dev
-      libgeoip-dev
-      libglib2.0-dev
-      libhiredis-dev
-      libivykis-dev
-      libjson0-dev
-      libnet1-dev
-      libriemann-client-dev
-      libwrap0-dev
-      pkg-config
-      sqlite3
-      xsltproc
-      criterion-dev
-      libmaxminddb-dev
-      libxml2-utils
-  - sudo pip install -r requirements.txt
+  - pip install --user -r requirements.txt
 before_script:
-  - echo 'Europe/Budapest' | sudo tee /etc/timezone
-  - sudo dpkg-reconfigure --frontend noninteractive tzdata
+  - export TZ=Europe/Budapest
   - ./autogen.sh
   - unset PYTHON_CFLAGS # HACK
   - CONFIGURE_FLAGS="
@@ -95,9 +103,6 @@ script:
         return $S;
       fi;
     fi
-compiler:
-  - gcc
-  - clang
 
 matrix:
   fast_finish: true
@@ -106,18 +111,21 @@ matrix:
   include:
     - env: B=style-check
       dist: trusty
-      sudo: required
-      install:
-      - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key | sudo apt-key add -
-      - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
-      - sudo apt-get update -qq
-      - sudo apt-get install -qq
-          astyle
+      sudo: false
+      addons:
+        apt:
+          sources:
+            - sourceline: 'deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./'
+              key_url: 'http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key'
+          packages:
+            - astyle
       before_script:
       - astyle --version
       script:
       - scripts/style-checker.sh format
       - git diff --exit-code
+
+
     - env: B=copyright-check
       sudo: false
       compiler: gcc
@@ -126,10 +134,12 @@ matrix:
       script:
         - export COPYRIGHTVERBOSITY=1
         - tests/copyright/check.sh . .
+
+
     - env: B=trusty-cmake-internal
       compiler: gcc
       dist: trusty
-      sudo: required
+      sudo: false
       before_script:
       git:
         submodules: true
@@ -143,10 +153,12 @@ matrix:
             ..
         - make --keep-going -j $(nproc) all test install
         - make VERBOSE=1 func-test
+
+
     - env: B=trusty-cmake
       compiler: clang
       dist: trusty
-      sudo: required
+      sudo: false
       before_script:
       script:
         - mkdir build
@@ -157,6 +169,8 @@ matrix:
             -DCMAKE_INSTALL_PREFIX=$HOME/install/syslog-ng
             ..
         - make --keep-going -j $(nproc) all test install
+
+
     - env: B=check
       os: osx
       osx_image: xcode8
