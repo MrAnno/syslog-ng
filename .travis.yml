@@ -171,11 +171,13 @@ matrix:
             glib
             gradle
             hiredis
+            ivykis
             libdbi
             libnet
             riemann-client
+            snaipe/soft/criterion
         - geoipupdate
-        - pip install -r requirements.txt
+        - pip install -r dbld/images/required-pip/all.txt
         - export PATH=/usr/local/opt/bison/bin:/usr/local/opt/libnet/bin:$PATH
         - export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH
       before_script:
@@ -184,8 +186,8 @@ matrix:
             --disable-sun-streams
             --disable-systemd
             --disable-pacct
-            --enable-all-modules
             --disable-smtp
+            --with-ivykis=system
         - make --keep-going -j 3 ||
           {
             S=$?;
