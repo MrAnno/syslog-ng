@@ -175,6 +175,7 @@ matrix:
             libdbi
             libnet
             riemann-client
+            libmaxminddb
             snaipe/soft/criterion
         - geoipupdate
         - pip install -r dbld/images/required-pip/all.txt
@@ -182,7 +183,13 @@ matrix:
         - export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH
       before_script:
         - ./autogen.sh
-        - ./configure --with-ivykis=system
+        - ./configure
+            --with-ivykis=system
+            --disable-sun-streams
+            --disable-systemd
+            --disable-pacct
+            --disable-smtp
+            --enable-all-modules
         - make --keep-going -j 3 ||
           {
             S=$?;
