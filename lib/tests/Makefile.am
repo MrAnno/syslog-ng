@@ -9,6 +9,7 @@ lib_tests_TESTS		= \
 	lib/tests/test_rcptid		\
 	lib/tests/test_lexer        	\
 	lib/tests/test_logthrdestdrv	\
+	lib/tests/test_logthrsourcedrv \
 	lib/tests/test_str_format   	\
 	lib/tests/test_string_list	\
 	lib/tests/test_runid        	\
@@ -81,6 +82,9 @@ lib_tests_test_logthrdestdrv_CFLAGS	=	\
 	$(TEST_CFLAGS)
 lib_tests_test_logthrdestdrv_LDADD	=	\
 	$(TEST_LDADD)
+
+lib_tests_test_logthrsourcedrv_CFLAGS	= $(TEST_CFLAGS)
+lib_tests_test_logthrsourcedrv_LDADD	= $(TEST_LDADD)
 
 lib_tests_test_runid_CFLAGS	=	\
 	$(TEST_CFLAGS)

@@ -85,6 +85,7 @@ set (LIB_HEADERS
     logsource.h
     logstamp.h
     logthrdestdrv.h
+    logthrsourcedrv.h
     logwriter.h
     mainloop.h
     signal-handler.h
@@ -175,6 +176,7 @@ set(LIB_SOURCES
     logsource.c
     logstamp.c
     logthrdestdrv.c
+    logthrsourcedrv.c
     logwriter.c
     mainloop.c
     signal-handler.c
