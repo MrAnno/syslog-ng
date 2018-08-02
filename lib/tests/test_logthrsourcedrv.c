@@ -45,6 +45,12 @@ _generate_persist_name(const LogPipe *s)
   return "test_threaded_source_driver";
 }
 
+static const gchar *
+_format_stats_instance(LogThreadedSourceDriver *s)
+{
+  return "test_threaded_source_driver_stats";
+}
+
 static TestThreadedSourceDriver *
 test_threaded_sd_new(GlobalConfig *cfg)
 {
@@ -52,6 +58,7 @@ test_threaded_sd_new(GlobalConfig *cfg)
 
   log_threaded_source_driver_init_instance(&self->super, cfg);
   self->super.super.super.super.generate_persist_name = _generate_persist_name;
+  self->super.format_stats_instance = _format_stats_instance;
 
   return self;
 }

@@ -31,16 +31,27 @@
 #include "cfg.h"
 #include "logpipe.h"
 
-typedef struct _LogThreadedSourceWorker
-{
-  LogSource super;
-} LogThreadedSourceWorker;
+typedef struct _LogThreadedSourceDriver LogThreadedSourceDriver;
+typedef struct _LogThreadedSourceWorker LogThreadedSourceWorker;
 
-typedef struct _LogThreadedSourceDriver
+typedef struct _LogThreadedSourceWorkerOptions
+{
+  LogSourceOptions super;
+} LogThreadedSourceWorkerOptions;
+
+struct _LogThreadedSourceDriver
 {
   LogSrcDriver super;
+  LogThreadedSourceWorkerOptions worker_options;
   LogThreadedSourceWorker *worker;
-} LogThreadedSourceDriver;
+
+  const gchar *(*format_stats_instance)(LogThreadedSourceDriver *s);
+};
+
+void log_threaded_source_worker_options_defaults(LogThreadedSourceWorkerOptions *options);
+void log_threaded_source_worker_options_init(LogThreadedSourceWorkerOptions *options, GlobalConfig *cfg,
+                                             const gchar *group_name);
+void log_threaded_source_worker_options_destroy(LogThreadedSourceWorkerOptions *options);
 
 void log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalConfig *cfg);
 gboolean log_threaded_source_driver_init_method(LogPipe *s);
