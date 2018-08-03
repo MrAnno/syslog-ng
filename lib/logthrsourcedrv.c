@@ -28,12 +28,18 @@
 #include "mainloop-worker.h"
 
 #include <iv.h>
+#include <iv_event.h>
 
 struct _LogThreadedSourceWorker
 {
   LogSource super;
+  struct iv_task fetcher_task;
+  struct iv_event shutdown_event;
   WorkerOptions options;
 };
+
+static void _fetch(gpointer data);
+static void _shutdown(gpointer data);
 
 static LogPipe *
 log_threaded_source_worker_logpipe(LogThreadedSourceWorker *self)
@@ -73,11 +79,61 @@ log_threaded_source_worker_options_destroy(LogThreadedSourceWorkerOptions *optio
 }
 
 static void
+_init_fetcher_task(LogThreadedSourceWorker *worker)
+{
+  IV_TASK_INIT(&worker->fetcher_task);
+  worker->fetcher_task.cookie = worker;
+  worker->fetcher_task.handler = _fetch;
+}
+
+static void
+_schedule_fetcher_task(LogThreadedSourceWorker *worker)
+{
+  if (!iv_task_registered(&worker->fetcher_task))
+    iv_task_register(&worker->fetcher_task);
+}
+
+static void
+_deregister_fetcher_task(LogThreadedSourceWorker *worker)
+{
+  if (iv_task_registered(&worker->fetcher_task))
+    iv_task_unregister(&worker->fetcher_task);
+}
+
+static void
+_init_shutdown_event(LogThreadedSourceWorker *worker)
+{
+  IV_EVENT_INIT(&worker->shutdown_event);
+  worker->shutdown_event.cookie = worker;
+  worker->shutdown_event.handler = _shutdown;
+}
+
+static void
+_fetch(gpointer data)
+{
+  LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+}
+
+static void
+_shutdown(gpointer data)
+{
+  LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+
+  _deregister_fetcher_task(self);
+  iv_event_unregister(&self->shutdown_event);
+  iv_quit();
+}
+
+static void
 _worker_thread(gpointer data)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
 
   iv_init();
+
+  iv_event_register(&self->shutdown_event);
+  _schedule_fetcher_task(self);
+
   iv_main();
   iv_deinit();
 }
@@ -86,6 +142,8 @@ static void
 _worker_schedule_exit(gpointer data)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+
+  iv_event_post(&self->shutdown_event);
 }
 
 static gboolean
@@ -105,6 +163,9 @@ log_threaded_source_worker_new(GlobalConfig *cfg)
 {
   LogThreadedSourceWorker *self = g_new0(LogThreadedSourceWorker, 1);
   log_source_init_instance(&self->super, cfg);
+
+  _init_fetcher_task(self);
+  _init_shutdown_event(self);
 
   self->options.is_external_input = TRUE;
 
