@@ -76,6 +76,10 @@ static void
 _worker_thread(gpointer data)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+
+  iv_init();
+  iv_main();
+  iv_deinit();
 }
 
 static void
