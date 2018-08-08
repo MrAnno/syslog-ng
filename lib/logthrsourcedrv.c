@@ -188,8 +188,6 @@ log_threaded_source_driver_init_method(LogPipe *s)
   if (!log_src_driver_init_method(s))
     return FALSE;
 
-  self->worker = log_threaded_source_worker_new(cfg);
-
   g_assert(self->format_stats_instance);
 
   log_threaded_source_worker_options_init(&self->worker_options, cfg, self->super.super.group);
@@ -216,8 +214,6 @@ log_threaded_source_driver_deinit_method(LogPipe *s)
   LogPipe *worker_pipe = log_threaded_source_worker_logpipe(self->worker);
 
   log_pipe_deinit(worker_pipe);
-  log_pipe_unref(worker_pipe);
-  self->worker = NULL;
 
   return log_src_driver_deinit_method(s);
 }
@@ -226,6 +222,10 @@ void
 log_threaded_source_driver_free_method(LogPipe *s)
 {
   LogThreadedSourceDriver *self = (LogThreadedSourceDriver *) s;
+  LogPipe *worker_pipe = log_threaded_source_worker_logpipe(self->worker);
+
+  log_pipe_unref(worker_pipe);
+  self->worker = NULL;
 
   log_threaded_source_worker_options_destroy(&self->worker_options);
   log_src_driver_free(s);
@@ -237,6 +237,8 @@ log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalCo
   log_src_driver_init_instance(&self->super, cfg);
 
   log_threaded_source_worker_options_defaults(&self->worker_options);
+
+  self->worker = log_threaded_source_worker_new(cfg);
 
   self->super.super.super.init = log_threaded_source_driver_init_method;
   self->super.super.super.deinit = log_threaded_source_driver_deinit_method;
