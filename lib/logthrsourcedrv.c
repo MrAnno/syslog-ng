@@ -35,6 +35,9 @@ struct _LogThreadedSourceWorker
   LogSource super;
   LogThreadedSourceDriver *control;
   WorkerOptions options;
+
+  void (*run)(LogThreadedSourceDriver *self);
+  void (*request_exit)(LogThreadedSourceDriver *self);
 };
 
 static LogPipe *
@@ -76,22 +79,6 @@ log_threaded_source_worker_options_destroy(LogThreadedSourceWorkerOptions *optio
   log_source_options_destroy(&options->super);
 }
 
-static void
-_worker_thread(gpointer data)
-{
-  LogThreadedSourceDriver *self = (LogThreadedSourceDriver *) data;
-
-
-}
-
-static void
-_worker_schedule_exit(gpointer data)
-{
-  LogThreadedSourceDriver *self = (LogThreadedSourceDriver *) data;
-
-
-}
-
 static gboolean
 log_threaded_source_worker_init(LogPipe *s)
 {
@@ -99,7 +86,11 @@ log_threaded_source_worker_init(LogPipe *s)
   if (!log_source_init(s))
     return FALSE;
 
-  main_loop_create_worker_thread(_worker_thread, _worker_schedule_exit, self->control, &self->options);
+  g_assert(self->run);
+  g_assert(self->request_exit);
+
+  main_loop_create_worker_thread((WorkerThreadFunc) self->run, (WorkerExitNotificationFunc) self->request_exit,
+                                 self->control, &self->options);
 
   return TRUE;
 }
@@ -113,10 +104,7 @@ log_threaded_source_worker_new(GlobalConfig *cfg)
   self->options.is_external_input = TRUE;
 
   self->super.super.init = log_threaded_source_worker_init;
-  /*self->super.super.deinit =
-  self->super.super.free_fn =
-  self->super.wakeup =
-  self->super.window_empty_cb =*/
+  /* self->super.wakeup = */
 
   return self;
 }
@@ -175,6 +163,19 @@ log_threaded_source_driver_free_method(LogPipe *s)
 }
 
 void
+log_threaded_source_driver_set_worker_run(LogThreadedSourceDriver *self, LogThreadedSourceWorkerRun run)
+{
+  self->worker->run = run;
+}
+
+void
+log_threaded_source_driver_set_worker_request_exit(LogThreadedSourceDriver *self,
+                                                   LogThreadedSourceWorkerRequestExit request_exit)
+{
+  self->worker->request_exit = request_exit;
+}
+
+void
 log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalConfig *cfg)
 {
   log_src_driver_init_instance(&self->super, cfg);
@@ -186,6 +187,4 @@ log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalCo
   self->super.super.super.init = log_threaded_source_driver_init_method;
   self->super.super.super.deinit = log_threaded_source_driver_deinit_method;
   self->super.super.super.free_fn = log_threaded_source_driver_free_method;
-  // self->super.super.super.queue =
-  // self->super.super.super.notify =
 }

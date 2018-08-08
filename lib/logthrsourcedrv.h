@@ -34,6 +34,9 @@
 typedef struct _LogThreadedSourceDriver LogThreadedSourceDriver;
 typedef struct _LogThreadedSourceWorker LogThreadedSourceWorker;
 
+typedef void (*LogThreadedSourceWorkerRun)(LogThreadedSourceDriver *);
+typedef void (*LogThreadedSourceWorkerRequestExit)(LogThreadedSourceDriver *);
+
 typedef struct _LogThreadedSourceWorkerOptions
 {
   LogSourceOptions super;
@@ -45,7 +48,7 @@ struct _LogThreadedSourceDriver
   LogThreadedSourceWorkerOptions worker_options;
   LogThreadedSourceWorker *worker;
 
-  const gchar *(*format_stats_instance)(LogThreadedSourceDriver *s);
+  const gchar *(*format_stats_instance)(LogThreadedSourceDriver *self);
 };
 
 void log_threaded_source_worker_options_defaults(LogThreadedSourceWorkerOptions *options);
@@ -57,5 +60,9 @@ void log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, Glo
 gboolean log_threaded_source_driver_init_method(LogPipe *s);
 gboolean log_threaded_source_driver_deinit_method(LogPipe *s);
 void log_threaded_source_driver_free_method(LogPipe *s);
+
+void log_threaded_source_driver_set_worker_run(LogThreadedSourceDriver *self, LogThreadedSourceWorkerRun run);
+void log_threaded_source_driver_set_worker_request_exit(LogThreadedSourceDriver *self,
+                                                        LogThreadedSourceWorkerRequestExit request_exit);
 
 #endif

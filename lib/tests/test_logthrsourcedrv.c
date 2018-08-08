@@ -51,14 +51,26 @@ _format_stats_instance(LogThreadedSourceDriver *s)
   return "test_threaded_source_driver_stats";
 }
 
+static void
+_run(LogThreadedSourceDriver *s)
+{
+
+}
+
+static void _request_exit(LogThreadedSourceDriver *s) {}
+
 static TestThreadedSourceDriver *
 test_threaded_sd_new(GlobalConfig *cfg)
 {
   TestThreadedSourceDriver *self = g_new0(TestThreadedSourceDriver, 1);
 
   log_threaded_source_driver_init_instance(&self->super, cfg);
-  self->super.super.super.super.generate_persist_name = _generate_persist_name;
+
+  log_threaded_source_driver_set_worker_run(&self->super, _run);
+  log_threaded_source_driver_set_worker_request_exit(&self->super, _request_exit);
+
   self->super.format_stats_instance = _format_stats_instance;
+  self->super.super.super.super.generate_persist_name = _generate_persist_name;
 
   return self;
 }
