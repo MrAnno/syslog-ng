@@ -33,6 +33,7 @@
 struct _LogThreadedSourceWorker
 {
   LogSource super;
+  LogThreadedSourceDriver *control;
   struct iv_task fetcher_task;
   struct iv_event shutdown_event;
   WorkerOptions options;
@@ -48,15 +49,17 @@ log_threaded_source_worker_logpipe(LogThreadedSourceWorker *self)
 }
 
 static void
-log_threaded_source_worker_set_options(LogThreadedSourceWorker *self, LogPipe *control,
+log_threaded_source_worker_set_options(LogThreadedSourceWorker *self, LogThreadedSourceDriver *control,
                                        LogThreadedSourceWorkerOptions *options,
                                        const gchar *stats_id, const gchar *stats_instance)
 {
-  /* Position tracking is disabled, should we support it? */
-  log_source_set_options(&self->super, &options->super, stats_id, stats_instance, TRUE, FALSE, control->expr_node);
+  /* TODO: support position tracking */
+  log_source_set_options(&self->super, &options->super, stats_id, stats_instance, TRUE, FALSE,
+                         control->super.super.super.expr_node);
 
-  /*log_pipe_unref(self->control);
-  log_pipe_ref(control);*/
+  log_pipe_unref(&self->control->super.super.super);
+  log_pipe_ref(&control->super.super.super);
+  self->control = control;
 }
 
 void
@@ -127,12 +130,12 @@ _shutdown(gpointer data)
 static void
 _worker_thread(gpointer data)
 {
-  LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+  LogThreadedSourceDriver *self = (LogThreadedSourceDriver *) data;
 
   iv_init();
 
-  iv_event_register(&self->shutdown_event);
-  _schedule_fetcher_task(self);
+  iv_event_register(&self->worker->shutdown_event);
+  _schedule_fetcher_task(self->worker);
 
   iv_main();
   iv_deinit();
@@ -141,9 +144,9 @@ _worker_thread(gpointer data)
 static void
 _worker_schedule_exit(gpointer data)
 {
-  LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) data;
+  LogThreadedSourceDriver *self = (LogThreadedSourceDriver *) data;
 
-  iv_event_post(&self->shutdown_event);
+  iv_event_post(&self->worker->shutdown_event);
 }
 
 static gboolean
@@ -153,7 +156,7 @@ log_threaded_source_worker_init(LogPipe *s)
   if (!log_source_init(s))
     return FALSE;
 
-  main_loop_create_worker_thread(_worker_thread, _worker_schedule_exit, self, &self->options);
+  main_loop_create_worker_thread(_worker_thread, _worker_schedule_exit, self->control, &self->options);
 
   return TRUE;
 }
@@ -191,7 +194,7 @@ log_threaded_source_driver_init_method(LogPipe *s)
   g_assert(self->format_stats_instance);
 
   log_threaded_source_worker_options_init(&self->worker_options, cfg, self->super.super.group);
-  log_threaded_source_worker_set_options(self->worker, s, &self->worker_options,
+  log_threaded_source_worker_set_options(self->worker, self, &self->worker_options,
                                          self->super.super.id, self->format_stats_instance(self));
   // state
 
