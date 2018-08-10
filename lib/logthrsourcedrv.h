@@ -30,12 +30,14 @@
 #include "logsource.h"
 #include "cfg.h"
 #include "logpipe.h"
+#include "logmsg/logmsg.h"
 
 typedef struct _LogThreadedSourceDriver LogThreadedSourceDriver;
 typedef struct _LogThreadedSourceWorker LogThreadedSourceWorker;
 
 typedef void (*LogThreadedSourceWorkerRun)(LogThreadedSourceDriver *);
 typedef void (*LogThreadedSourceWorkerRequestExit)(LogThreadedSourceDriver *);
+typedef void (*LogThreadedSourceWorkerWakeup)(LogThreadedSourceDriver *);
 
 typedef struct _LogThreadedSourceWorkerOptions
 {
@@ -64,5 +66,12 @@ void log_threaded_source_driver_free_method(LogPipe *s);
 void log_threaded_source_driver_set_worker_run(LogThreadedSourceDriver *self, LogThreadedSourceWorkerRun run);
 void log_threaded_source_driver_set_worker_request_exit(LogThreadedSourceDriver *self,
                                                         LogThreadedSourceWorkerRequestExit request_exit);
+
+void log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
+
+/* for internal usage */
+void _log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeup wakeup);
+void _log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
+gboolean _log_threaded_source_free_to_send(LogThreadedSourceDriver *self);
 
 #endif
