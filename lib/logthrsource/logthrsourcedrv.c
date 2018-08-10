@@ -229,29 +229,29 @@ log_threaded_source_wakeup(LogThreadedSourceDriver *self)
 }
 
 void
-_log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeup wakeup)
+log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeup wakeup)
 {
   self->worker->wakeup = wakeup;
 }
 
 void
-_log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
+log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
 {
   log_source_post(&self->worker->super, msg);
 }
 
 gboolean
-_log_threaded_source_free_to_send(LogThreadedSourceDriver *self)
+log_threaded_source_free_to_send(LogThreadedSourceDriver *self)
 {
   return log_source_free_to_send(&self->worker->super);
 }
 
 void
-log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
+log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg)
 {
   LogThreadedSourceWorker *worker = self->worker;
 
-  _log_threaded_source_post(self, msg);
+  log_threaded_source_post(self, msg);
 
   /*
    * The wakeup lock must be held before calling free_to_send() and suspend(),
@@ -264,7 +264,7 @@ log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
    */
 
   g_mutex_lock(worker->wakeup_cond.lock);
-  if (!_log_threaded_source_free_to_send(self))
+  if (!log_threaded_source_free_to_send(self))
     log_threaded_source_worker_suspend(worker);
   g_mutex_unlock(worker->wakeup_cond.lock);
 }

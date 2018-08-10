@@ -67,11 +67,12 @@ void log_threaded_source_driver_set_worker_run(LogThreadedSourceDriver *self, Lo
 void log_threaded_source_driver_set_worker_request_exit(LogThreadedSourceDriver *self,
                                                         LogThreadedSourceWorkerRequestExit request_exit);
 
-void log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
+/* blocking API */
+void log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg);
 
-/* for internal usage */
-void _log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeup wakeup);
-void _log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
-gboolean _log_threaded_source_free_to_send(LogThreadedSourceDriver *self);
+/* non-blocking API, use it wisely */
+void log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeup wakeup);
+void log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
+gboolean log_threaded_source_free_to_send(LogThreadedSourceDriver *self);
 
 #endif
