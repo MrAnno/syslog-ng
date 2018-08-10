@@ -24,7 +24,7 @@
 
 #include <criterion/criterion.h>
 
-#include "logthrsourcedrv.h"
+#include "logthrsource/logthrsourcedrv.h"
 #include "apphook.h"
 #include "mainloop.h"
 #include "mainloop-worker.h"

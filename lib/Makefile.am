@@ -19,6 +19,7 @@ include lib/scanner/list-scanner/Makefile.am
 include lib/scanner/kv-scanner/Makefile.am
 include lib/str-repr/Makefile.am
 include lib/secret-storage/Makefile.am
+include lib/logthrsource/Makefile.am
 
 LSNG_RELEASE		= $(shell echo @PACKAGE_VERSION@ | cut -d. -f1,2)
 
@@ -125,7 +126,6 @@ pkginclude_HEADERS			+= \
 	lib/logsource.h			\
 	lib/logstamp.h			\
 	lib/logthrdestdrv.h		\
-	lib/logthrsourcedrv.h   \
 	lib/logwriter.h			\
 	lib/mainloop.h			\
 	lib/signal-handler.h		\
@@ -215,7 +215,6 @@ lib_libsyslog_ng_la_SOURCES		= \
 	lib/logsource.c			\
 	lib/logstamp.c			\
 	lib/logthrdestdrv.c		\
-	lib/logthrsourcedrv.c   \
 	lib/logwriter.c			\
 	lib/mainloop.c			\
 	lib/signal-handler.c		\
@@ -279,7 +278,8 @@ lib_libsyslog_ng_la_SOURCES		= \
 	$(debugger_sources)		\
 	$(compat_sources)     		\
 	$(logmsg_sources)		\
-	$(str_repr_sources)
+	$(str_repr_sources)		\
+	$(logthrsource_sources)
 
 lib_libsyslog_ng_la_CFLAGS		= \
 	$(AM_CFLAGS) \
