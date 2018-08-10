@@ -44,8 +44,8 @@ struct _LogThreadedSourceWorker
   WakeupCondition wakeup_cond;
   WorkerOptions options;
 
-  void (*run)(LogThreadedSourceDriver *self);
-  void (*request_exit)(LogThreadedSourceDriver *self);
+  LogThreadedSourceWorkerRun run;
+  LogThreadedSourceWorkerRequestExit request_exit;
   LogThreadedSourceWorkerWakeup wakeup;
 };
 
