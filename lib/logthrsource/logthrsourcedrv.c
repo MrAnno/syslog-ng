@@ -237,6 +237,7 @@ log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceW
 void
 log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
 {
+  /* TODO: offload (main_loop_io_worker_job_submit) */
   log_source_post(&self->worker->super, msg);
 }
 
