@@ -25,13 +25,45 @@
 #ifndef LOGTHRFETCHERDRV_H
 #define LOGTHRFETCHERDRV_H
 
+#include "syslog-ng.h"
 #include "logthrsourcedrv.h"
+#include "logmsg/logmsg.h"
+
+#include <iv.h>
+#include <iv_event.h>
 
 typedef struct _LogThreadedFetcherDriver LogThreadedFetcherDriver;
+
+typedef enum
+{
+  THREADED_FETCH_ERROR,
+  THREADED_FETCH_NOT_CONNECTED,
+  THREADED_FETCH_SUCCESS
+} ThreadedFetchResult;
+
+typedef struct _LogThreadedFetchResult
+{
+  ThreadedFetchResult result;
+  LogMessage *msg;
+} LogThreadedFetchResult;
 
 struct _LogThreadedFetcherDriver
 {
   LogThreadedSourceDriver super;
+  struct iv_task fetch_task;
+  struct iv_event wakeup_event;
+  struct iv_event shutdown_event;
+
+  void (*thread_init)(LogThreadedFetcherDriver *self);
+  void (*thread_deinit)(LogThreadedFetcherDriver *self);
+  gboolean (*connect)(LogThreadedFetcherDriver *self);
+  void (*disconnect)(LogThreadedFetcherDriver *self);
+  LogThreadedFetchResult (*fetch)(LogThreadedFetcherDriver *self);
 };
+
+void log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, GlobalConfig *cfg);
+gboolean log_threaded_fetcher_driver_init_method(LogPipe *s);
+gboolean log_threaded_fetcher_driver_deinit_method(LogPipe *s);
+void log_threaded_fetcher_driver_free_method(LogPipe *s);
 
 #endif
