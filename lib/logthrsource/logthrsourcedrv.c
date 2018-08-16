@@ -22,13 +22,9 @@
  *
  */
 
-/* TODO: scratch-buffers GC call + reclaim  */
-
 #include "logthrsourcedrv.h"
 #include "mainloop-worker.h"
-
-#include <iv.h>
-#include <iv_event.h>
+#include "messages.h"
 
 typedef struct _WakeupCondition
 {
@@ -256,7 +252,13 @@ log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceW
 void
 log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
 {
-  /* TODO: offload (main_loop_io_worker_job_submit) */
+  /*
+   * TODO: offload (main_loop_io_worker_job_submit)
+   *
+   * In this case, we should modify or split log_source_post(), because
+   * free_to_send() has to be called before log_pipe_queue() but after
+   * decrementing the window.
+   */
   log_source_post(&self->worker->super, msg);
 }
 
