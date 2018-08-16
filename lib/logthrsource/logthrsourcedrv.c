@@ -98,6 +98,24 @@ log_threaded_source_worker_suspend(LogThreadedSourceWorker *self)
 }
 
 static void
+log_threaded_source_worker_run(LogThreadedSourceWorker *self)
+{
+  msg_debug("Worker thread started", evt_tag_str("driver", self->control->super.super.id));
+
+  self->run(self->control);
+
+  msg_debug("Worker thread finished", evt_tag_str("driver", self->control->super.super.id));
+}
+
+static void
+log_threaded_source_worker_request_exit(LogThreadedSourceWorker *self)
+{
+  /* TODO force exit after timeout */
+  msg_debug("Requesting worker thread exit", evt_tag_str("driver", self->control->super.super.id));
+  self->request_exit(self->control);
+}
+
+static void
 _worker_wakeup(LogSource *s)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
@@ -115,8 +133,9 @@ log_threaded_source_worker_init(LogPipe *s)
   g_assert(self->run);
   g_assert(self->request_exit);
 
-  main_loop_create_worker_thread((WorkerThreadFunc) self->run, (WorkerExitNotificationFunc) self->request_exit,
-                                 self->control, &self->options);
+  main_loop_create_worker_thread((WorkerThreadFunc) log_threaded_source_worker_run,
+                                 (WorkerExitNotificationFunc) log_threaded_source_worker_request_exit,
+                                 self, &self->options);
 
   return TRUE;
 }
