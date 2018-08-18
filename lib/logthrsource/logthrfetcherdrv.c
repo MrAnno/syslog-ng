@@ -35,7 +35,14 @@ _worker_run(LogThreadedSourceDriver *s)
   iv_event_register(&self->shutdown_event);
   iv_task_register(&self->fetch_task);
 
+  if (self->thread_init)
+    self->thread_init(self);
+
   iv_main();
+
+  if (self->thread_deinit)
+    self->thread_deinit(self);
+
   iv_deinit();
 }
 
