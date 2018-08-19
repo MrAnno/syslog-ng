@@ -408,9 +408,8 @@ afinter_postpone_mark(gint mark_freq)
 {
   if (mark_freq > 0)
     {
-      iv_validate_now();
       g_static_mutex_lock(&internal_mark_target_lock);
-      next_mark_target = iv_now;
+      clock_gettime(CLOCK_MONOTONIC, &next_mark_target);
       next_mark_target.tv_sec += mark_freq;
       g_static_mutex_unlock(&internal_mark_target_lock);
     }
