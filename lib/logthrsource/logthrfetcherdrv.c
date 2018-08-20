@@ -23,6 +23,23 @@
  */
 
 #include "logthrfetcherdrv.h"
+#include "messages.h"
+
+static inline void
+_connect(LogThreadedFetcherDriver *self)
+{
+  msg_trace("Fetcher connect()", evt_tag_str("driver", self->super.super.super.id));
+  if (self->connect)
+    self->connect(self);
+}
+
+static inline void
+_disconnect(LogThreadedFetcherDriver *self)
+{
+  msg_trace("Fetcher disconnect()", evt_tag_str("driver", self->super.super.super.id));
+  if (self->disconnect)
+    self->disconnect(self);
+}
 
 static void
 _worker_run(LogThreadedSourceDriver *s)
@@ -38,7 +55,11 @@ _worker_run(LogThreadedSourceDriver *s)
   if (self->thread_init)
     self->thread_init(self);
 
+  _connect(self);
+
   iv_main();
+
+  _disconnect(self);
 
   if (self->thread_deinit)
     self->thread_deinit(self);
@@ -63,17 +84,51 @@ _wakeup(LogThreadedSourceDriver *s)
 }
 
 static void
+_start_reconnect_timer(LogThreadedFetcherDriver *self)
+{
+  iv_validate_now();
+  self->reconnect_timer.expires  = iv_now;
+  self->reconnect_timer.expires.tv_sec += self->time_reopen;
+  iv_timer_register(&self->reconnect_timer);
+}
+
+static inline void
+_schedule_next_fetch_if_free_to_send(LogThreadedFetcherDriver *self)
+{
+  if (log_threaded_source_free_to_send(&self->super))
+    iv_task_register(&self->fetch_task);
+}
+
+static void
 _fetch(gpointer data)
 {
   LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
 
+  msg_trace("Fetcher fetch()", evt_tag_str("driver", self->super.super.super.id));
+
   LogThreadedFetchResult fetch_result = self->fetch(self);
 
-  // TODO error handling, connect, etc.
-  log_threaded_source_post(&self->super, fetch_result.msg);
+  switch (fetch_result.result)
+    {
+    case THREADED_FETCH_ERROR:
+      msg_error("Error during fetching messages", evt_tag_str("driver", self->super.super.super.id));
+      _schedule_next_fetch_if_free_to_send(self);
+      break;
 
-  if (log_threaded_source_free_to_send(&self->super))
-    iv_task_register(&self->fetch_task);
+    case THREADED_FETCH_NOT_CONNECTED:
+      msg_info("Fetcher disconnected while receiving messages, reconnecting",
+               evt_tag_str("driver", self->super.super.super.id));
+      _start_reconnect_timer(self);
+      break;
+
+    case THREADED_FETCH_SUCCESS:
+      log_threaded_source_post(&self->super, fetch_result.msg);
+      _schedule_next_fetch_if_free_to_send(self);
+      break;
+
+    default:
+      g_assert_not_reached();
+    }
 }
 
 static void
@@ -96,18 +151,34 @@ _shutdown_event_handler(gpointer data)
   if (iv_task_registered(&self->fetch_task))
     iv_task_unregister(&self->fetch_task);
 
+  if (iv_timer_registered(&self->reconnect_timer))
+    iv_timer_unregister(&self->reconnect_timer);
+
   iv_quit();
+}
+
+static void
+_reconnect(gpointer data)
+{
+  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+
+  _connect(self);
+  _schedule_next_fetch_if_free_to_send(self);
 }
 
 gboolean
 log_threaded_fetcher_driver_init_method(LogPipe *s)
 {
   LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  GlobalConfig *cfg = log_pipe_get_config(s);
 
   if (!log_threaded_source_driver_init_method(s))
     return FALSE;
 
   g_assert(self->fetch);
+
+  if (cfg && self->time_reopen == -1)
+    self->time_reopen = cfg->time_reopen;
 
   return TRUE;
 }
@@ -129,6 +200,8 @@ log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, Global
 {
   log_threaded_source_driver_init_instance(&self->super, cfg);
 
+  self->time_reopen = -1;
+
   IV_TASK_INIT(&self->fetch_task);
   self->fetch_task.cookie = self;
   self->fetch_task.handler = _fetch;
@@ -140,6 +213,10 @@ log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, Global
   IV_EVENT_INIT(&self->shutdown_event);
   self->shutdown_event.cookie = self;
   self->shutdown_event.handler = _shutdown_event_handler;
+
+  IV_TIMER_INIT(&self->reconnect_timer);
+  self->reconnect_timer.cookie = self;
+  self->reconnect_timer.handler = _reconnect;
 
   log_threaded_source_driver_set_worker_run(&self->super, _worker_run);
   log_threaded_source_driver_set_worker_request_exit(&self->super, _worker_request_exit);

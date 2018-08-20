@@ -28,6 +28,7 @@
 #include "syslog-ng.h"
 #include "logthrsourcedrv.h"
 #include "logmsg/logmsg.h"
+#include "compat/time.h"
 
 #include <iv.h>
 #include <iv_event.h>
@@ -50,9 +51,11 @@ typedef struct _LogThreadedFetchResult
 struct _LogThreadedFetcherDriver
 {
   LogThreadedSourceDriver super;
+  time_t time_reopen;
   struct iv_task fetch_task;
   struct iv_event wakeup_event;
   struct iv_event shutdown_event;
+  struct iv_timer reconnect_timer;
 
   void (*thread_init)(LogThreadedFetcherDriver *self);
   void (*thread_deinit)(LogThreadedFetcherDriver *self);
