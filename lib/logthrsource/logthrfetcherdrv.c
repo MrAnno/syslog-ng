@@ -26,6 +26,22 @@
 #include "messages.h"
 
 static inline void
+_thread_init(LogThreadedFetcherDriver *self)
+{
+  msg_trace("Fetcher thread_init()", evt_tag_str("driver", self->super.super.super.id));
+  if (self->thread_init)
+    self->thread_init(self);
+}
+
+static inline void
+_thread_deinit(LogThreadedFetcherDriver *self)
+{
+  msg_trace("Fetcher thread_deinit()", evt_tag_str("driver", self->super.super.super.id));
+  if (self->thread_deinit)
+    self->thread_deinit(self);
+}
+
+static inline void
 _connect(LogThreadedFetcherDriver *self)
 {
   msg_trace("Fetcher connect()", evt_tag_str("driver", self->super.super.super.id));
@@ -52,17 +68,13 @@ _worker_run(LogThreadedSourceDriver *s)
   iv_event_register(&self->shutdown_event);
   iv_task_register(&self->fetch_task);
 
-  if (self->thread_init)
-    self->thread_init(self);
-
+  _thread_init(self);
   _connect(self);
 
   iv_main();
 
   _disconnect(self);
-
-  if (self->thread_deinit)
-    self->thread_deinit(self);
+  _thread_deinit(self);
 
   iv_deinit();
 }
@@ -141,10 +153,8 @@ _wakeup_event_handler(gpointer data)
 }
 
 static void
-_shutdown_event_handler(gpointer data)
+_stop_watches(LogThreadedFetcherDriver *self)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
-
   iv_event_unregister(&self->wakeup_event);
   iv_event_unregister(&self->shutdown_event);
 
@@ -153,6 +163,14 @@ _shutdown_event_handler(gpointer data)
 
   if (iv_timer_registered(&self->reconnect_timer))
     iv_timer_unregister(&self->reconnect_timer);
+}
+
+static void
+_shutdown_event_handler(gpointer data)
+{
+  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+
+  _stop_watches(self);
 
   iv_quit();
 }
@@ -164,6 +182,26 @@ _reconnect(gpointer data)
 
   _connect(self);
   _schedule_next_fetch_if_free_to_send(self);
+}
+
+static void
+_init_watches(LogThreadedFetcherDriver *self)
+{
+  IV_TASK_INIT(&self->fetch_task);
+  self->fetch_task.cookie = self;
+  self->fetch_task.handler = _fetch;
+
+  IV_EVENT_INIT(&self->wakeup_event);
+  self->wakeup_event.cookie = self;
+  self->wakeup_event.handler = _wakeup_event_handler;
+
+  IV_EVENT_INIT(&self->shutdown_event);
+  self->shutdown_event.cookie = self;
+  self->shutdown_event.handler = _shutdown_event_handler;
+
+  IV_TIMER_INIT(&self->reconnect_timer);
+  self->reconnect_timer.cookie = self;
+  self->reconnect_timer.handler = _reconnect;
 }
 
 gboolean
@@ -202,21 +240,7 @@ log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, Global
 
   self->time_reopen = -1;
 
-  IV_TASK_INIT(&self->fetch_task);
-  self->fetch_task.cookie = self;
-  self->fetch_task.handler = _fetch;
-
-  IV_EVENT_INIT(&self->wakeup_event);
-  self->wakeup_event.cookie = self;
-  self->wakeup_event.handler = _wakeup_event_handler;
-
-  IV_EVENT_INIT(&self->shutdown_event);
-  self->shutdown_event.cookie = self;
-  self->shutdown_event.handler = _shutdown_event_handler;
-
-  IV_TIMER_INIT(&self->reconnect_timer);
-  self->reconnect_timer.cookie = self;
-  self->reconnect_timer.handler = _reconnect;
+  _init_watches(self);
 
   log_threaded_source_driver_set_worker_run(&self->super, _worker_run);
   log_threaded_source_driver_set_worker_request_exit(&self->super, _worker_request_exit);
