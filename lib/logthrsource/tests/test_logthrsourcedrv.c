@@ -87,22 +87,22 @@ create_threaded_source(void)
 }
 
 static void
-start_test_threaded_source(TestThreadedSourceDriver *self)
+start_test_threaded_source(TestThreadedSourceDriver *s)
 {
-  cr_assert(log_pipe_init(&self->super.super.super.super));
+  cr_assert(log_pipe_init(&s->super.super.super.super));
 }
 
 static void
-stop_test_threaded_source(TestThreadedSourceDriver *self)
+request_exit_and_wait_for_stop(TestThreadedSourceDriver *s)
 {
   main_loop_sync_worker_startup_and_teardown();
 }
 
 static void
-destroy_test_threaded_source(TestThreadedSourceDriver *self)
+destroy_test_threaded_source(TestThreadedSourceDriver *s)
 {
-  cr_assert(log_pipe_deinit(&self->super.super.super.super));
-  log_pipe_unref(&self->super.super.super.super);
+  cr_assert(log_pipe_deinit(&s->super.super.super.super));
+  log_pipe_unref(&s->super.super.super.super);
 }
 
 static void
@@ -119,8 +119,6 @@ teardown(void)
   main_loop_deinit(main_loop);
   app_shutdown();
 }
-
-TestSuite(logthrsourcedrv, .init = setup, .fini = teardown);
 
 static void
 _run_using_blocking_posts(LogThreadedSourceDriver *s)
@@ -165,6 +163,8 @@ _do_not_ack_messages(LogPipe *s, LogMessage *msg, const LogPathOptions *path_opt
   log_msg_unref(msg);
 }
 
+TestSuite(logthrsourcedrv, .init = setup, .fini = teardown, .timeout = 10);
+
 Test(logthrsourcedrv, test_threaded_source_blocking_post)
 {
   TestThreadedSourceDriver *s = create_threaded_source();
@@ -174,7 +174,7 @@ Test(logthrsourcedrv, test_threaded_source_blocking_post)
   log_threaded_source_driver_set_worker_request_exit(&s->super, _request_exit);
 
   start_test_threaded_source(s);
-  stop_test_threaded_source(s);
+  request_exit_and_wait_for_stop(s);
 
   StatsCounterItem *recvd_messages = _log_threaded_source_driver_get_source(&s->super)->recvd_messages;
   cr_assert(stats_counter_get(recvd_messages) == 10);
@@ -194,7 +194,7 @@ Test(logthrsourcedrv, test_threaded_source_suspend)
   log_threaded_source_driver_set_worker_request_exit(&s->super, _request_exit);
 
   start_test_threaded_source(s);
-  stop_test_threaded_source(s);
+  request_exit_and_wait_for_stop(s);
 
   StatsCounterItem *recvd_messages = _log_threaded_source_driver_get_source(&s->super)->recvd_messages;
   cr_assert(stats_counter_get(recvd_messages) == 5);

@@ -28,7 +28,6 @@
 
 typedef struct _WakeupCondition
 {
-  GMutex *lock;
   GCond *cond;
   gboolean awoken;
 } WakeupCondition;
@@ -37,6 +36,7 @@ struct _LogThreadedSourceWorker
 {
   LogSource super;
   LogThreadedSourceDriver *control;
+  GMutex *lock;
   WakeupCondition wakeup_cond;
   WorkerOptions options;
 
@@ -92,7 +92,7 @@ log_threaded_source_suspend(LogThreadedSourceDriver *self)
 
   worker->wakeup_cond.awoken = FALSE;
   while (!worker->wakeup_cond.awoken)
-    g_cond_wait(worker->wakeup_cond.cond, worker->wakeup_cond.lock);
+    g_cond_wait(worker->wakeup_cond.cond, worker->lock);
 }
 
 static void
@@ -100,10 +100,10 @@ log_threaded_source_wakeup(LogThreadedSourceDriver *self)
 {
   LogThreadedSourceWorker *worker = self->worker;
 
-  g_mutex_lock(worker->wakeup_cond.lock);
+  g_mutex_lock(worker->lock);
   worker->wakeup_cond.awoken = TRUE;
   g_cond_signal(worker->wakeup_cond.cond);
-  g_mutex_unlock(worker->wakeup_cond.lock);
+  g_mutex_unlock(worker->lock);
 }
 
 static void
@@ -156,7 +156,7 @@ log_threaded_source_worker_free(LogPipe *s)
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
 
   g_cond_free(self->wakeup_cond.cond);
-  g_mutex_free(self->wakeup_cond.lock);
+  g_mutex_free(self->lock);
 
   log_source_free(s);
 }
@@ -167,7 +167,7 @@ log_threaded_source_worker_new(GlobalConfig *cfg)
   LogThreadedSourceWorker *self = g_new0(LogThreadedSourceWorker, 1);
   log_source_init_instance(&self->super, cfg);
 
-  self->wakeup_cond.lock = g_mutex_new();
+  self->lock = g_mutex_new();
   self->wakeup_cond.cond = g_cond_new();
 
   self->options.is_external_input = TRUE;
@@ -296,10 +296,10 @@ log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg
    * "schedule_wakeup" event are guaranteed to be scheduled in the right order.
    */
 
-  g_mutex_lock(worker->wakeup_cond.lock);
+  g_mutex_lock(worker->lock);
   if (!log_threaded_source_free_to_send(self))
     log_threaded_source_suspend(self);
-  g_mutex_unlock(worker->wakeup_cond.lock);
+  g_mutex_unlock(worker->lock);
 }
 
 void
