@@ -116,13 +116,12 @@ ml_batched_timer_postpone(MlBatchedTimer *self, glong sec)
 {
   struct timespec next_expires;
 
-  iv_validate_now();
-
   /* we deliberately use nsec == 0 in order to increase the likelihood that
    * we target the same second, in case only a fraction of a second has
    * passed between two updates.  */
+  clock_gettime(CLOCK_MONOTONIC, &next_expires);
   next_expires.tv_nsec = 0;
-  next_expires.tv_sec = iv_now.tv_sec + sec;
+  next_expires.tv_sec += sec;
   ml_batched_timer_update(self, &next_expires);
 }
 
