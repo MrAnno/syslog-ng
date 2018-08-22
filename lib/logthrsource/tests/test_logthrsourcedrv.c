@@ -37,6 +37,8 @@ typedef struct _TestThreadedSourceDriver
 {
   LogThreadedSourceDriver super;
   gint num_of_messages_to_generate;
+  gboolean suspended;
+  gboolean exit_requested;
 } TestThreadedSourceDriver;
 
 MainLoopOptions main_loop_options = {0};
@@ -132,7 +134,36 @@ _run_using_blocking_posts(LogThreadedSourceDriver *s)
     }
 }
 
-static void _request_exit(LogThreadedSourceDriver *s) {}
+static void
+_run_simple(LogThreadedSourceDriver *s)
+{
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
+
+  for (gint i = 0; i < self->num_of_messages_to_generate; ++i)
+    {
+      LogMessage *msg = create_sample_message();
+      log_threaded_source_post(&self->super, msg);
+
+      if (!log_threaded_source_free_to_send(&self->super))
+        {
+          self->suspended = TRUE;
+          break;
+        }
+    }
+}
+
+static void
+_request_exit(LogThreadedSourceDriver *s)
+{
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
+  self->exit_requested = TRUE;
+}
+
+static void
+_do_not_ack_messages(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options)
+{
+  log_msg_unref(msg);
+}
 
 Test(logthrsourcedrv, test_threaded_source_blocking_post)
 {
@@ -147,6 +178,28 @@ Test(logthrsourcedrv, test_threaded_source_blocking_post)
 
   StatsCounterItem *recvd_messages = _log_threaded_source_driver_get_source(&s->super)->recvd_messages;
   cr_assert(stats_counter_get(recvd_messages) == 10);
+  cr_assert(s->exit_requested);
+
+  destroy_test_threaded_source(s);
+}
+
+Test(logthrsourcedrv, test_threaded_source_suspend)
+{
+  TestThreadedSourceDriver *s = create_threaded_source();
+
+  s->num_of_messages_to_generate = 5;
+  s->super.worker_options.super.init_window_size = 5;
+  s->super.super.super.super.queue = _do_not_ack_messages;
+  log_threaded_source_driver_set_worker_run(&s->super, _run_simple);
+  log_threaded_source_driver_set_worker_request_exit(&s->super, _request_exit);
+
+  start_test_threaded_source(s);
+  stop_test_threaded_source(s);
+
+  StatsCounterItem *recvd_messages = _log_threaded_source_driver_get_source(&s->super)->recvd_messages;
+  cr_assert(stats_counter_get(recvd_messages) == 5);
+  cr_assert(s->suspended);
+  cr_assert(s->exit_requested);
 
   destroy_test_threaded_source(s);
 }
