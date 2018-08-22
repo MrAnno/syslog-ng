@@ -86,11 +86,13 @@ log_threaded_source_worker_options_destroy(LogThreadedSourceWorkerOptions *optio
 
 /* The wakeup lock must be held before calling this function. */
 static void
-log_threaded_source_worker_suspend(LogThreadedSourceWorker *self)
+log_threaded_source_suspend(LogThreadedSourceDriver *self)
 {
-  self->wakeup_cond.awoken = FALSE;
-  while (!self->wakeup_cond.awoken)
-    g_cond_wait(self->wakeup_cond.cond, self->wakeup_cond.lock);
+  LogThreadedSourceWorker *worker = self->worker;
+
+  worker->wakeup_cond.awoken = FALSE;
+  while (!worker->wakeup_cond.awoken)
+    g_cond_wait(worker->wakeup_cond.cond, worker->wakeup_cond.lock);
 }
 
 static void
@@ -296,7 +298,7 @@ log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg
 
   g_mutex_lock(worker->wakeup_cond.lock);
   if (!log_threaded_source_free_to_send(self))
-    log_threaded_source_worker_suspend(worker);
+    log_threaded_source_suspend(self);
   g_mutex_unlock(worker->wakeup_cond.lock);
 }
 
