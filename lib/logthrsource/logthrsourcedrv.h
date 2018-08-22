@@ -75,4 +75,7 @@ void log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSo
 void log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
 gboolean log_threaded_source_free_to_send(LogThreadedSourceDriver *self);
 
+/* for testing */
+LogSource *_log_threaded_source_driver_get_source(LogThreadedSourceDriver *self);
+
 #endif

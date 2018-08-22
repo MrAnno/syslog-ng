@@ -94,6 +94,17 @@ log_threaded_source_worker_suspend(LogThreadedSourceWorker *self)
 }
 
 static void
+log_threaded_source_wakeup(LogThreadedSourceDriver *self)
+{
+  LogThreadedSourceWorker *worker = self->worker;
+
+  g_mutex_lock(worker->wakeup_cond.lock);
+  worker->wakeup_cond.awoken = TRUE;
+  g_cond_signal(worker->wakeup_cond.cond);
+  g_mutex_unlock(worker->wakeup_cond.lock);
+}
+
+static void
 log_threaded_source_worker_run(LogThreadedSourceWorker *self)
 {
   msg_debug("Worker thread started", evt_tag_str("driver", self->control->super.super.id));
@@ -109,6 +120,7 @@ log_threaded_source_worker_request_exit(LogThreadedSourceWorker *self)
   /* TODO force exit after timeout */
   msg_debug("Requesting worker thread exit", evt_tag_str("driver", self->control->super.super.id));
   self->request_exit(self->control);
+  log_threaded_source_wakeup(self->control);
 }
 
 static void
@@ -232,15 +244,10 @@ log_threaded_source_driver_set_worker_request_exit(LogThreadedSourceDriver *self
   self->worker->request_exit = request_exit;
 }
 
-static void
-log_threaded_source_wakeup(LogThreadedSourceDriver *self)
+LogSource *
+_log_threaded_source_driver_get_source(LogThreadedSourceDriver *self)
 {
-  LogThreadedSourceWorker *worker = self->worker;
-
-  g_mutex_lock(worker->wakeup_cond.lock);
-  worker->wakeup_cond.awoken = TRUE;
-  g_cond_signal(worker->wakeup_cond.cond);
-  g_mutex_unlock(worker->wakeup_cond.lock);
+  return &self->worker->super;
 }
 
 void
@@ -252,6 +259,8 @@ log_threaded_source_set_wakeup(LogThreadedSourceDriver *self, LogThreadedSourceW
 void
 log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
 {
+  msg_debug("Incoming log message", evt_tag_str("msg", log_msg_get_value(msg, LM_V_MESSAGE, NULL)));
+
   /*
    * TODO: offload (main_loop_io_worker_job_submit)
    *

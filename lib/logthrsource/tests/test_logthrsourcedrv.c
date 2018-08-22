@@ -29,15 +29,18 @@
 #include "mainloop.h"
 #include "mainloop-worker.h"
 #include "cfg.h"
+#include "stats/stats-counter.h"
+#include "logsource.h"
+#include "cr_template.h"
 
 typedef struct _TestThreadedSourceDriver
 {
   LogThreadedSourceDriver super;
+  gint num_of_messages_to_generate;
 } TestThreadedSourceDriver;
 
 MainLoopOptions main_loop_options = {0};
 MainLoop *main_loop;
-TestThreadedSourceDriver *source_driver;
 
 static const gchar *
 _generate_persist_name(const LogPipe *s)
@@ -51,13 +54,13 @@ _format_stats_instance(LogThreadedSourceDriver *s)
   return "test_threaded_source_driver_stats";
 }
 
-static void
-_run(LogThreadedSourceDriver *s)
+static void _source_queue_mock(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options)
 {
+  LogSource *self = (LogSource *) s;
 
+  stats_counter_inc(self->recvd_messages);
+  log_pipe_forward_msg(s, msg, path_options);
 }
-
-static void _request_exit(LogThreadedSourceDriver *s) {}
 
 static TestThreadedSourceDriver *
 test_threaded_sd_new(GlobalConfig *cfg)
@@ -66,53 +69,84 @@ test_threaded_sd_new(GlobalConfig *cfg)
 
   log_threaded_source_driver_init_instance(&self->super, cfg);
 
-  log_threaded_source_driver_set_worker_run(&self->super, _run);
-  log_threaded_source_driver_set_worker_request_exit(&self->super, _request_exit);
-
   self->super.format_stats_instance = _format_stats_instance;
   self->super.super.super.super.generate_persist_name = _generate_persist_name;
+
+  /* this is extremely ugly, but we want to mock out the hard-coded DNS lookup calls inside log_source_queue() */
+  _log_threaded_source_driver_get_source(&self->super)->super.queue = _source_queue_mock;
 
   return self;
 }
 
-static void
-setup_threaded_source(void)
+static TestThreadedSourceDriver *
+create_threaded_source(void)
 {
-  source_driver = test_threaded_sd_new(main_loop_get_current_config(main_loop));
-
-  cr_assert(log_pipe_init(&source_driver->super.super.super.super));
+  return test_threaded_sd_new(main_loop_get_current_config(main_loop));
 }
 
 static void
-teardown_threaded_source(void)
+start_test_threaded_source(TestThreadedSourceDriver *self)
+{
+  cr_assert(log_pipe_init(&self->super.super.super.super));
+}
+
+static void
+stop_test_threaded_source(TestThreadedSourceDriver *self)
 {
   main_loop_sync_worker_startup_and_teardown();
-  cr_assert(log_pipe_deinit(&source_driver->super.super.super.super));
-  log_pipe_unref(&source_driver->super.super.super.super);
+}
+
+static void
+destroy_test_threaded_source(TestThreadedSourceDriver *self)
+{
+  cr_assert(log_pipe_deinit(&self->super.super.super.super));
+  log_pipe_unref(&self->super.super.super.super);
 }
 
 static void
 setup(void)
 {
   app_startup();
-
   main_loop = main_loop_get_instance();
   main_loop_init(main_loop, &main_loop_options);
-  setup_threaded_source();
 }
 
 static void
 teardown(void)
 {
-  teardown_threaded_source();
   main_loop_deinit(main_loop);
   app_shutdown();
 }
 
 TestSuite(logthrsourcedrv, .init = setup, .fini = teardown);
 
-Test(logthrsourcedrv, test_threaded_source_init)
+static void
+_run_using_blocking_posts(LogThreadedSourceDriver *s)
 {
-  cr_assert(1);
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
+
+  for (gint i = 0; i < self->num_of_messages_to_generate; ++i)
+    {
+      LogMessage *msg = create_sample_message();
+      log_threaded_source_blocking_post(&self->super, msg);
+    }
 }
 
+static void _request_exit(LogThreadedSourceDriver *s) {}
+
+Test(logthrsourcedrv, test_threaded_source_blocking_post)
+{
+  TestThreadedSourceDriver *s = create_threaded_source();
+
+  s->num_of_messages_to_generate = 10;
+  log_threaded_source_driver_set_worker_run(&s->super, _run_using_blocking_posts);
+  log_threaded_source_driver_set_worker_request_exit(&s->super, _request_exit);
+
+  start_test_threaded_source(s);
+  stop_test_threaded_source(s);
+
+  StatsCounterItem *recvd_messages = _log_threaded_source_driver_get_source(&s->super)->recvd_messages;
+  cr_assert(stats_counter_get(recvd_messages) == 10);
+
+  destroy_test_threaded_source(s);
+}
