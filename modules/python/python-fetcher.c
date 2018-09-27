@@ -304,6 +304,43 @@ _py_init_object(PythonFetcherDriver *self)
 }
 
 static gboolean
+_py_set_parse_options(PythonFetcherDriver *self)
+{
+  MsgFormatOptions *parse_options = log_threaded_source_driver_get_parse_options(&self->super.super.super.super);
+
+  PyObject *py_parse_options = PyCapsule_New(parse_options, NULL, NULL);
+
+  if (!py_parse_options)
+    {
+      gchar buf[256];
+
+      msg_error("Error creating capsule for message parse options",
+                evt_tag_str("driver", self->super.super.super.super.id),
+                evt_tag_str("class", self->class),
+                evt_tag_str("exception", _py_format_exception_text(buf, sizeof(buf))));
+      _py_finish_exception_handling();
+      return FALSE;
+    }
+
+  if (PyObject_SetAttrString(self->py.instance, "parse_options", py_parse_options) == -1)
+    {
+      gchar buf[256];
+
+      msg_error("Error setting attribute message parse options",
+                evt_tag_str("driver", self->super.super.super.super.id),
+                evt_tag_str("class", self->class),
+                evt_tag_str("exception", _py_format_exception_text(buf, sizeof(buf))));
+      _py_finish_exception_handling();
+
+      Py_DECREF(py_parse_options);
+      return FALSE;
+    }
+
+  Py_DECREF(py_parse_options);
+  return TRUE;
+}
+
+static gboolean
 python_fetcher_open(LogThreadedFetcherDriver *s)
 {
   PythonFetcherDriver *self = (PythonFetcherDriver *) s;
@@ -377,6 +414,9 @@ python_fetcher_init(LogPipe *s)
     self->super.request_exit = python_fetcher_request_exit;
 
   if (!_py_init_object(self))
+    goto fail;
+
+  if (!_py_set_parse_options(self))
     goto fail;
 
   PyGILState_Release(gstate);

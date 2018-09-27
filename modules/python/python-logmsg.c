@@ -298,13 +298,36 @@ py_log_message_parse(PyObject *_none, PyObject *args, PyObject *kwrds)
   const gchar *raw_msg;
   gint raw_msg_length;
 
-  static const gchar *kwlist[] = {"raw_msg", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwrds, "s#", (gchar **) kwlist, &raw_msg, &raw_msg_length))
+  PyObject *py_parse_options;
+
+  static const gchar *kwlist[] = {"raw_msg", "parse_options", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwrds, "s#O", (gchar **) kwlist, &raw_msg, &raw_msg_length, &py_parse_options))
     return NULL;
 
-  // TODO: parse_options...
+  if (!PyCapsule_CheckExact(py_parse_options))
+    {
+      PyErr_Format(PyExc_TypeError, "Parse options (PyCapsule) expected in the second parameter");
+      return NULL;
+    }
 
-  Py_RETURN_NONE;
+  MsgFormatOptions *parse_options = PyCapsule_GetPointer(py_parse_options, NULL);
+  if (!parse_options)
+    {
+      PyErr_Clear();
+      PyErr_Format(PyExc_TypeError, "Invalid parse options (PyCapsule)");
+      return NULL;
+    }
+
+  PyLogMessage *py_msg = PyObject_New(PyLogMessage, &py_log_message_type);
+  if (!py_msg)
+    {
+      PyErr_Format(PyExc_TypeError, "Error creating new PyLogMessage");
+      return NULL;
+    }
+
+  py_msg->msg = log_msg_new(raw_msg, raw_msg_length, NULL, parse_options);
+
+  return (PyObject *) py_msg;
 }
 
 static PyMethodDef py_log_message_methods[] =
