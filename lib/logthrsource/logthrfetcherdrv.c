@@ -158,6 +158,9 @@ _fetch(gpointer data)
 {
   LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
 
+  if (!log_threaded_source_free_to_send(&self->super))
+    return;
+
   msg_trace("Fetcher fetch()", _tag_driver(self));
 
   LogThreadedFetchResult fetch_result = self->fetch(self);
