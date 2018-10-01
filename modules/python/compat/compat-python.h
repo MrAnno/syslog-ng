@@ -26,6 +26,7 @@
 
 #include <Python.h>
 #include "syslog-ng.h"
+#include "logstamp.h"
 
 #if (SYSLOG_NG_ENABLE_PYTHONv2)
 #define PYTHON_BUILTIN_MODULE_NAME "__builtin__"
@@ -36,5 +37,8 @@
 #endif
 
 void py_init_argv(void);
+
+void py_datetime_init(void);
+gboolean py_datetime_to_logstamp(PyObject *py_timestamp, LogStamp *logstamp);
 
 #endif

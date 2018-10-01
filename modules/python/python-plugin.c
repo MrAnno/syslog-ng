@@ -80,6 +80,7 @@ _py_init_interpreter(void)
       py_init_argv();
 
       PyEval_InitThreads();
+      py_datetime_init();
       py_log_message_init();
       py_log_source_init();
       py_log_fetcher_init();

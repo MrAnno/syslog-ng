@@ -26,8 +26,7 @@
 #include "logmsg/logmsg.h"
 #include "messages.h"
 #include "str-utils.h"
-
-#include <datetime.h>
+#include "logstamp.h"
 
 int
 py_is_log_message(PyObject *obj)
@@ -274,19 +273,14 @@ py_log_message_set_pri(PyLogMessage *self, PyObject *args, PyObject *kwrds)
 static PyLogMessage *
 py_log_message_set_timestamp(PyLogMessage *self, PyObject *args, PyObject *kwrds)
 {
-  PyDateTime_DateTime *pytimestamp;
+  PyObject *py_timestamp;
 
   static const gchar *kwlist[] = {"timestamp", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwrds, "O", (gchar **) kwlist, &pytimestamp))
+  if (!PyArg_ParseTupleAndKeywords(args, kwrds, "O", (gchar **) kwlist, &py_timestamp))
     return NULL;
 
-  if (!PyDateTime_Check((PyObject *) pytimestamp))
-    {
-      PyErr_Format(PyExc_TypeError, "datetime expected in the first parameter");
-      return NULL;
-    }
-
-  // TODO: python2-compatible POSIX timestamp conversion
+  if (!py_datetime_to_logstamp((PyObject *) py_timestamp, &self->msg->timestamps[LM_TS_STAMP]))
+    return NULL;
 
   Py_INCREF(self);
   return self;
@@ -356,8 +350,6 @@ PyTypeObject py_log_message_type =
 void
 py_log_message_init(void)
 {
-  PyDateTime_IMPORT;
-
   PyType_Ready(&py_log_message_type);
   PyModule_AddObject(PyImport_AddModule("syslogng"), "LogMessage", (PyObject *) &py_log_message_type);
 }
