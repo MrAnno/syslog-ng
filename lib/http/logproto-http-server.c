@@ -70,13 +70,15 @@ struct _LogProtoHTTPServer
   CreateResponseCallback create_response;
 };
 
-static gboolean
-log_proto_http_server_prepare(LogProtoServer *s, GIOCondition *cond)
+static LogProtoPrepareAction
+log_proto_http_server_prepare(LogProtoServer *s, GIOCondition *cond, gint *timeout)
 {
+  /* TODO timeout */
+
   LogProtoHTTPServer *self = (LogProtoHTTPServer *) s;
 
   if (self->state == STATE_PROCESS_LOG_MESSAGES)
-    return TRUE;
+    return LPPA_FORCE_SCHEDULE_FETCH;
 
   GIOCondition proto_io_direction;
   gboolean unprocessed_data_in_buffer;
@@ -99,7 +101,7 @@ log_proto_http_server_prepare(LogProtoServer *s, GIOCondition *cond)
   if (*cond == 0)
     *cond = proto_io_direction;
 
-  return unprocessed_data_in_buffer;
+  return unprocessed_data_in_buffer ? LPPA_FORCE_SCHEDULE_FETCH : LPPA_POLL_IO;
 }
 
 static LogProtoStatus
