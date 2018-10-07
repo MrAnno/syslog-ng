@@ -51,6 +51,11 @@
 #include "logthrsource/logthrfetcherdrv.h"
 #include "logthrdest/logthrdestdrv.h"
 
+#include "tlscontext.h"
+#include "http/source/socket-options-inet.h"
+#include "http/source/transport-mapper-inet.h"
+#include "http/source/http-source.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -80,6 +85,16 @@ extern StatsOptions *last_stats_options;
 extern LogRewrite *last_rewrite;
 extern CfgArgs *last_block_args;
 extern DNSCacheOptions *last_dns_cache_options;
+
+extern _SocketOptions *_last_sock_options;
+extern _TransportMapper *_last_transport_mapper;
+extern TLSContext *_last_tls_context;
+
+#if ! SYSLOG_NG_ENABLE_IPV6
+#undef AF_INET6
+#define AF_INET6 0; g_assert_not_reached()
+
+#endif
 
 
 #endif

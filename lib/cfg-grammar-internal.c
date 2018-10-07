@@ -47,3 +47,7 @@ DNSCacheOptions *last_dns_cache_options;
 LogRewrite *last_rewrite;
 CfgArgs *last_block_args;
 DNSCacheOptions *last_dns_cache_options;
+
+_SocketOptions *_last_sock_options;
+_TransportMapper *_last_transport_mapper;
+TLSContext *_last_tls_context;
