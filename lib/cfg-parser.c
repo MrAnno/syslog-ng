@@ -172,6 +172,46 @@ static CfgLexerKeyword main_keywords[] =
   { "on",                 KW_YES },
   { "no",                 KW_NO },
   { "off",                KW_NO },
+
+  /* ssl */
+  { "tls",                KW_TLS },
+  { "peer_verify",        KW_PEER_VERIFY },
+  { "key_file",           KW_KEY_FILE },
+  { "cert_file",          KW_CERT_FILE },
+  { "dhparam_file",       KW_DHPARAM_FILE },
+  { "pkcs12_file",        KW_PKCS12_FILE },
+  { "ca_dir",             KW_CA_DIR },
+  { "crl_dir",            KW_CRL_DIR },
+  { "trusted_keys",       KW_TRUSTED_KEYS },
+  { "trusted_dn",         KW_TRUSTED_DN },
+  { "cipher_suite",       KW_CIPHER_SUITE },
+  { "ecdh_curve_list",    KW_ECDH_CURVE_LIST },
+  { "curve_list",         KW_ECDH_CURVE_LIST, KWS_OBSOLETE, "ecdh_curve_list"},
+  { "ssl_options",        KW_SSL_OPTIONS },
+
+  /* inet/tcp */
+  { "localip",            KW_LOCALIP },
+  { "ip",                 KW_IP },
+  { "localport",          KW_LOCALPORT },
+  { "port",               KW_PORT },
+  { "ip_ttl",             KW_IP_TTL },
+  { "ip_tos",             KW_IP_TOS },
+  { "ip_freebind",        KW_IP_FREEBIND },
+  { "so_broadcast",       KW_SO_BROADCAST },
+  { "so_rcvbuf",          KW_SO_RCVBUF },
+  { "so_sndbuf",          KW_SO_SNDBUF },
+  { "so_keepalive",       KW_SO_KEEPALIVE },
+  { "tcp_keep_alive",     KW_SO_KEEPALIVE }, /* old, once deprecated form, but revived in 3.4 */
+  { "tcp_keepalive",      KW_SO_KEEPALIVE }, /* alias for so-keepalive, as tcp is the only option actually using it */
+  { "tcp_keepalive_time", KW_TCP_KEEPALIVE_TIME },
+  { "tcp_keepalive_probes", KW_TCP_KEEPALIVE_PROBES },
+  { "tcp_keepalive_intvl", KW_TCP_KEEPALIVE_INTVL },
+  { "spoof_source",       KW_SPOOF_SOURCE },
+  { "transport",          KW_TRANSPORT },
+  { "ip_protocol",        KW_IP_PROTOCOL },
+  { "max_connections",    KW_MAX_CONNECTIONS },
+  { "listen_backlog",     KW_LISTEN_BACKLOG },
+  { "keep_alive",         KW_KEEP_ALIVE },
   { NULL, 0 }
 };
 

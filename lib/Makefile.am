@@ -286,7 +286,7 @@ lib_libsyslog_ng_la_SOURCES		= \
 lib_libsyslog_ng_la_CFLAGS		= \
 	$(AM_CFLAGS) \
 	@UUID_CFLAGS@ $(libsystemd_CFLAGS) -Wno-shadow -Wno-switch-default
-lib_libsyslog_ng_la_LIBADD		+= @OPENSSL_LIBS@ @UUID_LIBS@
+lib_libsyslog_ng_la_LIBADD		+= @OPENSSL_LIBS@ @UUID_LIBS@ $(ZLIB_LIBS) $(LIBNET_LIBS) $(LIBWRAP_LIBS)
 
 # each line with closely related files (e.g. the ones generated from the same source)
 BUILT_SOURCES += lib/cfg-lex.c lib/cfg-lex.h						\
