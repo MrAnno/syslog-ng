@@ -39,11 +39,6 @@ typedef struct _AFInetSourceDriver
 
 void afinet_sd_set_tls_context(LogDriver *s, TLSContext *tls_context);
 
-AFInetSourceDriver *afinet_sd_new_tcp(GlobalConfig *cfg);
-AFInetSourceDriver *afinet_sd_new_tcp6(GlobalConfig *cfg);
-AFInetSourceDriver *afinet_sd_new_udp(GlobalConfig *cfg);
-AFInetSourceDriver *afinet_sd_new_udp6(GlobalConfig *cfg);
-AFInetSourceDriver *afinet_sd_new_syslog(GlobalConfig *cfg);
 AFInetSourceDriver *afinet_sd_new_network(GlobalConfig *cfg);
 
 void afinet_sd_set_localport(LogDriver *self, gchar *service);

@@ -132,41 +132,6 @@ afinet_sd_new_instance(TransportMapper *transport_mapper, GlobalConfig *cfg)
 }
 
 AFInetSourceDriver *
-afinet_sd_new_tcp(GlobalConfig *cfg)
-{
-  return afinet_sd_new_instance(transport_mapper_tcp_new(), cfg);
-}
-
-AFInetSourceDriver *
-afinet_sd_new_tcp6(GlobalConfig *cfg)
-{
-  return afinet_sd_new_instance(transport_mapper_tcp6_new(), cfg);
-}
-
-
-AFInetSourceDriver *
-afinet_sd_new_udp(GlobalConfig *cfg)
-{
-  return afinet_sd_new_instance(transport_mapper_udp_new(), cfg);
-}
-
-AFInetSourceDriver *
-afinet_sd_new_udp6(GlobalConfig *cfg)
-{
-  return afinet_sd_new_instance(transport_mapper_udp6_new(), cfg);
-}
-
-
-AFInetSourceDriver *
-afinet_sd_new_syslog(GlobalConfig *cfg)
-{
-  AFInetSourceDriver *self = afinet_sd_new_instance(transport_mapper_syslog_new(), cfg);
-
-  self->super.reader_options.parse_options.flags |= LP_SYSLOG_PROTOCOL;
-  return self;
-}
-
-AFInetSourceDriver *
 afinet_sd_new_network(GlobalConfig *cfg)
 {
   AFInetSourceDriver *self = afinet_sd_new_instance(transport_mapper_network_new(), cfg);

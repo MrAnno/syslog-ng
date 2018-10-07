@@ -21,7 +21,6 @@
  *
  */
 
-#include "afsocket.h"
 #include "driver.h"
 #include "cfg-parser.h"
 #include "afsocket-grammar.h"
@@ -32,16 +31,7 @@ int afsocket_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
 
 static CfgLexerKeyword afsocket_keywords[] =
 {
-  { "unix_dgram", KW_UNIX_DGRAM },
-  { "unix_stream",  KW_UNIX_STREAM },
-  { "udp",                KW_UDP },
-  { "tcp",                KW_TCP },
-  { "syslog",             KW_SYSLOG },
   { "network",            KW_NETWORK },
-#if SYSLOG_NG_ENABLE_IPV6
-  { "udp6",               KW_UDP6 },
-  { "tcp6",               KW_TCP6 },
-#endif
   /* ssl */
   { "tls",                KW_TLS },
   { "peer_verify",        KW_PEER_VERIFY },
@@ -62,7 +52,6 @@ static CfgLexerKeyword afsocket_keywords[] =
   { "ip",                 KW_IP },
   { "localport",          KW_LOCALPORT },
   { "port",               KW_PORT },
-  { "destport",           KW_DESTPORT },
   { "ip_ttl",             KW_IP_TTL },
   { "ip_tos",             KW_IP_TOS },
   { "ip_freebind",        KW_IP_FREEBIND },
@@ -81,13 +70,6 @@ static CfgLexerKeyword afsocket_keywords[] =
   { "max_connections",    KW_MAX_CONNECTIONS },
   { "listen_backlog",     KW_LISTEN_BACKLOG },
   { "keep_alive",         KW_KEEP_ALIVE },
-  { "systemd_syslog",     KW_SYSTEMD_SYSLOG  },
-  { "failover_servers",   KW_FAILOVER_SERVERS, KWS_OBSOLETE, "failover-servers has been deprecated, try failover() and use servers() option inside it." },
-  { "failover",           KW_FAILOVER },
-  { "failback",           KW_FAILBACK },
-  { "servers",            KW_SERVERS },
-  { "tcp_probe_interval", KW_TCP_PROBE_INTERVAL },
-  { "successful_probes_required", KW_SUCCESSFUL_PROBES_REQUIRED },
   { NULL }
 };
 
