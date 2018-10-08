@@ -87,44 +87,6 @@ afinet_grammar_set_source_driver(AFInetSourceDriver *sd)
 %parse-param {gpointer arg}
 
 %token KW_NETWORK
-%token KW_TRANSPORT
-%token KW_IP_PROTOCOL
-
-%token KW_IP_TTL
-%token KW_SO_BROADCAST
-%token KW_IP_TOS
-%token KW_IP_FREEBIND
-%token KW_SO_SNDBUF
-%token KW_SO_RCVBUF
-%token KW_SO_KEEPALIVE
-%token KW_TCP_KEEPALIVE_TIME
-%token KW_TCP_KEEPALIVE_PROBES
-%token KW_TCP_KEEPALIVE_INTVL
-%token KW_LISTEN_BACKLOG
-%token KW_SPOOF_SOURCE
-
-%token KW_KEEP_ALIVE
-%token KW_MAX_CONNECTIONS
-
-%token KW_LOCALIP
-%token KW_IP
-%token KW_LOCALPORT
-
-/* SSL support */
-
-%token KW_TLS
-%token KW_PEER_VERIFY
-%token KW_KEY_FILE
-%token KW_CERT_FILE
-%token KW_DHPARAM_FILE
-%token KW_PKCS12_FILE
-%token KW_CA_DIR
-%token KW_CRL_DIR
-%token KW_TRUSTED_KEYS
-%token KW_TRUSTED_DN
-%token KW_CIPHER_SUITE
-%token KW_ECDH_CURVE_LIST
-%token KW_SSL_OPTIONS
 
 /* INCLUDE_DECLS */
 

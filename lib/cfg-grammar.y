@@ -341,6 +341,45 @@ extern struct _StatsOptions *last_stats_options;
 
 %token KW_RETRIES                     10512
 
+/* inet/tcp */
+%token KW_TRANSPORT                   10600
+%token KW_IP_PROTOCOL                 10601
+
+%token KW_IP_TTL                      10602
+%token KW_SO_BROADCAST                10603
+%token KW_IP_TOS                      10604
+%token KW_IP_FREEBIND                 10605
+%token KW_SO_SNDBUF                   10606
+%token KW_SO_RCVBUF                   10607
+%token KW_SO_KEEPALIVE                10608
+%token KW_TCP_KEEPALIVE_TIME          10609
+%token KW_TCP_KEEPALIVE_PROBES        10610
+%token KW_TCP_KEEPALIVE_INTVL         10611
+%token KW_LISTEN_BACKLOG              10612
+%token KW_SPOOF_SOURCE                10613
+
+%token KW_KEEP_ALIVE                  10614
+%token KW_MAX_CONNECTIONS             10615
+
+%token KW_LOCALIP                     10616
+%token KW_IP                          10617
+%token KW_LOCALPORT                   10618
+
+/* ssl */
+%token KW_TLS                         10619
+%token KW_PEER_VERIFY                 10620
+%token KW_KEY_FILE                    10621
+%token KW_CERT_FILE                   10622
+%token KW_DHPARAM_FILE                10623
+%token KW_PKCS12_FILE                 10624
+%token KW_CA_DIR                      10625
+%token KW_CRL_DIR                     10626
+%token KW_TRUSTED_KEYS                10627
+%token KW_TRUSTED_DN                  10628
+%token KW_CIPHER_SUITE                10629
+%token KW_ECDH_CURVE_LIST             10630
+%token KW_SSL_OPTIONS                 10631
+
 /* END_DECLS */
 
 %code {
