@@ -315,19 +315,7 @@ transport_mapper_network_apply_transport(TransportMapper *s, GlobalConfig *cfg)
 
   transport = self->super.transport;
   self->server_port = NETWORK_PORT;
-  if (strcasecmp(transport, "udp") == 0)
-    {
-      self->super.sock_type = SOCK_DGRAM;
-      self->super.sock_proto = IPPROTO_UDP;
-      self->super.logproto = "dgram";
-    }
-  else if (strcasecmp(transport, "tcp") == 0)
-    {
-      self->super.logproto = "text";
-      self->super.sock_type = SOCK_STREAM;
-      self->super.sock_proto = IPPROTO_TCP;
-    }
-  else if (strcasecmp(transport, "tls") == 0)
+  if (strcasecmp(transport, "tls") == 0)
     {
       self->super.logproto = "text";
       self->super.sock_type = SOCK_STREAM;
@@ -355,7 +343,7 @@ transport_mapper_network_apply_transport(TransportMapper *s, GlobalConfig *cfg)
 TransportMapper *
 transport_mapper_network_new(void)
 {
-  TransportMapperInet *self = transport_mapper_inet_new_instance("tcp");
+  TransportMapperInet *self = transport_mapper_inet_new_instance("text");
 
   self->super.apply_transport = transport_mapper_network_apply_transport;
   self->super.stats_source = SCS_NETWORK;

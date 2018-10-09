@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2012 Balabit
- * Copyright (c) 1998-2012 Balázs Scheidler
+ * Copyright (c) 2018 Balabit
+ * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -21,34 +21,30 @@
  *
  */
 
-#include "afsocket-parser.h"
+#include "driver.h"
 #include "cfg-parser.h"
-#include "plugin.h"
-#include "tlscontext.h"
-#include "plugin-types.h"
+#include "http-source-grammar.h"
 
-static Plugin afsocket_plugins[] =
+extern int http_source_debug;
+
+int http_source_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
+
+static CfgLexerKeyword http_source_keywords[] =
 {
-  {
-    .type = LL_CONTEXT_SOURCE,
-    .name = "network",
-    .parser = &afsocket_parser,
-  },
+  { "http", KW_HTTP },
+  { NULL }
 };
 
-gboolean
-afsocket_module_init(PluginContext *context, CfgArgs *args)
+CfgParser http_source_parser =
 {
-  plugin_register(context, afsocket_plugins, G_N_ELEMENTS(afsocket_plugins));
-  return TRUE;
-}
-
-const ModuleInfo module_info =
-{
-  .canonical_name = "afsocket",
-  .version = SYSLOG_NG_VERSION,
-  .description = "The afsocket module provides socket based transports for syslog-ng, such as the udp(), tcp() and syslog() drivers. This module is compiled with SSL support.",
-  .core_revision = SYSLOG_NG_SOURCE_REVISION,
-  .plugins = afsocket_plugins,
-  .plugins_len = G_N_ELEMENTS(afsocket_plugins),
+#if ENABLE_DEBUG
+  .debug_flag = &http_source_debug,
+#endif
+  .name = "http_source",
+  .keywords = http_source_keywords,
+  .parse = (gint (*)(CfgLexer *, gpointer *, gpointer)) http_source_parse,
+  .cleanup = (void (*)(gpointer)) log_pipe_unref,
 };
+
+CFG_PARSER_IMPLEMENT_LEXER_BINDING(http_source_, LogDriver **)
+

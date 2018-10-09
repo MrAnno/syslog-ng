@@ -28,6 +28,7 @@
 #include "stats/stats-registry.h"
 #include "mainloop.h"
 #include "poll-fd-events.h"
+#include "http/logproto-http-server.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -93,8 +94,7 @@ afsocket_sc_init(LogPipe *s)
       if (!transport)
         return FALSE;
 
-      proto = log_proto_server_factory_construct(self->owner->proto_factory, transport,
-                                                 &self->owner->reader_options.proto_options.super);
+      proto = log_proto_http_server_new(transport, &self->owner->reader_options.proto_options.super);
       if (!proto)
         {
           log_transport_free(transport);
@@ -503,18 +503,6 @@ afsocket_sd_setup_transport(AFSocketSourceDriver *self)
 
   if (!transport_mapper_apply_transport(self->transport_mapper, cfg))
     return FALSE;
-
-  if (!self->proto_factory)
-    self->proto_factory = log_proto_server_get_factory(&cfg->plugin_context, self->transport_mapper->logproto);
-
-  if (!self->proto_factory)
-    {
-      msg_error("Unknown value specified in the transport() option, no such LogProto plugin found",
-                evt_tag_str("transport", self->transport_mapper->logproto));
-      return FALSE;
-    }
-
-  self->transport_mapper->create_multitransport = self->proto_factory->use_multitransport;
 
   afsocket_sd_setup_reader_options(self);
   return TRUE;

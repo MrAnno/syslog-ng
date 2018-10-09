@@ -40,6 +40,10 @@
 #include "rewrite/rewrite-expr-parser.h"
 #include "logmatcher.h"
 #include "logthrdestdrv.h"
+#include "tlscontext.h"
+#include "http/source/afinet-source.h"
+#include "http/source/socket-options-inet.h"
+#include "http/source/transport-mapper-inet.h"
 #include "str-utils.h"
 
 /* uses struct declarations instead of the typedefs to avoid having to
@@ -63,6 +67,16 @@ extern struct _ValuePairsTransformSet *last_vp_transset;
 extern struct _LogMatcherOptions *last_matcher_options;
 extern struct _HostResolveOptions *last_host_resolve_options;
 extern struct _StatsOptions *last_stats_options;
+
+extern SocketOptions *_last_sock_options;
+extern TransportMapper *_last_transport_mapper;
+extern TLSContext *_last_tls_context;
+
+#if ! SYSLOG_NG_ENABLE_IPV6
+#undef AF_INET6
+#define AF_INET6 0; g_assert_not_reached()
+
+#endif
 
 }
 
@@ -431,6 +445,10 @@ HostResolveOptions *last_host_resolve_options;
 StatsOptions *last_stats_options;
 DNSCacheOptions *last_dns_cache_options;
 
+SocketOptions *_last_sock_options;
+TransportMapper *_last_transport_mapper;
+TLSContext *_last_tls_context;
+
 }
 
 %type   <ptr> expr_stmt
@@ -496,6 +514,8 @@ DNSCacheOptions *last_dns_cache_options;
 %type   <num> positive_integer64
 %type   <num> nonnegative_integer
 %type   <num> nonnegative_integer64
+
+%type   <num> ip_protocol_option
 
 /* END_DECLS */
 
@@ -1438,6 +1458,147 @@ vp_rekey_option
 	| KW_ADD_PREFIX '(' string ')' { value_pairs_transform_set_add_func(last_vp_transset, value_pairs_new_transform_add_prefix($3)); free($3); }
 	| KW_REPLACE_PREFIX '(' string string ')' { value_pairs_transform_set_add_func(last_vp_transset, value_pairs_new_transform_replace_prefix($3, $4)); free($3); free($4); }
 	;
+
+http_source_options
+	: http_source_option http_source_options
+	|
+	;
+
+http_source_option
+	: KW_LOCALIP '(' string ')'		{ afinet_sd_set_localip(last_driver, $3); free($3); }
+	| KW_IP '(' string ')'			{ afinet_sd_set_localip(last_driver, $3); free($3); }
+	| KW_LOCALPORT '(' string_or_number ')'	{ afinet_sd_set_localport(last_driver, $3); free($3); }
+	| KW_PORT '(' string_or_number ')'	{ afinet_sd_set_localport(last_driver, $3); free($3); }
+	| KW_TRANSPORT '(' KW_TLS ')'                    { transport_mapper_set_transport(_last_transport_mapper, "tls"); }
+  | KW_IP_PROTOCOL '(' ip_protocol_option ')' { transport_mapper_set_address_family(_last_transport_mapper, $3); }
+	| KW_TLS
+	  {
+      gchar buf[256];
+	    _last_tls_context = tls_context_new(TM_SERVER, cfg_lexer_format_location(lexer, &@1, buf, sizeof(buf)));
+	  }
+	  '(' ssl_options ')'
+	  {
+	    afinet_sd_set_tls_context(last_driver, _last_tls_context);
+    }
+	| KW_KEEP_ALIVE '(' yesno ')'		{ afsocket_sd_set_keep_alive(last_driver, $3); }
+	| KW_MAX_CONNECTIONS '(' positive_integer ')'	 { afsocket_sd_set_max_connections(last_driver, $3); }
+	| KW_LISTEN_BACKLOG '(' positive_integer ')'	{ afsocket_sd_set_listen_backlog(last_driver, $3); }
+  | source_reader_option
+	| source_driver_option
+	| tcp_ip_option
+	;
+
+ssl_options
+	: ssl_option ssl_options
+	|
+	;
+
+ssl_option
+  : KW_PEER_VERIFY '(' yesno ')'
+	  {
+	    gint verify_mode = $3 ? (TVM_REQUIRED | TVM_TRUSTED) : (TVM_OPTIONAL | TVM_UNTRUSTED);
+	    tls_context_set_verify_mode(_last_tls_context, verify_mode);
+          }
+	| KW_PEER_VERIFY '(' string ')'
+	  {
+	    CHECK_ERROR(tls_context_set_verify_mode_by_name(_last_tls_context, $3), @3,
+	                "unknown peer-verify() argument");
+            free($3);
+          }
+	| KW_KEY_FILE '(' string ')'
+	  {
+	    tls_context_set_key_file(_last_tls_context, $3);
+            free($3);
+          }
+	| KW_CERT_FILE '(' string ')'
+	  {
+	    tls_context_set_cert_file(_last_tls_context, $3);
+            free($3);
+          }
+        | KW_DHPARAM_FILE '(' string ')'
+          {
+            tls_context_set_dhparam_file(_last_tls_context, $3);
+            free($3);
+          }
+        | KW_PKCS12_FILE '(' string ')'
+          {
+            tls_context_set_pkcs12_file(_last_tls_context, $3);
+            free($3);
+          }
+	| KW_CA_DIR '(' string ')'
+	  {
+	    tls_context_set_ca_dir(_last_tls_context, $3);
+            free($3);
+          }
+	| KW_CRL_DIR '(' string ')'
+	  {
+	    tls_context_set_crl_dir(_last_tls_context, $3);
+            free($3);
+          }
+        | KW_TRUSTED_KEYS '(' string_list ')'
+          {
+            tls_session_set_trusted_fingerprints(_last_tls_context, $3);
+          }
+        | KW_TRUSTED_DN '(' string_list ')'
+          {
+            tls_session_set_trusted_dn(_last_tls_context, $3);
+          }
+	| KW_CIPHER_SUITE '(' string ')'
+	  {
+            tls_context_set_cipher_suite(_last_tls_context, $3);
+            free($3);
+	  }
+        | KW_ECDH_CURVE_LIST '(' string ')'
+          {
+            tls_context_set_ecdh_curve_list(_last_tls_context, $3);
+            free($3);
+          }
+	| KW_SSL_OPTIONS '(' string_list ')'
+	  {
+            CHECK_ERROR(tls_context_set_ssl_options_by_name(_last_tls_context, $3), @3,
+                        "unknown ssl-options() argument");
+	  }
+  ;
+
+sock_option
+	: KW_SO_SNDBUF '(' nonnegative_integer ')'
+    {
+      CHECK_ERROR($3 <= G_MAXINT, @3, "Invalid so_sndbuf, it has to be less than %d", G_MAXINT);
+      _last_sock_options->so_sndbuf = $3;
+    }
+	| KW_SO_RCVBUF '(' nonnegative_integer ')'
+    {
+      CHECK_ERROR($3 <= G_MAXINT, @3, "Invalid so_rcvbuf, it has to be less than %d", G_MAXINT);
+      _last_sock_options->so_rcvbuf = $3;
+    }
+	| KW_SO_BROADCAST '(' yesno ')'             { _last_sock_options->so_broadcast = $3; }
+	| KW_SO_KEEPALIVE '(' yesno ')'             { _last_sock_options->so_keepalive = $3; }
+	;
+
+tcp_ip_option
+	: sock_option
+	| KW_IP_TTL '(' nonnegative_integer ')'               { ((SocketOptionsInet *) _last_sock_options)->ip_ttl = $3; }
+	| KW_IP_TOS '(' nonnegative_integer ')'               { ((SocketOptionsInet *) _last_sock_options)->ip_tos = $3; }
+	| KW_IP_FREEBIND '(' yesno ')'              { ((SocketOptionsInet *) _last_sock_options)->ip_freebind = $3; }
+	| KW_TCP_KEEPALIVE_TIME '(' nonnegative_integer ')'   { ((SocketOptionsInet *) _last_sock_options)->tcp_keepalive_time = $3; }
+	| KW_TCP_KEEPALIVE_INTVL '(' nonnegative_integer ')'  { ((SocketOptionsInet *) _last_sock_options)->tcp_keepalive_intvl = $3; }
+	| KW_TCP_KEEPALIVE_PROBES '(' nonnegative_integer ')' { ((SocketOptionsInet *) _last_sock_options)->tcp_keepalive_probes = $3; }
+	;
+
+ip_protocol_option
+  : LL_NUMBER
+    {
+      CHECK_ERROR($1 == 4 || $1 == 6, @1, "ip-protocol option can only be 4 or 6!");
+      if ($1 == 4)
+        {
+          $$ = AF_INET;
+        }
+      else
+        {
+          $$ = AF_INET6;
+        }
+    }
+  ;
 
 /* END_RULES */
 

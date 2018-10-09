@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2012 Balabit
- * Copyright (c) 1998-2012 Balázs Scheidler
+ * Copyright (c) 2018 Balabit
+ * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -21,14 +21,16 @@
  *
  */
 
-#ifndef AFSOCKET_PARSER_H_INCLUDED
-#define AFSOCKET_PARSER_H_INCLUDED
+#ifndef HTTP_SOURCE_PARSER_H
+#define HTTP_SOURCE_PARSER_H
 
 #include "cfg-parser.h"
+#include "cfg-lexer.h"
 #include "driver.h"
 
-extern CfgParser afsocket_parser;
+extern CfgParser http_source_parser;
 
-CFG_PARSER_DECLARE_LEXER_BINDING(afsocket_, LogDriver **)
+CFG_PARSER_DECLARE_LEXER_BINDING(http_source_, LogDriver **)
 
 #endif
+
