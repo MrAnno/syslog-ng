@@ -323,6 +323,7 @@ log_proto_http_server_extract_log_messages(LogProtoHTTPServer *self, const HTTPR
     }
 
   self->state = STATE_PROCESS_LOG_MESSAGES;
+  return;
 
 skip_log_message_processing:
   self->state = STATE_SEND_HTTP_RESPONSE;
