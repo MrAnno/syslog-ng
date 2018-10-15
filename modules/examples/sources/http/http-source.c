@@ -49,7 +49,7 @@ _extract_messages(HTTPRequest *http_request, HTTPSourceConnection *connection)
 
   while (line)
     {
-      LogMessage *msg = log_msg_new(line, strlen(line), NULL, parse_option);
+      LogMessage *msg = log_msg_new(line, strlen(line), connection->peer_addr, parse_option);
       g_queue_push_tail(messages, msg);
 
       line = strtok_r(NULL, "\n", &state);
