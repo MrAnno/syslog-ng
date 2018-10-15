@@ -51,7 +51,7 @@ typedef struct _ExtractLogMessagesCallback
 
 typedef struct _CreateResponseCallback
 {
-  LPHTTPCreateResponse func;
+  LPHTTPCreateResponseFunc func;
   gpointer user_data;
 } CreateResponseCallback;
 
@@ -442,17 +442,21 @@ log_proto_http_server_free(LogProtoServer *s)
 }
 
 void
-log_proto_http_server_set_extract_log_messages(LogProtoHTTPServer *self,
+log_proto_http_server_set_extract_log_messages(LogProtoServer *s,
                                                LPHTTPExtractLogMessagesFunc extract_log_messages, gpointer user_data)
 {
+  LogProtoHTTPServer *self = (LogProtoHTTPServer *) s;
+
   self->extract_log_messages.func = extract_log_messages;
   self->extract_log_messages.user_data = user_data;
 }
 
 void
-log_proto_http_server_set_create_response(LogProtoHTTPServer *self, LPHTTPCreateResponse create_response,
+log_proto_http_server_set_create_response(LogProtoServer *s, LPHTTPCreateResponseFunc create_response,
                                           gpointer user_data)
 {
+  LogProtoHTTPServer *self = (LogProtoHTTPServer *) s;
+
   self->create_response.func = create_response;
   self->create_response.user_data = user_data;
 }
