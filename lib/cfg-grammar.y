@@ -1494,6 +1494,7 @@ http_source_option
 	  {
       gchar buf[256];
 	    _last_tls_context = tls_context_new(TM_SERVER, cfg_lexer_format_location(lexer, &@1, buf, sizeof(buf)));
+	    tls_context_set_verify_mode(_last_tls_context, TVM_OPTIONAL | TVM_UNTRUSTED);
 	  }
 	  '(' ssl_options ')'
 	  {
