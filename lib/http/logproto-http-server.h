@@ -30,14 +30,10 @@
 
 #include <glib.h>
 
-//TODO: LogProtoServer + Logreader: structured fetch interface
-
 typedef struct _LogProtoHTTPServer LogProtoHTTPServer;
 
 typedef GQueue *(*LPHTTPExtractLogMessagesFunc)(HTTPRequest *http_request, gpointer user_data);
 typedef HTTPResponse *(*LPHTTPCreateResponseFunc)(HTTPRequest *http_request, gpointer user_data);
-//TODO: runs in the reader thread, mention it on the other side
-//TODO: pass LogTransportAuxData
 
 LogProtoServer *log_proto_http_server_new(LogTransport *transport, const LogProtoServerOptions *options);
 void log_proto_http_server_set_extract_log_messages(LogProtoServer *self,
