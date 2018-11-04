@@ -31,10 +31,6 @@
 
 #include <errno.h>
 
-//TODO: http-message-size megák lehetnek, induljunk egy kisebb értékkel és növeljük meg max-ig
-//TODO: követni az üzenet elejét, ezzel lehetne ritkábban splitelni (buffer_reset használni lehet?)
-//TODO: a kimenő buffert mi állítjuk össze mindig? akkor nem kell buffer limit, jól kell méretezni
-
 typedef enum _State
 {
   STATE_RECEIVE_HTTP_REQUEST,
@@ -66,6 +62,7 @@ struct _LogProtoHTTPServer
 
   GQueue *pending_log_messages;
 
+  // pass LogTransportAuxData
   ExtractLogMessagesCallback extract_log_messages;
   CreateResponseCallback create_response;
 };
@@ -168,17 +165,28 @@ _generate_error_page(HTTPStatusCode error_code)
   return error_page;
 }
 
+static HTTPResponse *
+_generate_error_response(HTTPStatusCode error_code)
+{
+  HTTPResponse *http_error_response = http_response_new_empty();
+
+  http_response_set_http_version(http_error_response, 1, 1);
+  http_response_set_status_code(http_error_response, error_code);
+  http_response_add_header(http_error_response, "content-type", "text/html");
+  http_response_add_header(http_error_response, "connection", "close");
+
+  GByteArray *error_page = _generate_error_page(error_code);
+  http_response_take_body(http_error_response, error_page);
+
+  http_response_add_mandatory_headers(http_error_response);
+
+  return http_error_response;
+}
+
 static void
 log_proto_http_server_set_error_response(LogProtoHTTPServer *self, HTTPStatusCode error)
 {
-  HTTPResponse *http_error_response = http_response_new_empty();
-  http_response_set_http_version(http_error_response, 1, 1);
-  http_response_set_status_code(http_error_response, error);
-  http_response_add_header(http_error_response, "content-type", "text/html");
-  http_response_add_header(http_error_response, "connection", "close");
-  GByteArray *error_page = _generate_error_page(error);
-  http_response_take_body(http_error_response, error_page);
-  http_response_add_mandatory_headers(http_error_response);
+  HTTPResponse *http_error_response = _generate_error_response(error);
 
   GByteArray *raw_http_response = http_response_generate_raw_response(http_error_response);
   buffer_assign(&self->out_buffer, raw_http_response->data, raw_http_response->len);
@@ -338,15 +346,8 @@ log_proto_http_server_create_response(LogProtoHTTPServer *self, HTTPRequest *htt
 
   if (!http_response)
     {
-      http_response = http_response_new_empty();
-      http_response_set_http_version(http_response, 1, 1);
-      http_response_set_status_code(http_response, HTTP_OK);
-      http_response_add_header(http_response, "Content-Type", "text/html");
-
-      GByteArray *body = g_byte_array_new();
-      g_byte_array_append(body, (const guint8 *) "<center><h3>Aand HTTPS</h3><hr>syslog-ng/3.1x</center>", 54);
-
-      http_response_take_body(http_response, body);
+      msg_error("No HTTP response, generating 'Internal Server Error' response");
+      http_response = _generate_error_response(HTTP_INTERNAL_SERVER_ERROR);
     }
 
   http_response_add_mandatory_headers(http_response);
@@ -354,8 +355,6 @@ log_proto_http_server_create_response(LogProtoHTTPServer *self, HTTPRequest *htt
   GByteArray *raw_http_response = http_response_generate_raw_response(http_response);
   buffer_assign(&self->out_buffer, raw_http_response->data, raw_http_response->len);
   g_byte_array_free(raw_http_response, FALSE);
-
-  //TODO: 500 ha nincs response vagy nincs callback beállítva
 
   http_response_free(http_response);
 }
