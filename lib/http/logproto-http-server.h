@@ -34,8 +34,8 @@
 
 typedef struct _LogProtoHTTPServer LogProtoHTTPServer;
 
-typedef GQueue *(*LPHTTPExtractLogMessagesFunc)(const HTTPRequest *http_request, gpointer user_data);
-typedef HTTPResponse *(*LPHTTPCreateResponseFunc)(const HTTPRequest *http_request, gpointer user_data);
+typedef GQueue *(*LPHTTPExtractLogMessagesFunc)(HTTPRequest *http_request, gpointer user_data);
+typedef HTTPResponse *(*LPHTTPCreateResponseFunc)(HTTPRequest *http_request, gpointer user_data);
 //TODO: runs in the reader thread, mention it on the other side
 //TODO: pass LogTransportAuxData
 

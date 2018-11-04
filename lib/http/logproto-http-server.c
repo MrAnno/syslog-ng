@@ -305,7 +305,7 @@ log_proto_http_server_send_response(LogProtoHTTPServer *self)
 }
 
 static void
-log_proto_http_server_extract_log_messages(LogProtoHTTPServer *self, const HTTPRequest *http_request)
+log_proto_http_server_extract_log_messages(LogProtoHTTPServer *self, HTTPRequest *http_request)
 {
   if (!self->extract_log_messages.func)
     goto skip_log_message_processing;
@@ -330,7 +330,7 @@ skip_log_message_processing:
 }
 
 static void
-log_proto_http_server_create_response(LogProtoHTTPServer *self, const HTTPRequest *http_request)
+log_proto_http_server_create_response(LogProtoHTTPServer *self, HTTPRequest *http_request)
 {
   HTTPResponse *http_response = NULL;
   if (self->create_response.func)
