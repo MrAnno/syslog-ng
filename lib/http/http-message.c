@@ -33,19 +33,6 @@
 #define HTTP_CRLF "\r\n"
 #define HTTP_HEADER_SEPARATOR HTTP_CRLF
 
-struct _HTTPMessage
-{
-  gushort http_major;
-  gushort http_minor;
-
-  GString *raw_headers;
-  GHashTable *header_positions;
-
-  GByteArray *body;
-
-  void (*free)(HTTPMessage *self);
-};
-
 typedef struct _HTTPHeaderKey
 {
   const gchar **buffer;
@@ -247,13 +234,6 @@ http_message_add_header_normalized_in_place(HTTPMessage *self, GString *key, GSt
 
 /* HTTPRequest */
 
-struct _HTTPRequest
-{
-  HTTPMessage super;
-  GString *url;
-  gchar *method;
-};
-
 static void
 http_request_free_method(HTTPMessage *s)
 {
@@ -277,30 +257,6 @@ http_request_new_empty(void)
 }
 
 void
-http_request_set_http_version(HTTPRequest *self, gushort major, gushort minor)
-{
-  http_message_set_http_version(&self->super, major, minor);
-}
-
-void
-http_request_get_http_version(HTTPRequest *self, gushort *major, gushort *minor)
-{
-  http_message_get_http_version(&self->super, major, minor);
-}
-
-GString *
-http_request_get_header(HTTPRequest *self, const gchar *key)
-{
-  return http_message_get_header(&self->super, key);
-}
-
-GString *
-http_request_get_header_using_normalized_key(HTTPRequest *self, const gchar *normalized_key)
-{
-  return http_message_get_header_using_normalized_key(&self->super, normalized_key);
-}
-
-void
 http_request_set_url(HTTPRequest *self, const gchar *url)
 {
   g_string_assign(self->url, url);
@@ -310,36 +266,6 @@ const gchar *
 http_request_get_url(HTTPRequest *self)
 {
   return self->url->str;
-}
-
-void
-http_request_take_body(HTTPRequest *self, GByteArray *body)
-{
-  http_message_take_body(&self->super, body);
-}
-
-const GByteArray *
-http_request_get_body(HTTPRequest *self)
-{
-  return http_message_get_body(&self->super);
-}
-
-void
-http_request_add_header(HTTPRequest *self, const gchar *key, const gchar *value)
-{
-  http_message_add_header(&self->super, key, value);
-}
-
-gboolean
-http_request_header_exists(HTTPRequest *self, const gchar *key)
-{
-  return http_message_header_exists(&self->super, key);
-}
-
-gboolean
-http_request_normalized_header_exists(HTTPRequest *self, const gchar *normalized_key)
-{
-  return http_message_normalized_header_exists(&self->super, normalized_key);
 }
 
 void
@@ -362,12 +288,6 @@ http_request_free(HTTPRequest *self)
     http_message_free(&self->super);
 }
 
-HTTPMessage *
-http_request_upcast(HTTPRequest *self)
-{
-  return &self->super;
-}
-
 void
 http_request_append_url(HTTPRequest *self, const gchar *data, gsize length)
 {
@@ -383,12 +303,6 @@ http_request_null_terminate_body(HTTPRequest *self)
 
 
 /* HTTPResponse */
-
-struct _HTTPResponse
-{
-  HTTPMessage super;
-  HTTPStatusCode status_code;
-};
 
 static void
 http_response_free_method(HTTPMessage *s)
@@ -408,60 +322,6 @@ http_response_new_empty(void)
 }
 
 void
-http_response_set_http_version(HTTPResponse *self, gushort major, gushort minor)
-{
-  http_message_set_http_version(&self->super, major, minor);
-}
-
-void
-http_response_get_http_version(HTTPResponse *self, gushort *major, gushort *minor)
-{
-  http_message_get_http_version(&self->super, major, minor);
-}
-
-GString *
-http_response_get_header(HTTPResponse *self, const gchar *key)
-{
-  return http_message_get_header(&self->super, key);
-}
-
-GString *
-http_response_get_header_using_normalized_key(HTTPResponse *self, const gchar *normalized_key)
-{
-  return http_message_get_header_using_normalized_key(&self->super, normalized_key);
-}
-
-void
-http_response_take_body(HTTPResponse *self, GByteArray *body)
-{
-  http_message_take_body(&self->super, body);
-}
-
-const GByteArray *
-http_response_get_body(HTTPResponse *self)
-{
-  return http_message_get_body(&self->super);
-}
-
-void
-http_response_add_header(HTTPResponse *self, const gchar *key, const gchar *value)
-{
-  http_message_add_header(&self->super, key, value);
-}
-
-gboolean
-http_response_header_exists(HTTPResponse *self, const gchar *key)
-{
-  return http_message_header_exists(&self->super, key);
-}
-
-gboolean
-http_response_normalized_header_exists(HTTPResponse *self, const gchar *normalized_key)
-{
-  return http_message_normalized_header_exists(&self->super, normalized_key);
-}
-
-void
 http_response_set_status_code(HTTPResponse *self, HTTPStatusCode status_code)
 {
   self->status_code = status_code;
@@ -478,12 +338,6 @@ http_response_free(HTTPResponse *self)
 {
   if (self)
     http_message_free(&self->super);
-}
-
-HTTPMessage *
-http_response_upcast(HTTPResponse *self)
-{
-  return &self->super;
 }
 
 
@@ -587,15 +441,15 @@ http_response_generate_raw_response(HTTPResponse *self)
 
 void http_response_add_mandatory_headers(HTTPResponse *self)
 {
-  if (!http_response_normalized_header_exists(self, "content-length"))
+  if (!http_message_normalized_header_exists(&self->super, "content-length"))
     {
-      gsize body_length = http_response_get_body(self) ? http_response_get_body(self)->len : 0;
+      gsize body_length = http_message_get_body(&self->super) ? http_message_get_body(&self->super)->len : 0;
       gchar content_length[32];
       g_snprintf(content_length, sizeof(content_length), "%zu", body_length);
 
       http_message_add_normalized_header(&self->super, "content-length", content_length);
     }
 
-  if (!http_response_normalized_header_exists(self, "server"))
+  if (!http_message_normalized_header_exists(&self->super, "server"))
     http_message_add_normalized_header(&self->super, "server", "syslog-ng");
 }
