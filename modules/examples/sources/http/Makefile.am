@@ -17,9 +17,10 @@ EXTRA_DIST += \
 
 modules_examples_sources_libhttp_source_la_CPPFLAGS  = \
   $(AM_CPPFLAGS) \
+  $(JSON_CFLAGS) \
   -I$(top_srcdir)/modules/examples/sources/http \
   -I$(top_builddir)/modules/examples/sources/http
 
-modules_examples_sources_libhttp_source_la_LIBADD  = $(MODULE_DEPS_LIBS)
+modules_examples_sources_libhttp_source_la_LIBADD  = $(MODULE_DEPS_LIBS) $(JSON_LIBS)
 modules_examples_sources_libhttp_source_la_LDFLAGS = $(MODULE_LDFLAGS)
-modules_examples_sources_libhttp_source_la_DEPENDENCIES = $(MODULE_DEPS_LIBS)
+modules_examples_sources_libhttp_source_la_DEPENDENCIES = $(MODULE_DEPS_LIBS) $(JSON_DEPENDENCY)
