@@ -66,20 +66,21 @@ static void
 assert_http_request(HTTPRequest *actual_request, ExpectedHTTPRequest *expected_request)
 {
   gushort http_major, http_minor;
-  http_request_get_http_version(actual_request, &http_major, &http_minor);
+  http_message_get_http_version(&actual_request->super, &http_major, &http_minor);
   cr_assert_eq(http_major, expected_request->expected_http_major);
   cr_assert_eq(http_minor, expected_request->expected_http_minor);
 
   for (gsize i = 0; i < expected_request->expected_headers_length; ++i)
     {
-      GString *actual_value = http_request_get_header(actual_request, expected_request->expected_headers[i].key);
+      GString *actual_value = http_message_get_header(&actual_request->super,
+                                                      expected_request->expected_headers[i].key);
       cr_assert_not_null(actual_value);
 
       cr_assert_str_eq(actual_value->str, expected_request->expected_headers[i].value);
       g_string_free(actual_value, TRUE);
     }
 
-  const gchar *actual_body = (const gchar *) http_request_get_body(actual_request)->data;
+  const gchar *actual_body = (const gchar *) http_message_get_body(&actual_request->super)->data;
   cr_assert_str_eq(actual_body, expected_request->expected_body);
 
   const gchar *actual_url = http_request_get_url(actual_request);

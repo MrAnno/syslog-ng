@@ -7,6 +7,7 @@ httpinclude_HEADERS = \
   lib/http/logproto-http-server.h \
   lib/http/http-parser/http_parser.h \
   lib/http/http-parser.h \
+  lib/http/http-status.h \
   lib/http/http-message.h \
   lib/http/http-message-internal.h
 

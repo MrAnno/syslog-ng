@@ -30,7 +30,7 @@
 Test(http_message, test_headers)
 {
   HTTPRequest *request = http_request_new_empty();
-  HTTPMessage *message = http_request_upcast(request);
+  HTTPMessage *message = &request->super;
   request = NULL;
 
   const gchar *accept_key = "Accept";
@@ -95,14 +95,14 @@ Test(http_message, test_invalid_status_code_to_status_line)
 Test(http_message, test_generate_raw_response)
 {
   HTTPResponse *response = http_response_new_empty();
-  http_response_set_http_version(response, 1, 1);
+  http_message_set_http_version(&response->super, 1, 1);
   http_response_set_status_code(response, HTTP_OK);
-  http_response_add_header(response, "Content-Length", "5");
+  http_message_add_header(&response->super, "Content-Length", "5");
 
   GByteArray *body = g_byte_array_new();
   g_byte_array_append(body, (const guint8 *) "hello", 5);
 
-  http_response_take_body(response, body);
+  http_message_take_body(&response->super, body);
 
   GByteArray *raw_response = http_response_generate_raw_response(response);
 
