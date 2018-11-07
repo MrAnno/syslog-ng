@@ -62,41 +62,39 @@ http_grammar_set_source_driver(HTTPSourceDriver *sd)
 %parse-param {gpointer arg}
 
 %token KW_HTTP
+%token KW_MODE
 
 /* INCLUDE_DECLS */
-
-%type   <ptr> driver
-%type	<ptr> source_http
-%type	<ptr> source_http_params
 
 %%
 
 start
-  : driver
+  : LL_CONTEXT_SOURCE KW_HTTP
     {
-      *instance = $1;
+      EHTTPSourceDriver *d = ehttp_sd_new(configuration);
+      http_grammar_set_source_driver(&d->super);
+      *instance = &d->super.super.super;
+    }
+    '(' source_http_options ')'
+    {
       if (yychar != YYEMPTY)
         cfg_lexer_unput_token(lexer, &yylval);
       YYACCEPT;
     }
   ;
 
-driver
-  : LL_CONTEXT_SOURCE source_http                  { $$ = $2; }
-  ;
-
-
-source_http
-	: KW_HTTP '(' source_http_params ')'    { $$ = $3; }
+source_http_options
+	: source_http_option source_http_options
+	|
 	;
 
-source_http_params
-	:
-	  {
-      EHTTPSourceDriver *d = ehttp_sd_new(configuration);
-      http_grammar_set_source_driver(&d->super);
-	  }
-	  http_source_options	{ $$ = last_driver; }
+source_http_option
+	: KW_MODE '(' string ')'
+    {
+      CHECK_ERROR(ehttp_sd_set_mode(last_driver, $3), @3, "invalid mode() value");
+      free($3);
+    }
+	| http_source_option
   ;
 
 /* INCLUDE_RULES */

@@ -28,11 +28,20 @@
 #include "http/source/http-source.h"
 
 typedef struct EHTTPSourceDriver EHTTPSourceDriver;
+typedef enum _EHTTPSourceMode
+{
+  EHTTP_SINGLE,
+  EHTTP_TEXT,
+  EHTTP_JSON
+} EHTTPSourceMode;
+
 struct EHTTPSourceDriver
 {
   HTTPSourceDriver super;
+  EHTTPSourceMode mode;
 };
 
 EHTTPSourceDriver *ehttp_sd_new(GlobalConfig *cfg);
+gboolean ehttp_sd_set_mode(LogDriver *d, const gchar *mode);
 
 #endif

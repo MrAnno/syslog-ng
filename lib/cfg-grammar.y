@@ -1481,11 +1481,6 @@ vp_rekey_option
 	| KW_REPLACE_PREFIX '(' string string ')' { value_pairs_transform_set_add_func(last_vp_transset, value_pairs_new_transform_replace_prefix($3, $4)); free($3); free($4); }
 	;
 
-http_source_options
-	: http_source_option http_source_options
-	|
-	;
-
 http_source_option
 	: KW_LOCALIP '(' string ')'		{ http_sd_set_localip(last_driver, $3); free($3); }
 	| KW_IP '(' string ')'			{ http_sd_set_localip(last_driver, $3); free($3); }
