@@ -32,6 +32,7 @@ int http_source_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
 static CfgLexerKeyword http_source_keywords[] =
 {
   { "http", KW_HTTP },
+  { "mode", KW_MODE },
   { NULL }
 };
 

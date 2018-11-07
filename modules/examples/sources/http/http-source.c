@@ -29,9 +29,32 @@
 #include "logmsg/logmsg.h"
 
 #include <string.h>
+#include <strings.h>
+
+typedef GQueue *(*EHTTPExtractMessageFunc)(HTTPRequest *http_request, HTTPSourceConnection *connection);
 
 GQueue *
-_extract_messages(HTTPRequest *http_request, HTTPSourceConnection *connection)
+_extract_single_message(HTTPRequest *http_request, HTTPSourceConnection *connection)
+{
+  EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
+  MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
+
+  http_request_null_terminate_body(http_request);
+  const GByteArray *body = http_request_get_body(http_request);
+  if (!body)
+    return NULL;
+
+  GQueue *messages = g_queue_new();
+
+  const gchar *message = (const gchar *) body->data;
+  LogMessage *msg = log_msg_new(message, body->len, connection->peer_addr, parse_option);
+  g_queue_push_tail(messages, msg);
+
+  return messages;
+}
+
+GQueue *
+_extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
   MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
@@ -57,14 +80,53 @@ _extract_messages(HTTPRequest *http_request, HTTPSourceConnection *connection)
   return messages;
 }
 
+GQueue *
+_extract_messages_json(HTTPRequest *http_request, HTTPSourceConnection *connection)
+{
+  return NULL;
+}
+
+static EHTTPExtractMessageFunc ehttp_extract_modes[] =
+{
+  _extract_single_message,
+  _extract_messages_text,
+  _extract_messages_json
+};
+
 HTTPResponse *
 _create_response(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
   HTTPResponse *http_response = http_response_new_empty();
   http_response_set_http_version(http_response, 1, 1);
   http_response_set_status_code(http_response, HTTP_OK);
-  http_response_add_header(http_response, "Content-Type", "text/html");
   return http_response;
+}
+
+gboolean
+ehttp_sd_set_mode(LogDriver *d, const gchar *mode)
+{
+  EHTTPSourceDriver *self = (EHTTPSourceDriver *) d;
+
+  if (strcasecmp(mode, "single") == 0)
+    self->mode = EHTTP_SINGLE;
+  else if (strcasecmp(mode, "text") == 0)
+    self->mode = EHTTP_TEXT;
+  else if (strcasecmp(mode, "json") == 0)
+    self->mode = EHTTP_JSON;
+  else
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+ehttp_sd_init(LogPipe *s)
+{
+  EHTTPSourceDriver *self = (EHTTPSourceDriver *) s;
+
+  self->super.extract_log_messages = ehttp_extract_modes[self->mode];
+
+  return http_sd_init_method(s);
 }
 
 EHTTPSourceDriver *
@@ -73,8 +135,10 @@ ehttp_sd_new(GlobalConfig *cfg)
   EHTTPSourceDriver *self = g_new0(EHTTPSourceDriver, 1);
   http_sd_init_instance(&self->super, _socket_options_inet_new(), _transport_mapper_network_new(), cfg);
 
-  self->super.extract_log_messages = _extract_messages;
+  self->mode = EHTTP_SINGLE;
+
   self->super.create_response = _create_response;
+  self->super.super.super.super.init = ehttp_sd_init;
 
   return self;
 }
