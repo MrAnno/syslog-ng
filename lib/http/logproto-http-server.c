@@ -170,13 +170,13 @@ _generate_error_response(HTTPStatusCode error_code)
 {
   HTTPResponse *http_error_response = http_response_new_empty();
 
-  http_response_set_http_version(http_error_response, 1, 1);
+  http_message_set_http_version(&http_error_response->super, 1, 1);
   http_response_set_status_code(http_error_response, error_code);
-  http_response_add_header(http_error_response, "content-type", "text/html");
-  http_response_add_header(http_error_response, "connection", "close");
+  http_message_add_header(&http_error_response->super, "content-type", "text/html");
+  http_message_add_header(&http_error_response->super, "connection", "close");
 
   GByteArray *error_page = _generate_error_page(error_code);
-  http_response_take_body(http_error_response, error_page);
+  http_message_take_body(&http_error_response->super, error_page);
 
   http_response_add_mandatory_headers(http_error_response);
 

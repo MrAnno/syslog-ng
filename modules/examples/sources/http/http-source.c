@@ -41,7 +41,7 @@ _extract_single_message(HTTPRequest *http_request, HTTPSourceConnection *connect
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
   MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
 
-  const GByteArray *body = http_request_get_body(http_request);
+  const GByteArray *body = http_message_get_body(&http_request->super);
   if (!body || !body->data)
     return NULL;
 
@@ -61,7 +61,7 @@ _extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connecti
   MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
 
   http_request_null_terminate_body(http_request);
-  const GByteArray *body = http_request_get_body(http_request);
+  const GByteArray *body = http_message_get_body(&http_request->super);
   if (!body || !body->data)
     return NULL;
 
@@ -126,7 +126,7 @@ _extract_messages_json(HTTPRequest *http_request, HTTPSourceConnection *connecti
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
   MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
 
-  const GByteArray *body = http_request_get_body(http_request);
+  const GByteArray *body = http_message_get_body(&http_request->super);
   if (!body || !body->data)
     return NULL;
 
@@ -157,7 +157,7 @@ HTTPResponse *
 _create_response(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
   HTTPResponse *http_response = http_response_new_empty();
-  http_response_set_http_version(http_response, 1, 1);
+  http_message_set_http_version(&http_response->super, 1, 1);
   http_response_set_status_code(http_response, HTTP_OK);
   return http_response;
 }

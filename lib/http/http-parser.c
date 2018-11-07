@@ -108,9 +108,9 @@ _create_message(enum http_parser_type type)
   switch (type)
     {
     case HTTP_REQUEST:
-      return http_request_upcast(http_request_new_empty());
+      return &http_request_new_empty()->super;
     case HTTP_RESPONSE:
-      return http_response_upcast(http_response_new_empty());
+      return &http_response_new_empty()->super;
     default:
       g_assert_not_reached();
     }
