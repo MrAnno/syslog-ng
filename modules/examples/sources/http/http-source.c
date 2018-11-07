@@ -31,6 +31,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <json.h>
+
 typedef GQueue *(*EHTTPExtractMessageFunc)(HTTPRequest *http_request, HTTPSourceConnection *connection);
 
 GQueue *
@@ -39,9 +41,8 @@ _extract_single_message(HTTPRequest *http_request, HTTPSourceConnection *connect
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
   MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
 
-  http_request_null_terminate_body(http_request);
   const GByteArray *body = http_request_get_body(http_request);
-  if (!body)
+  if (!body || !body->data)
     return NULL;
 
   GQueue *messages = g_queue_new();
@@ -61,7 +62,7 @@ _extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connecti
 
   http_request_null_terminate_body(http_request);
   const GByteArray *body = http_request_get_body(http_request);
-  if (!body)
+  if (!body || !body->data)
     return NULL;
 
   GQueue *messages = g_queue_new();
@@ -80,10 +81,69 @@ _extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connecti
   return messages;
 }
 
+static GQueue *
+_extract_from_json(struct json_object *obj, GSockAddr *saddr, MsgFormatOptions *parse_options)
+{
+  struct json_object *messages_obj = obj;
+
+  if (!json_object_is_type(obj, json_type_array))
+    {
+      struct json_object_iter itr;
+      json_object_object_foreachC(obj, itr)
+      {
+        if (json_object_is_type(itr.val, json_type_array))
+          {
+            messages_obj = itr.val;
+            break;
+          }
+      }
+
+      if (messages_obj == obj)
+        {
+          msg_warning("Error extracting JSON messages, array object is not found");
+          return NULL;
+        }
+    }
+
+  GQueue *messages = g_queue_new();
+
+  gsize messages_size = json_object_array_length(messages_obj);
+  for (gsize i = 0; i < messages_size; ++i)
+    {
+      struct json_object *message_obj = json_object_array_get_idx(messages_obj, i);
+      const gchar *message = json_object_get_string(message_obj);
+
+      LogMessage *msg = log_msg_new(message, strlen(message), saddr, parse_options);
+      g_queue_push_tail(messages, msg);
+    }
+
+  return messages;
+}
+
 GQueue *
 _extract_messages_json(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
-  return NULL;
+  EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
+  MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
+
+  const GByteArray *body = http_request_get_body(http_request);
+  if (!body || !body->data)
+    return NULL;
+
+  struct json_tokener *tok = json_tokener_new();
+  struct json_object *obj = json_tokener_parse_ex(tok, (const gchar *) body->data, body->len);
+  if (tok->err != json_tokener_success || !obj)
+    {
+      msg_warning("Error parsing JSON messages");
+      json_tokener_free(tok);
+      return NULL;
+    }
+  json_tokener_free(tok);
+
+  GQueue *messages = _extract_from_json(obj, connection->peer_addr, parse_option);
+  json_object_put(obj);
+
+  return messages;
 }
 
 static EHTTPExtractMessageFunc ehttp_extract_modes[] =
