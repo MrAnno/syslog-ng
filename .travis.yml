@@ -5,13 +5,14 @@ git:
 env: B=autotools
 
 os: linux
+dist: xenial
 
 cache:
   apt: true
 
 install:
-  - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key | sudo apt-key add -
-  - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
+  - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04/Release.key | sudo apt-key add -
+  - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
   - sudo apt-get update -qq
   - sudo apt-get install -qq
       autoconf-archive
@@ -39,7 +40,7 @@ install:
       criterion-dev
       libmaxminddb-dev
       libxml2-utils
-  - sudo pip install -r requirements.txt
+  - sudo pip install --user -r requirements.txt
 before_script:
   - echo 'Europe/Budapest' | sudo tee /etc/timezone
   - sudo dpkg-reconfigure --frontend noninteractive tzdata
@@ -102,11 +103,11 @@ compiler:
 matrix:
   include:
     - env: B=style-check
-      dist: trusty
+      dist: xenial
       sudo: required
       install:
-      - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04/Release.key | sudo apt-key add -
-      - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_14.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
+      - curl -4 http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04/Release.key | sudo apt-key add -
+      - echo "deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04 ./" | sudo tee --append /etc/apt/sources.list.d/syslog-ng-obs.list
       - sudo apt-get update -qq
       - sudo apt-get install -qq
           astyle
@@ -123,9 +124,9 @@ matrix:
       script:
         - export COPYRIGHTVERBOSITY=1
         - tests/copyright/check.sh . .
-    - env: B=trusty-cmake-internal
+    - env: B=xenial-cmake-internal
       compiler: gcc
-      dist: trusty
+      dist: xenial
       sudo: required
       before_script:
       git:
@@ -140,9 +141,9 @@ matrix:
             ..
         - make --keep-going -j $(nproc) ARGS="-j $(nproc)" all test install
         - make VERBOSE=1 func-test
-    - env: B=trusty-cmake
+    - env: B=xenial-cmake
       compiler: clang
-      dist: trusty
+      dist: xenial
       sudo: required
       before_script:
       script:
