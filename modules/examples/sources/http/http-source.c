@@ -159,6 +159,13 @@ _create_response(HTTPRequest *http_request, HTTPSourceConnection *connection)
   HTTPResponse *http_response = http_response_new_empty();
   http_message_set_http_version(&http_response->super, 1, 1);
   http_response_set_status_code(http_response, HTTP_OK);
+
+  GByteArray* body = g_byte_array_sized_new(32);
+  const gchar *status_line = http_response_status_code_to_status_line(HTTP_OK);
+  g_byte_array_append(body, (const guint8 *) status_line, strlen(status_line));
+
+  http_message_take_body(&http_response->super, body);
+
   return http_response;
 }
 
