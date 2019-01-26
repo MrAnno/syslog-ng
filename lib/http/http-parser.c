@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017 Balabit
- * Copyright (c) 2017 László Várady
+ * Copyright (c) 2018 Balabit
+ * Copyright (c) 2018 László Várady
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

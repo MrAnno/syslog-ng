@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017 Balabit
- * Copyright (c) 2017 László Várady
+ * Copyright (c) 2018 Balabit
+ * Copyright (c) 2018 László Várady
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,7 +62,6 @@ struct _LogProtoHTTPServer
 
   GQueue *pending_log_messages;
 
-  // pass LogTransportAuxData
   ExtractLogMessagesCallback extract_log_messages;
   CreateResponseCallback create_response;
 };
@@ -391,8 +390,7 @@ log_proto_http_server_process(LogProtoServer *s, LogMessage **log_message, LogTr
     {
       switch (self->state)
         {
-        case STATE_RECEIVE_HTTP_REQUEST:
-          ;
+        case STATE_RECEIVE_HTTP_REQUEST:;
           HTTPRequest *http_request = log_proto_http_server_receive_request(self, aux, &status);
           if (http_request)
             {
