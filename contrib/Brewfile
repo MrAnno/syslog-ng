@@ -1,5 +1,5 @@
-tap "snaipe/soft"
 tap "mranno/tap"
+tap "mranno/soft"
 
 brew "automake"
 brew "autoconf"
