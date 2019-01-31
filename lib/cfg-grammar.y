@@ -30,7 +30,7 @@
    massive list of includes further below. */
 
 #pragma GCC diagnostic ignored "-Wswitch-default"
-/* YYSTYPE and YYLTYPE is defined by the lexer */
+/* MAIN_STYPE and MAIN_LTYPE is defined by the lexer */
 #include "cfg-lexer.h"
 #include "cfg-path.h"
 #include "afinter.h"
@@ -69,9 +69,11 @@ extern struct _HostResolveOptions *last_host_resolve_options;
 extern struct _StatsOptions *last_stats_options;
 extern struct _LogRewrite *last_rewrite;
 
+#define MAIN_TOKENTYPE 1
+
 }
 
-%name-prefix "main_"
+%define api.prefix {main_}
 %lex-param {CfgLexer *lexer}
 %parse-param {CfgLexer *lexer}
 %parse-param {gpointer *dummy}
@@ -79,11 +81,12 @@ extern struct _LogRewrite *last_rewrite;
 
 /* START_DECLS */
 
-%require "2.4.1"
+%require "3.0"
 %locations
 %define api.pure
-%pure-parser
-%error-verbose
+%define api.value.type {MAIN_STYPE}
+%define api.location.type {MAIN_LTYPE}
+%define parse.error verbose
 
 %code {
 

@@ -42,19 +42,19 @@ typedef struct _CfgIncludeLevel CfgIncludeLevel;
 typedef struct _CfgTokenBlock CfgTokenBlock;
 
 /* the location type to carry location information from the lexer to the grammar */
-#define YYLTYPE YYLTYPE
-typedef struct YYLTYPE
+#define MAIN_LTYPE MAIN_LTYPE
+typedef struct MAIN_LTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
   CfgIncludeLevel *level;
-} YYLTYPE;
-#define YYLTYPE_IS_TRIVIAL 1
+} MAIN_LTYPE, YYLTYPE;
+#define MAIN_LTYPE_IS_TRIVIAL 1
 
 /* symbol type that carries token related information to the grammar */
-typedef struct YYSTYPE
+typedef struct MAIN_STYPE
 {
   /* one of LL_ types that indicates which field is being used */
   int type;
@@ -67,9 +67,9 @@ typedef struct YYSTYPE
     void *ptr;
     gpointer node;
   };
-} YYSTYPE;
-#define YYSTYPE_IS_TRIVIAL 1
-#define YYSTYPE_IS_DECLARED 1
+} MAIN_STYPE, YYSTYPE;
+#define MAIN_STYPE_IS_TRIVIAL 1
+#define MAIN_STYPE_IS_DECLARED 1
 
 #define KWS_NORMAL        0
 #define KWS_OBSOLETE      1
@@ -113,7 +113,7 @@ struct _CfgIncludeLevel
       gsize content_length;
     } buffer;
   };
-  YYLTYPE lloc;
+  MAIN_LTYPE lloc;
   struct yy_buffer_state *yybuf;
 };
 
@@ -143,7 +143,7 @@ struct _CfgLexer
 };
 
 /* pattern buffer */
-void cfg_lexer_unput_token(CfgLexer *self, YYSTYPE *yylval);
+void cfg_lexer_unput_token(CfgLexer *self, MAIN_STYPE *yylval);
 
 void cfg_lexer_start_block_state(CfgLexer *self, const gchar block_boundary[2]);
 
@@ -153,7 +153,7 @@ void cfg_lexer_append_char(CfgLexer *self, char c);
 /* keyword handling */
 void cfg_lexer_set_current_keywords(CfgLexer *self, CfgLexerKeyword *keywords);
 char *cfg_lexer_get_keyword_string(CfgLexer *self, int kw);
-int cfg_lexer_lookup_keyword(CfgLexer *self, YYSTYPE *yylval, YYLTYPE *yylloc, const char *token);
+int cfg_lexer_lookup_keyword(CfgLexer *self, MAIN_STYPE *yylval, MAIN_LTYPE *yylloc, const char *token);
 
 /* include files */
 gboolean cfg_lexer_start_next_include(CfgLexer *self);
@@ -161,8 +161,8 @@ gboolean cfg_lexer_include_file(CfgLexer *self, const gchar *filename);
 gboolean cfg_lexer_include_buffer(CfgLexer *self, const gchar *name, const gchar *buffer, gssize length);
 gboolean cfg_lexer_include_buffer_without_backtick_substitution(CfgLexer *self,
     const gchar *name, const gchar *buffer, gsize length);
-const gchar *cfg_lexer_format_location(CfgLexer *self, YYLTYPE *yylloc, gchar *buf, gsize buf_len);
-EVTTAG *cfg_lexer_format_location_tag(CfgLexer *self, YYLTYPE *yylloc);
+const gchar *cfg_lexer_format_location(CfgLexer *self, MAIN_LTYPE *yylloc, gchar *buf, gsize buf_len);
+EVTTAG *cfg_lexer_format_location_tag(CfgLexer *self, MAIN_LTYPE *yylloc);
 
 /* context tracking */
 void cfg_lexer_push_context(CfgLexer *self, gint context, CfgLexerKeyword *keywords, const gchar *desc);
@@ -173,8 +173,8 @@ gint cfg_lexer_get_context_type(CfgLexer *self);
 /* token blocks */
 void cfg_lexer_inject_token_block(CfgLexer *self, CfgTokenBlock *block);
 
-int cfg_lexer_lex(CfgLexer *self, YYSTYPE *yylval, YYLTYPE *yylloc);
-void cfg_lexer_free_token(YYSTYPE *token);
+int cfg_lexer_lex(CfgLexer *self, MAIN_STYPE *yylval, MAIN_LTYPE *yylloc);
+void cfg_lexer_free_token(MAIN_STYPE *token);
 
 CfgLexer *cfg_lexer_new(GlobalConfig *cfg, FILE *file, const gchar *filename, GString *preprocess_output);
 CfgLexer *cfg_lexer_new_buffer(GlobalConfig *cfg, const gchar *buffer, gsize length);
@@ -185,9 +185,9 @@ const gchar *cfg_lexer_lookup_context_name_by_type(gint id);
 
 /* token block objects */
 
-void cfg_token_block_add_and_consume_token(CfgTokenBlock *self, YYSTYPE *token);
-void cfg_token_block_add_token(CfgTokenBlock *self, YYSTYPE *token);
-YYSTYPE *cfg_token_block_get_token(CfgTokenBlock *self);
+void cfg_token_block_add_and_consume_token(CfgTokenBlock *self, MAIN_STYPE *token);
+void cfg_token_block_add_token(CfgTokenBlock *self, MAIN_STYPE *token);
+MAIN_STYPE *cfg_token_block_get_token(CfgTokenBlock *self);
 
 CfgTokenBlock *cfg_token_block_new(void);
 void cfg_token_block_free(CfgTokenBlock *self);
