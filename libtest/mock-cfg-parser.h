@@ -27,8 +27,8 @@
 
 typedef struct
 {
-  YYSTYPE *yylval;
-  YYLTYPE *yylloc;
+  MAIN_STYPE *yylval;
+  MAIN_LTYPE *yylloc;
   CfgLexer *lexer;
 } CfgParserMock;
 

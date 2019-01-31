@@ -255,7 +255,9 @@ log_expr_node_set_aux(LogExprNode *self, gpointer aux, GDestroyNotify destroy)
  * more information about LogExprNode objects and log expressions.
  **/
 LogExprNode *
-log_expr_node_new(gint layout, gint content, const gchar *name, LogExprNode *children, guint32 flags, YYLTYPE *yylloc)
+log_expr_node_new(gint layout, gint content, const gchar *name,
+                  LogExprNode *children, guint32 flags,
+                  MAIN_LTYPE *yylloc)
 {
   LogExprNode *self = g_new0(LogExprNode, 1);
 
@@ -302,7 +304,7 @@ _log_expr_node_free(LogExprNode *self)
 }
 
 LogExprNode *
-log_expr_node_new_pipe(LogPipe *pipe, YYLTYPE *yylloc)
+log_expr_node_new_pipe(LogPipe *pipe, MAIN_LTYPE *yylloc)
 {
   LogExprNode *node = log_expr_node_new(ENL_SINGLE, ENC_PIPE, NULL, NULL, 0, yylloc);
 
@@ -311,79 +313,79 @@ log_expr_node_new_pipe(LogPipe *pipe, YYLTYPE *yylloc)
 }
 
 LogExprNode *
-log_expr_node_new_source(const gchar *name, LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_source(const gchar *name, LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_SOURCE, name, children, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_source_reference(const gchar *name, YYLTYPE *yylloc)
+log_expr_node_new_source_reference(const gchar *name, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_REFERENCE, ENC_SOURCE, name, NULL, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_destination(const gchar *name, LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_destination(const gchar *name, LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_DESTINATION, name, children, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_destination_reference(const gchar *name, YYLTYPE *yylloc)
+log_expr_node_new_destination_reference(const gchar *name, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_REFERENCE, ENC_DESTINATION, name, NULL, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_filter(const gchar *name, LogExprNode *child, YYLTYPE *yylloc)
+log_expr_node_new_filter(const gchar *name, LogExprNode *child, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_FILTER, name, child, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_filter_reference(const gchar *name, YYLTYPE *yylloc)
+log_expr_node_new_filter_reference(const gchar *name, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_REFERENCE, ENC_FILTER, name, NULL, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_parser(const gchar *name, LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_parser(const gchar *name, LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_PARSER, name, children, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_parser_reference(const gchar *name, YYLTYPE *yylloc)
+log_expr_node_new_parser_reference(const gchar *name, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_REFERENCE, ENC_PARSER, name, NULL, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_rewrite(const gchar *name, LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_rewrite(const gchar *name, LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_REWRITE, name, children, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_rewrite_reference(const gchar *name, YYLTYPE *yylloc)
+log_expr_node_new_rewrite_reference(const gchar *name, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_REFERENCE, ENC_REWRITE, name, NULL, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_log(LogExprNode *children, guint32 flags, YYLTYPE *yylloc)
+log_expr_node_new_log(LogExprNode *children, guint32 flags, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_PIPE, NULL, children, flags, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_sequence(LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_sequence(LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_SEQUENCE, ENC_PIPE, NULL, children, 0, yylloc);
 }
 
 LogExprNode *
-log_expr_node_new_junction(LogExprNode *children, YYLTYPE *yylloc)
+log_expr_node_new_junction(LogExprNode *children, MAIN_LTYPE *yylloc)
 {
   return log_expr_node_new(ENL_JUNCTION, ENC_PIPE, NULL, children, 0, yylloc);
 }
@@ -519,7 +521,7 @@ log_expr_node_conditional_set_false_branch_of_the_last_if(LogExprNode *condition
 /*
  */
 LogExprNode *
-log_expr_node_new_conditional_with_filter(LogExprNode *filter_pipe, LogExprNode *true_expr, YYLTYPE *yylloc)
+log_expr_node_new_conditional_with_filter(LogExprNode *filter_pipe, LogExprNode *true_expr, MAIN_LTYPE *yylloc)
 {
   LogExprNode *filter_node = log_expr_node_new_filter(NULL, filter_pipe, NULL);
 
@@ -561,7 +563,7 @@ log_expr_node_new_conditional_with_filter(LogExprNode *filter_pipe, LogExprNode 
 }
 
 LogExprNode *
-log_expr_node_new_conditional_with_block(LogExprNode *block, YYLTYPE *yylloc)
+log_expr_node_new_conditional_with_block(LogExprNode *block, MAIN_LTYPE *yylloc)
 {
   /*
    *  channel {

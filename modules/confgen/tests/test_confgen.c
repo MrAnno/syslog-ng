@@ -43,7 +43,7 @@ _next_token(void)
   cfg_parser_mock_next_token(parser);
 }
 
-static YYSTYPE *
+static MAIN_STYPE *
 _current_token(void)
 {
   return parser->yylval;

@@ -39,7 +39,7 @@ static CfgLexerKeyword timestamp_keywords[] =
   { NULL }
 };
 
-CFG_PARSER_IMPLEMENT_LEXER_BINDING(timestamp_, gpointer *);
+CFG_PARSER_IMPLEMENT_LEXER_BINDING(timestamp_, TIMESTAMP_, gpointer *);
 
 CfgParser timestamp_parser =
 {
@@ -51,3 +51,4 @@ CfgParser timestamp_parser =
   .parse = (int (*)(CfgLexer *, gpointer *, gpointer)) timestamp_parse,
   .cleanup = (void (*)(gpointer)) log_pipe_unref,
 };
+
