@@ -178,14 +178,14 @@ matrix:
             --disable-smtp
             --disable-geoip
             --enable-all-modules
-        - make --keep-going -j $(sysctl -n hw.physicalcpu) ||
+        - make --keep-going -j 4 ||
           {
             S=$?;
             make V=1;
             return $S;
           }
       script:
-        - make --keep-going check -j $(sysctl -n hw.physicalcpu) ||
+        - make --keep-going check -j 4 ||
           {
             S=$?;
             echo "Output of first test invocation:";
