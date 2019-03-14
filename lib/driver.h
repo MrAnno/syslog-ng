@@ -165,7 +165,6 @@ struct _LogDestDriver
    * here and are automatically saved into cfg_persist & persist_state. */
   GList *queues;
 
-  gint log_fifo_size;
   gint throttle;
   StatsCounterItem *queued_global_messages;
 };

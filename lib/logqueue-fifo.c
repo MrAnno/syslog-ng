@@ -81,7 +81,6 @@ typedef struct _LogQueueFifo
   struct iv_list_head qoverflow_wait;
   gint qoverflow_wait_len;
   gint qoverflow_output_len;
-  gint qoverflow_size; /* in number of elements */
 
   struct iv_list_head qbacklog;    /* entries that were sent but not acked yet */
   gint qbacklog_len;
@@ -158,56 +157,6 @@ log_queue_fifo_keep_on_reload(LogQueue *s)
 static void
 log_queue_fifo_move_input_unlocked(LogQueueFifo *self, gint thread_id)
 {
-  gint queue_len;
-
-  /* since we're in the input thread, queue_len will be racy. It can
-   * increase due to log_queue_fifo_push_head() and can also decrease as
-   * items are removed from the output queue using log_queue_pop_head().
-   *
-   * The only reason we're using it here is to check for qoverflow
-   * overflows, however the only side-effect of the race (if lost) is that
-   * we would lose a couple of message too many or add some more messages to
-   * qoverflow than permitted by the user.  Since if flow-control is used,
-   * the fifo size should be sized larger than the potential window sizes,
-   * otherwise we can lose messages anyway, this is not deemed a cost to
-   * justify proper locking in this case.
-   */
-
-  queue_len = log_queue_fifo_get_length(&self->super);
-  if (queue_len + self->qoverflow_input[thread_id].len > self->qoverflow_size)
-    {
-      /* slow path, the input thread's queue would overflow the queue, let's drop some messages */
-
-      LogPathOptions path_options = LOG_PATH_OPTIONS_INIT;
-      gint i;
-      gint n;
-
-      /* NOTE: MAX is needed here to ensure that the lost race on queue_len
-       * doesn't result in n < 0 */
-      n = self->qoverflow_input[thread_id].len - MAX(0, (self->qoverflow_size - queue_len));
-
-      for (i = 0; i < n; i++)
-        {
-          LogMessageQueueNode *node = iv_list_entry(self->qoverflow_input[thread_id].items.next, LogMessageQueueNode, list);
-          LogMessage *msg = node->msg;
-
-          iv_list_del(&node->list);
-          self->qoverflow_input[thread_id].len--;
-          path_options.ack_needed = node->ack_needed;
-          path_options.flow_control_requested = node->flow_control_requested;
-          stats_counter_inc(self->super.dropped_messages);
-          log_msg_free_queue_node(node);
-          if (path_options.flow_control_requested)
-            log_msg_drop(msg, &path_options, AT_SUSPENDED);
-          else
-            log_msg_drop(msg, &path_options, AT_PROCESSED);
-        }
-      msg_debug("Destination queue full, dropping messages",
-                evt_tag_int("queue_len", queue_len),
-                evt_tag_int("log_fifo_size", self->qoverflow_size),
-                evt_tag_int("count", n),
-                evt_tag_str("persist_name", self->super.persist_name));
-    }
   log_queue_queued_messages_add(&self->super, self->qoverflow_input[thread_id].len);
   iv_list_update_msg_size(self, &self->qoverflow_input[thread_id].items);
 
@@ -304,36 +253,17 @@ log_queue_fifo_push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *pat
   if (thread_id >= 0)
     log_queue_fifo_move_input_unlocked(self, thread_id);
 
-  if (log_queue_fifo_get_length(s) < self->qoverflow_size)
-    {
-      node = log_msg_alloc_queue_node(msg, path_options);
+  node = log_msg_alloc_queue_node(msg, path_options);
 
-      iv_list_add_tail(&node->list, &self->qoverflow_wait);
-      self->qoverflow_wait_len++;
-      log_queue_push_notify(&self->super);
-      log_queue_queued_messages_inc(&self->super);
+  iv_list_add_tail(&node->list, &self->qoverflow_wait);
+  self->qoverflow_wait_len++;
+  log_queue_push_notify(&self->super);
+  log_queue_queued_messages_inc(&self->super);
 
-      log_queue_memory_usage_add(&self->super, log_msg_get_size(msg));
-      g_static_mutex_unlock(&self->super.lock);
+  log_queue_memory_usage_add(&self->super, log_msg_get_size(msg));
+  g_static_mutex_unlock(&self->super.lock);
 
-      log_msg_unref(msg);
-    }
-  else
-    {
-      stats_counter_inc(self->super.dropped_messages);
-      g_static_mutex_unlock(&self->super.lock);
-
-      if (path_options->flow_control_requested)
-        log_msg_drop(msg, path_options, AT_SUSPENDED);
-      else
-        log_msg_drop(msg, path_options, AT_PROCESSED);
-
-      msg_debug("Destination queue full, dropping message",
-                evt_tag_int("queue_len", log_queue_fifo_get_length(&self->super)),
-                evt_tag_int("log_fifo_size", self->qoverflow_size),
-                evt_tag_str("persist_name", self->super.persist_name));
-    }
-  return;
+  log_msg_unref(msg);
 }
 
 /*
@@ -542,7 +472,7 @@ log_queue_fifo_free(LogQueue *s)
 }
 
 LogQueue *
-log_queue_fifo_new(gint qoverflow_size, const gchar *persist_name)
+log_queue_fifo_new(const gchar *persist_name)
 {
   LogQueueFifo *self;
   gint i;
@@ -575,6 +505,5 @@ log_queue_fifo_new(gint qoverflow_size, const gchar *persist_name)
   INIT_IV_LIST_HEAD(&self->qoverflow_output);
   INIT_IV_LIST_HEAD(&self->qbacklog);
 
-  self->qoverflow_size = qoverflow_size;
   return &self->super;
 }

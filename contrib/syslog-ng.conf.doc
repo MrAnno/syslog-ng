@@ -65,8 +65,6 @@
 #                                      considered the log entry owner and
 #                                      the log entry will appear to have 
 #                                      come from that host.
-#  log_fifo_size              num      The number of lines fitting to the 
-#                                      output queue
 #  log_msg_size               num      Maximum length of message in bytes.
 #  long_hostnames             on/off   This options appears to only really
 #                                      have an affect on the local system.
@@ -124,7 +122,6 @@ options
     dir_perm(0755); 
     dns_cache(yes);
     keep_hostname(yes);
-    log_fifo_size(2048);
     log_msg_size(8192);
     long_hostnames(on);
     perm(0644); 
@@ -414,8 +411,6 @@ source s_tcp
 #                            performance seriously
 #    group           string  Set the group of the created      root
 #                            filename to the one specified.
-#    log_fifo_size   num     The number of entries in the      global
-#                            output fifo.                      setting
 #    owner           string  Set the owner of the created      root
 #                            filename to the one specified.
 #    perm            num     The permission mask of the file   0600

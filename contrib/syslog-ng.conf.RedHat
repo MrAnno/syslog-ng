@@ -18,7 +18,6 @@
 
 options { sync (0);
           time_reopen (10);
-          log_fifo_size (1000);
           long_hostnames (off);
           use_dns (no);
           use_fqdn (no);

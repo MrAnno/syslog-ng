@@ -39,7 +39,6 @@
 #include <iv_list.h>
 #include <iv_thread.h>
 
-#define OVERFLOW_SIZE 10000
 #define FEEDERS 1
 #define MESSAGES_PER_FEEDER 30000
 #define MESSAGES_SUM (FEEDERS * MESSAGES_PER_FEEDER)
@@ -185,7 +184,7 @@ Test(logqueue, test_zero_diskbuf_and_normal_acks)
   LogQueue *q;
   gint i;
 
-  q = log_queue_fifo_new(OVERFLOW_SIZE, NULL);
+  q = log_queue_fifo_new(NULL);
 
   StatsClusterKey sc_key;
   stats_lock();
@@ -226,7 +225,7 @@ Test(logqueue, test_zero_diskbuf_alternating_send_acks)
   LogQueue *q;
   gint i;
 
-  q = log_queue_fifo_new(OVERFLOW_SIZE, NULL);
+  q = log_queue_fifo_new(NULL);
   log_queue_set_use_backlog(q, TRUE);
 
   fed_messages = 0;
@@ -256,7 +255,7 @@ Test(logqueue, test_with_threads)
   for (i = 0; i < TEST_RUNS; i++)
     {
       fprintf(stderr,"starting testrun: %d\n",i);
-      q = log_queue_fifo_new(MESSAGES_SUM, NULL);
+      q = log_queue_fifo_new(NULL);
       log_queue_set_use_backlog(q, TRUE);
 
       for (j = 0; j < FEEDERS; j++)
@@ -283,7 +282,7 @@ Test(logqueue, test_with_threads)
 
 Test(logqueue, log_queue_fifo_rewind_all_and_memory_usage)
 {
-  LogQueue *q = log_queue_fifo_new(OVERFLOW_SIZE, NULL);
+  LogQueue *q = log_queue_fifo_new(NULL);
   log_queue_set_use_backlog(q, TRUE);
 
   StatsClusterKey sc_key;

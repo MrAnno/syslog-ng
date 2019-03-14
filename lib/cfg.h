@@ -91,7 +91,6 @@ struct _GlobalConfig
   gint suppress;
   gint type_cast_strictness;
 
-  gint log_fifo_size;
   gint log_msg_size;
 
   gboolean create_dirs;
