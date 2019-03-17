@@ -150,7 +150,6 @@ LogExprNode *log_expr_node_new_parser_reference(const gchar *name, YYLTYPE *yyll
 LogExprNode *log_expr_node_new_rewrite(const gchar *name, LogExprNode *children, YYLTYPE *yylloc);
 LogExprNode *log_expr_node_new_rewrite_reference(const gchar *name, YYLTYPE *yylloc);
 LogExprNode *log_expr_node_new_log(LogExprNode *children, guint32 flags, YYLTYPE *yylloc);
-LogExprNode *log_expr_node_new_sequence(LogExprNode *children, YYLTYPE *yylloc);
 LogExprNode *log_expr_node_new_junction(LogExprNode *children, YYLTYPE *yylloc);
 void log_expr_node_conditional_set_false_branch_of_the_last_if(LogExprNode *conditional_node, LogExprNode *false_expr);
 LogExprNode *log_expr_node_new_conditional_with_filter(LogExprNode *filter_pipe, LogExprNode *true_expr,
