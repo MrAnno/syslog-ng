@@ -373,6 +373,12 @@ cfg_set_version(GlobalConfig *self, gint version)
                   "syslog-ng will operate at its highest supported version in this mode");
       self->user_version = VERSION_VALUE;
     }
+
+  if (cfg_is_config_version_older(self, 0x0303))
+    {
+      msg_warning("WARNING: global: the default value of log_fifo_size() has changed to 10000 in " VERSION_3_3
+                  " to reflect log_iw_size() changes for tcp()/udp() window size changes");
+    }
   return TRUE;
 }
 
@@ -419,6 +425,7 @@ cfg_new(gint version)
   self->time_reopen = 60;
   self->time_reap = 60;
 
+  self->log_fifo_size = 10000;
   self->log_msg_size = 65536;
 
   file_perm_options_global_defaults(&self->file_perm_options);

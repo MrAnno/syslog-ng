@@ -135,6 +135,7 @@ _attach(LogDriverPlugin *s, LogDriver *d)
 {
   DiskQDestPlugin *self = (DiskQDestPlugin *) s;
   LogDestDriver *dd = (LogDestDriver *) d;
+  GlobalConfig *cfg = log_pipe_get_config(&d->super);
 
   if (self->options.disk_buf_size == -1)
     {
@@ -149,6 +150,10 @@ _attach(LogDriverPlugin *s, LogDriver *d)
       self->options.disk_buf_size = MIN_DISK_BUF_SIZE;
     }
 
+  if (self->options.mem_buf_length < 0)
+    self->options.mem_buf_length = dd->log_fifo_size;
+  if (self->options.mem_buf_length < 0)
+    self->options.mem_buf_length = cfg->log_fifo_size;
   if (self->options.qout_size < 0)
     self->options.qout_size = 64;
 
