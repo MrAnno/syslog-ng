@@ -932,10 +932,6 @@ log_threaded_dest_driver_queue(LogPipe *s, LogMessage *msg,
 {
   LogThreadedDestDriver *self = (LogThreadedDestDriver *)s;
   LogThreadedDestWorker *dw = _lookup_worker(self, msg);
-  LogPathOptions local_options;
-
-  if (!path_options->flow_control_requested)
-    path_options = log_msg_break_ack(msg, path_options, &local_options);
 
   log_msg_add_ack(msg, path_options);
   log_queue_push_tail(dw->queue, log_msg_ref(msg), path_options);
