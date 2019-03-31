@@ -1577,6 +1577,15 @@ log_msg_break_ack(LogMessage *msg, const LogPathOptions *path_options, LogPathOp
   return local_options;
 }
 
+LogSource *
+log_msg_get_source(LogMessage *msg)
+{
+  if (msg->ack_record && msg->ack_record->tracker)
+    return msg->ack_record->tracker->source;
+
+  return NULL;
+}
+
 
 /*
  * Start caching ref/unref/ack/add-ack operations in the current thread for
