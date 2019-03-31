@@ -28,6 +28,7 @@
 #include "serialize.h"
 #include "stats/stats-registry.h"
 #include "mainloop-worker.h"
+#include "logsource.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -189,6 +190,25 @@ log_queue_fifo_move_input(gpointer user_data)
   return NULL;
 }
 
+static inline gboolean
+_msg_has_to_be_dropped(LogMessage *msg, const LogPathOptions *path_options)
+{
+  LogSource *source = log_msg_get_source(msg);
+  if (!source)
+    return FALSE;
+
+  return !path_options->flow_control_requested && !log_source_free_to_send(source);
+}
+
+static inline void
+log_queue_fifo_drop_message(LogQueueFifo *self, LogMessage *msg, const LogPathOptions *path_options)
+{
+  stats_counter_inc(self->super.dropped_messages);
+  log_msg_drop(msg, path_options, AT_PROCESSED);
+  msg_debug("Source limit has been reached, dropping message",
+            evt_tag_str("persist_name", self->super.persist_name));
+}
+
 /**
  * Assumed to be called from one of the input threads. If the thread_id
  * cannot be determined, the item is put directly in the wait queue.
@@ -239,6 +259,12 @@ log_queue_fifo_push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *pat
           log_queue_ref(&self->super);
         }
 
+      if (_msg_has_to_be_dropped(msg, path_options))
+        {
+          log_queue_fifo_drop_message(self, msg, path_options);
+          return;
+        }
+
       node = log_msg_alloc_queue_node(msg, path_options);
       iv_list_add_tail(&node->list, &self->qoverflow_input[thread_id].items);
       self->qoverflow_input[thread_id].len++;
@@ -253,6 +279,13 @@ log_queue_fifo_push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *pat
   if (thread_id >= 0)
     log_queue_fifo_move_input_unlocked(self, thread_id);
 
+  if (_msg_has_to_be_dropped(msg, path_options))
+    {
+      log_queue_fifo_drop_message(self, msg, path_options);
+      g_static_mutex_unlock(&self->super.lock);
+      return;
+    }
+
   node = log_msg_alloc_queue_node(msg, path_options);
 
   iv_list_add_tail(&node->list, &self->qoverflow_wait);
@@ -262,7 +295,6 @@ log_queue_fifo_push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *pat
 
   log_queue_memory_usage_add(&self->super, log_msg_get_size(msg));
   g_static_mutex_unlock(&self->super.lock);
-
   log_msg_unref(msg);
 }
 
