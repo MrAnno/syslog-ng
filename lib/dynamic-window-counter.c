@@ -26,10 +26,13 @@
 #include <syslog-ng.h>
 #include "dynamic-window-counter.h"
 
-void
-dynamic_window_counter_init_instance(DynamicWindowCounter *self)
+DynamicWindowCounter *
+dynamic_window_counter_new(void)
 {
+  DynamicWindowCounter *self = g_new0(DynamicWindowCounter, 1);
+
   self->mutex = g_mutex_new();
+  return self;
 }
 
 void dynamic_window_counter_init(DynamicWindowCounter *self)
@@ -37,9 +40,15 @@ void dynamic_window_counter_init(DynamicWindowCounter *self)
   self->window = self->iw_size;
 }
 
-void dynamic_window_counter_destroy(DynamicWindowCounter *self)
+void dynamic_window_counter_free(DynamicWindowCounter *self)
 {
+  if (!self)
+    return;
+
   g_mutex_free(self->mutex);
+  self->mutex = NULL;
+
+  g_free(self);
 }
 
 void dynamic_window_counter_set_iw_size(DynamicWindowCounter *self, gsize iw_size)
