@@ -41,3 +41,8 @@ void dynamic_window_counter_destroy(DynamicWindowCounter *self)
 {
   g_mutex_free(self->mutex);
 }
+
+void dynamic_window_counter_set_iw_size(DynamicWindowCounter *self, gsize iw_size)
+{
+  self->iw_size = iw_size;
+}

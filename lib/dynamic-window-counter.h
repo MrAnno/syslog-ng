@@ -40,5 +40,6 @@ void dynamic_window_counter_init_instance(DynamicWindowCounter *self);
 void dynamic_window_counter_init(DynamicWindowCounter *self);
 void dynamic_window_counter_destroy(DynamicWindowCounter *self);
 
+void dynamic_window_counter_set_iw_size(DynamicWindowCounter *self, gsize iw_size);
 
 #endif
