@@ -428,6 +428,14 @@ log_source_set_options(LogSource *self, LogSourceOptions *options,
   self->stats_instance = stats_instance ? g_strdup(stats_instance): NULL;
   self->threaded = threaded;
   self->pos_tracked = pos_tracked;
+
+  if (pos_tracked && options->dynamic_window)
+    {
+      msg_warning("WARNING: dynamic window size control works only with non-position tracking protos"
+                  "Fallback to static window size(dynamic won't be used).",
+                  log_pipe_location_tag(&self->super));
+    }
+
   log_pipe_detach_expr_node(&self->super);
   log_pipe_attach_expr_node(&self->super, expr_node);
 
