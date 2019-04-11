@@ -268,6 +268,14 @@ afsocket_sd_set_listen_backlog(LogDriver *s, gint listen_backlog)
   self->listen_backlog = listen_backlog;
 }
 
+void
+afsocket_sd_set_dynamic_window_size(LogDriver *s, gint dynamic_window_size)
+{
+  AFSocketSourceDriver *self = (AFSocketSourceDriver *) s;
+
+  self->dynamic_window_size = dynamic_window_size;
+}
+
 static const gchar *
 afsocket_sd_format_name(const LogPipe *s)
 {

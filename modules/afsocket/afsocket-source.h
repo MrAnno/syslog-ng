@@ -47,6 +47,7 @@ struct _AFSocketSourceDriver
   gint max_connections;
   gint num_connections;
   gint listen_backlog;
+  gint dynamic_window_size;
   GList *connections;
   SocketOptions *socket_options;
   TransportMapper *transport_mapper;
@@ -70,6 +71,7 @@ struct _AFSocketSourceDriver
 void afsocket_sd_set_keep_alive(LogDriver *self, gint enable);
 void afsocket_sd_set_max_connections(LogDriver *self, gint max_connections);
 void afsocket_sd_set_listen_backlog(LogDriver *self, gint listen_backlog);
+void afsocket_sd_set_dynamic_window_size(LogDriver *self, gint dynamic_window_size);
 
 static inline gboolean
 afsocket_sd_acquire_socket(AFSocketSourceDriver *s, gint *fd)
