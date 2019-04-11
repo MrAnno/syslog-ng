@@ -43,7 +43,7 @@ struct _AFSocketSourceDriver
   struct iv_fd listen_fd;
   gint fd;
   LogReaderOptions reader_options;
-  DynamicWindowCounter dynamic_window_ctr;
+  DynamicWindowCounter *dynamic_window_ctr;
   LogProtoServerFactory *proto_factory;
   GSockAddr *bind_addr;
   gint max_connections;
