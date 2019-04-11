@@ -105,6 +105,9 @@ afsocket_sc_init(LogPipe *s)
       log_reader_reopen(self->reader, proto, poll_fd_events_new(self->sock));
       log_reader_set_peer_addr(self->reader, self->peer_addr);
     }
+
+  // TODO ref-count should not be necessary, check it
+  log_source_enable_dynamic_window((LogSource *) self->reader, &self->owner->dynamic_window_ctr);
   log_reader_set_options(self->reader, &self->super,
                          &self->owner->reader_options,
                          self->owner->super.super.id,
@@ -273,7 +276,7 @@ afsocket_sd_set_dynamic_window_size(LogDriver *s, gint dynamic_window_size)
 {
   AFSocketSourceDriver *self = (AFSocketSourceDriver *) s;
 
-  self->dynamic_window_size = dynamic_window_size;
+  dynamic_window_counter_set_iw_size(&self->dynamic_window_ctr, dynamic_window_size);
 }
 
 static const gchar *
@@ -711,6 +714,8 @@ afsocket_sd_init_method(LogPipe *s)
 {
   AFSocketSourceDriver *self = (AFSocketSourceDriver *) s;
 
+  dynamic_window_counter_init(&self->dynamic_window_ctr);
+
   return log_src_driver_init_method(s) &&
          afsocket_sd_setup_transport(self) &&
          afsocket_sd_setup_addresses(self) &&
@@ -755,6 +760,7 @@ afsocket_sd_free_method(LogPipe *s)
   socket_options_free(self->socket_options);
   g_sockaddr_unref(self->bind_addr);
   self->bind_addr = NULL;
+  dynamic_window_counter_destroy(&self->dynamic_window_ctr);
   log_src_driver_free(s);
 }
 
@@ -780,6 +786,8 @@ afsocket_sd_init_instance(AFSocketSourceDriver *self,
   log_reader_options_defaults(&self->reader_options);
   self->reader_options.super.stats_level = STATS_LEVEL1;
   self->reader_options.super.stats_source = transport_mapper->stats_source;
+
+  dynamic_window_counter_init_instance(&self->dynamic_window_ctr);
 
   /* NOTE: this changes the initial window size from 100 to 1000. Reasons:
    * Starting with syslog-ng 3.3, window-size is distributed evenly between

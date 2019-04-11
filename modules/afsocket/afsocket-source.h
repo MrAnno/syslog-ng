@@ -29,6 +29,7 @@
 #include "transport-mapper.h"
 #include "driver.h"
 #include "logreader.h"
+#include "dynamic-window-counter.h"
 
 #include <iv.h>
 
@@ -42,12 +43,12 @@ struct _AFSocketSourceDriver
   struct iv_fd listen_fd;
   gint fd;
   LogReaderOptions reader_options;
+  DynamicWindowCounter dynamic_window_ctr;
   LogProtoServerFactory *proto_factory;
   GSockAddr *bind_addr;
   gint max_connections;
   gint num_connections;
   gint listen_backlog;
-  gint dynamic_window_size;
   GList *connections;
   SocketOptions *socket_options;
   TransportMapper *transport_mapper;
