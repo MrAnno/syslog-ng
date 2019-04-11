@@ -112,6 +112,8 @@ pkginclude_HEADERS			+= \
 	lib/crypto.h			\
 	lib/dnscache.h			\
 	lib/driver.h			\
+	lib/dynamic-window-counter.h \
+	lib/dynamic-window.h \
 	lib/fdhelpers.h			\
 	lib/file-perms.h		\
 	lib/find-crlf.h			\
