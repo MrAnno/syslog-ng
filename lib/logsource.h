@@ -28,6 +28,7 @@
 #include "logpipe.h"
 #include "stats/stats-registry.h"
 #include "window-size-counter.h"
+#include "dynamic-window.h"
 
 typedef struct _LogSourceOptions
 {
@@ -47,6 +48,7 @@ typedef struct _LogSourceOptions
   GList *source_queue_callbacks;
   gint stats_level;
   gint stats_source;
+  DynamicWindow *dynamic_window;
 } LogSourceOptions;
 
 typedef struct _LogSource LogSource;
