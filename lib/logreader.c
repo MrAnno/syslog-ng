@@ -612,6 +612,14 @@ log_reader_set_peer_addr(LogReader *s, GSockAddr *peer_addr)
   self->peer_addr = g_sockaddr_ref(peer_addr);
 }
 
+static void
+_dynamic_window_realloc(LogSource *s)
+{
+  LogReader *self = (LogReader *)s;
+  msg_trace("LogReader::dynamic_window_realloc called");
+  //TODO
+}
+
 LogReader *
 log_reader_new(GlobalConfig *cfg)
 {
@@ -623,6 +631,7 @@ log_reader_new(GlobalConfig *cfg)
   self->super.super.free_fn = log_reader_free;
   self->super.wakeup = log_reader_wakeup;
   self->super.window_empty_cb = log_reader_window_empty;
+  self->super.dynamic_window_realloc = _dynamic_window_realloc;
   self->immediate_check = FALSE;
   log_reader_init_watches(self);
   g_static_mutex_init(&self->pending_proto_lock);
