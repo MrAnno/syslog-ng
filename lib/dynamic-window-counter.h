@@ -31,7 +31,6 @@ typedef struct _DynamicWindowCounter DynamicWindowCounter;
 
 struct _DynamicWindowCounter
 {
-  GMutex *mutex;
   gsize iw_size;
   gsize window;
 };
