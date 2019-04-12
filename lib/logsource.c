@@ -550,12 +550,9 @@ log_source_free(LogPipe *s)
   log_pipe_detach_expr_node(&self->super);
   log_pipe_free_method(s);
 
-  //TODO: reclaim all dynamic window slots after the connection is closed and all acks have been received
-  // maybe here?
-  //dynamic_window_counter_release(self->dynamic_window.window_ctr, self->full_window_size - self->options->init_window_size);
-
   ack_tracker_free(self->ack_tracker);
   self->ack_tracker = NULL;
+  _release_dynamic_window(self);
 }
 
 void
