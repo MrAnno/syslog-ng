@@ -237,6 +237,7 @@ static void
 _release_dynamic_window(LogSource *self)
 {
   //called only in log_source_free!
+  g_assert(self->ack_tracker == NULL);
   gsize dynamic_part = self->full_window_size - self->options->init_window_size;
   msg_trace("Releasing dynamic part of the window", evt_tag_int("dynamic_window_to_be_released", dynamic_part),
             log_pipe_location_tag(&self->super));
@@ -554,6 +555,7 @@ log_source_free(LogPipe *s)
   //dynamic_window_counter_release(self->dynamic_window.window_ctr, self->full_window_size - self->options->init_window_size);
 
   ack_tracker_free(self->ack_tracker);
+  self->ack_tracker = NULL;
 }
 
 void
