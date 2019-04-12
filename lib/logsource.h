@@ -32,6 +32,7 @@
 
 typedef struct _LogSourceOptions
 {
+  //TODO: rename to static_window_size?!
   gint init_window_size;
   const gchar *group_name;
   gboolean keep_timestamp;
@@ -68,6 +69,7 @@ struct _LogSource
   gboolean pos_tracked;
   gchar *stats_id;
   gchar *stats_instance;
+  gint full_window_size;
   WindowSizeCounter window_size;
   DynamicWindow dynamic_window;
   StatsCounterItem *last_message_seen;
@@ -126,5 +128,8 @@ void log_source_enable_dynamic_window(LogSource *self, DynamicWindowCounter *win
 void log_source_dynamic_window_update_statistics(LogSource *self);
 
 void log_source_global_init(void);
+
+/* protected */
+void log_source_dynamic_window_realloc(LogSource *self);
 
 #endif
