@@ -207,7 +207,7 @@ _decrease_window(LogSource *self)
   if (empty_window <= subtrahend)
     {
       subtrahend = empty_window == 0 ? 0 : empty_window - 1;
-      new_full_window_size = self->full_window_size - empty_window;
+      new_full_window_size = self->full_window_size - subtrahend;
     }
 
   msg_warning("DYNWINSTAT_PER_CONN",
@@ -266,7 +266,7 @@ log_source_dynamic_window_realloc(LogSource *self)
 
   // TODO: this is the first test heuristic
   gsize free_avg = dynamic_window_stat_get_avg(&self->dynamic_window);
-  if (free_avg >= self->full_window_size / 2)
+  if (free_avg > self->full_window_size / 2)
     _decrease_window(self);
 
   if (free_avg < self->full_window_size * 0.05f)
