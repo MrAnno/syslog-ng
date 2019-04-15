@@ -293,7 +293,7 @@ afsocket_sd_set_dynamic_window_stats_freq(LogDriver *s, gfloat stats_freq)
 {
   AFSocketSourceDriver *self = (AFSocketSourceDriver *) s;
 
-  self->dynamic_window_stats_freq = stats_freq * 1000.0;
+  self->dynamic_window_stats_freq = stats_freq * 1000.0f;
 }
 
 void
@@ -569,7 +569,7 @@ static void
 afsocket_sd_start_watches(AFSocketSourceDriver *self)
 {
   _listen_fd_start(self);
-  
+
   if (self->dynamic_window_ctr != NULL)
     _dynamic_window_timer_start(self);
 }
