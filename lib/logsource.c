@@ -30,6 +30,7 @@
 #include "logmsg/tags.h"
 #include "ack_tracker.h"
 #include "timeutils/misc.h"
+#include <iv.h>
 
 #include <string.h>
 
@@ -209,6 +210,11 @@ _decrease_window(LogSource *self)
       new_full_window_size = self->full_window_size - empty_window;
     }
 
+  msg_warning("DYNWINSTAT_PER_CONN",
+               evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
+               evt_tag_int("offered_win", subtrahend)
+             );
+
   window_size_counter_sub(&self->window_size, subtrahend, NULL);
 
   msg_trace("Decreasing dynamic window", evt_tag_int("previous_window", self->full_window_size),
@@ -225,6 +231,11 @@ _increase_window(LogSource *self)
 
   msg_trace("Increasing dynamic window", evt_tag_int("previous_window", self->full_window_size),
             evt_tag_int("new_window", self->full_window_size + offered_dynamic), log_pipe_location_tag(&self->super));
+
+  msg_warning("DYNWINSTAT_PER_CONN",
+               evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
+               evt_tag_int("offered_win", -offered_dynamic)
+             );
 
   self->full_window_size += offered_dynamic;
 
@@ -260,6 +271,11 @@ log_source_dynamic_window_realloc(LogSource *self)
 
   if (free_avg < self->full_window_size * 0.05f)
     _increase_window(self);
+
+  msg_warning("DYNWINSTAT_PER_CONN",
+               evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
+               evt_tag_int("sum_win", self->full_window_size),
+               evt_tag_int("used_win", window_size_counter_get(&self->window_size, NULL)));
 
   dynamic_window_stat_reset(&self->dynamic_window);
 }

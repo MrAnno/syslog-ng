@@ -531,6 +531,10 @@ _on_dynamic_window_timer_elapsed(gpointer cookie)
 
   msg_trace("Dynamic window timer elapsed", evt_tag_int("tick", self->dynamic_window_timer_tick));
   _dynamic_window_timer_start(self);
+
+  msg_warning("DYNWINSTAT_GLOBAL",
+               evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
+               evt_tag_int("free", self->dynamic_window_ctr->window));
 }
 
 static void
