@@ -212,7 +212,8 @@ _decrease_window(LogSource *self)
 
   msg_warning("DYNWINSTAT_PER_CONN",
                evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
-               evt_tag_int("offered_win", subtrahend)
+               evt_tag_int("offered_win", subtrahend),
+               evt_tag_printf("source", "%p", self)
              );
 
   window_size_counter_sub(&self->window_size, subtrahend, NULL);
@@ -234,7 +235,8 @@ _increase_window(LogSource *self)
 
   msg_warning("DYNWINSTAT_PER_CONN",
                evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
-               evt_tag_int("offered_win", -offered_dynamic)
+               evt_tag_int("offered_win", -offered_dynamic),
+               evt_tag_printf("source", "%p", self)
              );
 
   self->full_window_size += offered_dynamic;
@@ -275,7 +277,8 @@ log_source_dynamic_window_realloc(LogSource *self)
   msg_warning("DYNWINSTAT_PER_CONN",
                evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
                evt_tag_int("sum_win", self->full_window_size),
-               evt_tag_int("used_win", window_size_counter_get(&self->window_size, NULL)));
+               evt_tag_int("used_win", self->full_window_size - window_size_counter_get(&self->window_size, NULL)),
+               evt_tag_printf("source", "%p", self));
 
   dynamic_window_stat_reset(&self->dynamic_window);
 }
