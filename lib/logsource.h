@@ -34,6 +34,11 @@ typedef struct _LogSourceOptions
 {
   //TODO: rename to static_window_size?!
   gint init_window_size;
+
+  //TODO: heuristic parameters
+  gint dynamic_window_increase_threshold;
+  gint dynamic_window_decrease_threshold;
+
   const gchar *group_name;
   gboolean keep_timestamp;
   gboolean keep_hostname;

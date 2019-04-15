@@ -246,6 +246,8 @@ extern struct _StatsOptions *last_stats_options;
 %token KW_PERSIST_NAME                10302
 
 %token KW_READ_OLD_RECORDS            10304
+%token KW_DYNAMIC_WINDOW_INCREASE_THRESHOLD 10305
+%token KW_DYNAMIC_WINDOW_DECREASE_THRESHOLD 10306
 
 /* log statement options */
 %token KW_FLAGS                       10190
@@ -1228,6 +1230,8 @@ source_option
 	| KW_LOG_PREFIX '(' string ')'	        { gchar *p = strrchr($3, ':'); if (p) *p = 0; last_source_options->program_override = g_strdup($3); free($3); }
 	| KW_KEEP_TIMESTAMP '(' yesno ')'	{ last_source_options->keep_timestamp = $3; }
 	| KW_READ_OLD_RECORDS '(' yesno ')'	{ last_source_options->read_old_records = $3; }
+  | KW_DYNAMIC_WINDOW_INCREASE_THRESHOLD '(' nonnegative_integer ')' { last_source_options->dynamic_window_increase_threshold = $3; }
+  | KW_DYNAMIC_WINDOW_DECREASE_THRESHOLD '(' nonnegative_integer ')' { last_source_options->dynamic_window_decrease_threshold = $3; }
         | KW_TAGS '(' string_list ')'		{ log_source_options_set_tags(last_source_options, $3); }
         | { last_host_resolve_options = &last_source_options->host_resolve_options; } host_resolve_option
         ;

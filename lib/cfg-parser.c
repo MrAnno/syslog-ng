@@ -164,6 +164,8 @@ static CfgLexerKeyword main_keywords[] =
   { "batch_timeout",      KW_BATCH_TIMEOUT },
 
   { "read_old_records",   KW_READ_OLD_RECORDS},
+  { "dynamic_window_increase_threshold", KW_DYNAMIC_WINDOW_INCREASE_THRESHOLD },
+  { "dynamic_window_decrease_threshold", KW_DYNAMIC_WINDOW_DECREASE_THRESHOLD },
   /* filter items */
   { "type",               KW_TYPE },
   { "tags",               KW_TAGS },
