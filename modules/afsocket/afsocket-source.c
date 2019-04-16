@@ -511,6 +511,37 @@ _dynamic_window_timer_start(AFSocketSourceDriver *self)
 }
 
 static void
+_window_stat_timer_start(AFSocketSourceDriver *self)
+{
+  iv_validate_now();
+  self->window_stat_timer.expires = iv_now;
+  timespec_add_msec(&self->window_stat_timer.expires, self->window_stat_timer_freq);
+  iv_timer_register(&self->window_stat_timer);
+}
+
+static void
+_on_window_stat(gpointer cookie)
+{
+  AFSocketSourceDriver *self = (AFSocketSourceDriver *) cookie;
+
+  for (GList *conn_it = self->connections; conn_it; conn_it = conn_it->next)
+    {
+      AFSocketSourceConnection *conn = (AFSocketSourceConnection *) conn_it->data;
+
+      gint full_win = conn->reader->super.full_window_size;
+      gsize used_win = full_win - window_size_counter_get(&conn->reader->super.window_size, NULL);
+
+      msg_warning("WINSTAT_PER_CONN",
+                  evt_tag_printf("t", "%lu.%lu", iv_now.tv_sec, iv_now.tv_nsec),
+                  evt_tag_int("sum_win", full_win),
+                  evt_tag_int("used_win", used_win),
+                  evt_tag_printf("source", "%p", &conn->reader->super));
+    }
+
+  _window_stat_timer_start(self);
+}
+
+static void
 _on_dynamic_window_timer_elapsed(gpointer cookie)
 {
   AFSocketSourceDriver *self = (AFSocketSourceDriver *)cookie;
@@ -552,6 +583,7 @@ _dynamic_window_timer_stop(AFSocketSourceDriver *self)
   if (iv_timer_registered(&self->dynamic_window_timer))
     iv_timer_unregister(&self->dynamic_window_timer);
 }
+
 static void
 _listen_fd_stop(AFSocketSourceDriver *self)
 {
@@ -563,6 +595,10 @@ static void
 _init_watches(AFSocketSourceDriver *self)
 {
   _dynamic_window_timer_init(self);
+
+  IV_TIMER_INIT(&self->window_stat_timer);
+  self->window_stat_timer.cookie = self;
+  self->window_stat_timer.handler = _on_window_stat;
 }
 
 static void
@@ -572,6 +608,8 @@ afsocket_sd_start_watches(AFSocketSourceDriver *self)
 
   if (self->dynamic_window_ctr != NULL)
     _dynamic_window_timer_start(self);
+
+  _window_stat_timer_start(self);
 }
 
 static void
@@ -579,6 +617,9 @@ afsocket_sd_stop_watches(AFSocketSourceDriver *self)
 {
   _listen_fd_stop(self);
   _dynamic_window_timer_stop(self);
+
+  if (iv_timer_registered(&self->window_stat_timer))
+    iv_timer_unregister(&self->window_stat_timer);
 }
 
 static gboolean
@@ -889,6 +930,7 @@ afsocket_sd_init_instance(AFSocketSourceDriver *self,
   self->listen_backlog = 255;
   self->dynamic_window_stats_freq = DYNAMIC_WINDOW_TIMER_MSECS;
   self->dynamic_window_realloc_ticks = DYNAMIC_WINDOW_REALLOC_TICKS;
+  self->window_stat_timer_freq = DYNAMIC_WINDOW_TIMER_MSECS * DYNAMIC_WINDOW_REALLOC_TICKS;
   self->connections_kept_alive_across_reloads = TRUE;
   log_reader_options_defaults(&self->reader_options);
   self->reader_options.super.stats_level = STATS_LEVEL1;
