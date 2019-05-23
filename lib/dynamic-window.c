@@ -79,6 +79,12 @@ dynamic_window_set_counter(DynamicWindow *self, DynamicWindowCounter *ctr)
   dynamic_window_stat_reset(&self->ack_rate);
 }
 
+gboolean
+dynamic_window_is_enabled(DynamicWindow *self)
+{
+  return !!self->ctr;
+}
+
 gsize
 dynamic_window_request(DynamicWindow *self, gsize size)
 {
