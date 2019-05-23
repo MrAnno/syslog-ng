@@ -40,6 +40,16 @@ dynamic_window_stat_reset(DynamicWindowStat *self)
   self->n = 0;
 }
 
+void dynamic_window_stat_inc_number_of_samples(DynamicWindowStat *self, gsize n)
+{
+  self->n += n;
+}
+
+void dynamic_window_stat_inc_value(DynamicWindowStat *self, gsize value)
+{
+  self->sum += value;
+}
+
 gsize
 dynamic_window_stat_get_avg(DynamicWindowStat *self)
 {

@@ -40,6 +40,8 @@ struct _DynamicWindowStat
 
 void dynamic_window_stat_update(DynamicWindowStat *self, gsize value);
 void dynamic_window_stat_reset(DynamicWindowStat *self);
+void dynamic_window_stat_inc_number_of_samples(DynamicWindowStat *self, gsize n);
+void dynamic_window_stat_inc_value(DynamicWindowStat *self, gsize value);
 gsize dynamic_window_stat_get_avg(DynamicWindowStat *self);
 gsize dynamic_window_stat_get_number_of_samples(DynamicWindowStat *self);
 guint64 dynamic_window_stat_get_sum(DynamicWindowStat *self);
