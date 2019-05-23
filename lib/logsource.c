@@ -74,7 +74,8 @@ _flow_control_window_size_adjust(LogSource *self, guint32 window_size_increment,
   if (old_window_size+window_size_increment == self->full_window_size)
     log_source_window_empty(self);
 
-  self->received_acks += window_size_increment;
+  if (G_UNLIKELY(dynamic_window_is_enabled(&self->dynamic_window)))
+    dynamic_window_stat_inc_value(&self->dynamic_window.ack_rate, window_size_increment);
 }
 
 static void
@@ -187,8 +188,7 @@ void
 log_source_dynamic_window_update_statistics(LogSource *self)
 {
   dynamic_window_stat_update(&self->dynamic_window.stat, window_size_counter_get(&self->window_size, NULL));
-  dynamic_window_stat_update(&self->dynamic_window.ack_rate,
-                             self->received_acks - dynamic_window_stat_get_sum(&self->dynamic_window.ack_rate));
+  dynamic_window_stat_inc_number_of_samples(&self->dynamic_window.ack_rate, 1);
 
   msg_trace("Updating dynamic window statistic",
             evt_tag_int("avg_window_size", dynamic_window_stat_get_avg(&self->dynamic_window.stat)),

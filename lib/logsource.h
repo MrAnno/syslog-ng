@@ -75,7 +75,6 @@ struct _LogSource
   gsize full_window_size;
   WindowSizeCounter window_size;
   DynamicWindow dynamic_window;
-  guint64 received_acks; //TODO atomic ctr
   StatsCounterItem *last_message_seen;
   StatsCounterItem *recvd_messages;
   guint32 last_ack_count;
