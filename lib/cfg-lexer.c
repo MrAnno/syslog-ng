@@ -658,8 +658,6 @@ cfg_lexer_include_buffer_without_backtick_substitution(CfgLexer *self, const gch
   gchar *lexer_buffer;
   gsize lexer_buffer_len;
 
-  g_assert(length >= 0);
-
   if (self->include_depth >= MAX_INCLUDE_DEPTH - 1)
     {
       msg_error("Include file depth is too deep, increase MAX_INCLUDE_DEPTH and recompile",
