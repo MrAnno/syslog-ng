@@ -599,7 +599,7 @@ time_zone_info_new(const gchar *tz)
       mins = (*(tz+3) - '0') * 10 + *(tz+4) - '0';
       if ((hours < 24 && mins <= 60) || (hours == 24 && mins == 0))
         {
-          self->zone_offset = sign * (hours * 3600 + mins * 60);
+          self->zone_offset = sign * (hours * 3600L + mins * 60L);
           return self;
         }
     }
