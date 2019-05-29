@@ -715,7 +715,7 @@ r_new_pnode(gchar *key)
           parser_node->first = params[2][0];
           parser_node->last = params[2][0];
 
-          if (params_len >= 2 && params[2] && strlen(params[2]) == 2)
+          if (params[2] && strlen(params[2]) == 2)
             state[0] = params[2][1];
           else
             state[0] = params[2][0];
