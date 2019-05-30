@@ -44,10 +44,38 @@ log_source_wakeup(LogSource *self)
   msg_diagnostics("Source has been resumed", log_pipe_location_tag(&self->super));
 }
 
+static inline guint32
+_take_reclaimed_window(LogSource *self, guint32 window_size_increment)
+{
+  gssize old = atomic_gssize_sub(&self->window_size_to_be_reclaimed, window_size_increment);
+  gsize reclaimed_dec = window_size_increment;
+
+  if (old > 0)
+    {
+      if (old - window_size_increment >= 0)
+        {
+          window_size_increment = 0; // all the acks goes back to the common window pool
+        }
+      else
+        {
+          reclaimed_dec = window_size_increment - old;
+          window_size_increment -= old;
+        }
+
+      atomic_gssize_add(&self->pending_reclaimed, reclaimed_dec);
+    }
+
+  return window_size_increment;
+}
+
 static inline void
 _flow_control_window_size_adjust(LogSource *self, guint32 window_size_increment, gboolean last_ack_type_is_suspended)
 {
   gboolean suspended;
+
+  if (G_UNLIKELY(dynamic_window_is_enabled(&self->dynamic_window)))
+    window_size_increment = _take_reclaimed_window(self, window_size_increment);
+
   gsize old_window_size = window_size_counter_add(&self->window_size, window_size_increment, &suspended);
 
   msg_diagnostics("Window size adjustment",
@@ -181,6 +209,13 @@ log_source_dynamic_window_update_statistics(LogSource *self)
   dynamic_window_stat_update(&self->dynamic_window.stat, window_size_counter_get(&self->window_size, NULL));
   msg_trace("Updating dynamic window statistic", evt_tag_int("avg window size",
                                                              dynamic_window_stat_get_avg(&self->dynamic_window.stat)));
+}
+
+static void
+_reclaim_dynamic_window(LogSource *self, gsize window_size)
+{
+  g_assert(self->full_window_size - window_size >= self->options->init_window_size);
+  atomic_gssize_set(&self->window_size_to_be_reclaimed, window_size);
 }
 
 static void
