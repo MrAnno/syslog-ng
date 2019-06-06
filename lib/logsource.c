@@ -244,6 +244,12 @@ _inc_balanced(LogSource *self, gsize inc)
 {
   gsize offered_dynamic = dynamic_window_request(&self->dynamic_window, inc);
 
+  msg_warning("Balance::increase",
+              log_pipe_location_tag(&self->super),
+              evt_tag_printf("connection", "%p", self),
+              evt_tag_int("old_full_window_size", self->full_window_size),
+              evt_tag_int("new_full_window_size", self->full_window_size + offered_dynamic));
+
   self->full_window_size += offered_dynamic;
 
   gsize old_window_size = window_size_counter_add(&self->window_size, offered_dynamic, NULL);
@@ -276,6 +282,13 @@ _dec_balanced(LogSource *self, gsize dec)
 
   window_size_counter_sub(&self->window_size, subtrahend, NULL);
 
+  msg_warning("Balance::decrease",
+              log_pipe_location_tag(&self->super),
+              evt_tag_printf("connection", "%p", self),
+              evt_tag_int("old_full_window_size", self->full_window_size),
+              evt_tag_int("new_full_window_size", new_full_window_size),
+              evt_tag_int("to_be_reclaimed", remaining_sub));
+
   self->full_window_size = new_full_window_size;
   dynamic_window_release(&self->dynamic_window, subtrahend);
 }
@@ -297,6 +310,12 @@ _reclaim_window_instead_of_rebalance(LogSource *self)
         }
     }
 
+  msg_warning("Checking if reclaim is in progress...",
+              log_pipe_location_tag(&self->super),
+              evt_tag_printf("connection", "%p", self),
+              evt_tag_printf("in progress", "%s", reclaim_in_progress ? "yes" : "no"),
+              evt_tag_long("total_reclaim", total_reclaim));
+
   return reclaim_in_progress;
 }
 
@@ -306,6 +325,15 @@ _dynamic_window_rebalance(LogSource *self)
   gsize current_dynamic_win = self->full_window_size - self->options->init_window_size;
   gboolean have_to_increase = current_dynamic_win < self->dynamic_window.ctr->balanced_window;
   gboolean have_to_decrease = current_dynamic_win > self->dynamic_window.ctr->balanced_window;
+
+  msg_warning("Rebalance dynamic window",
+              log_pipe_location_tag(&self->super),
+              evt_tag_printf("connection", "%p", self),
+              evt_tag_int("full_window", self->full_window_size),
+              evt_tag_int("dynamic_win", current_dynamic_win),
+              evt_tag_int("static_window", self->options->init_window_size),
+              evt_tag_int("balanced_window", self->dynamic_window.ctr->balanced_window),
+              evt_tag_int("avg_free", dynamic_window_stat_get_avg(&self->dynamic_window.stat)));
 
   if (have_to_increase)
     _inc_balanced(self, self->dynamic_window.ctr->balanced_window - current_dynamic_win);
