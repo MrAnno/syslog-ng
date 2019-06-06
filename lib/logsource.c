@@ -233,9 +233,87 @@ _release_dynamic_window(LogSource *self)
   dynamic_window_counter_unref(self->dynamic_window.ctr); //TODO: move to dynamic_window_release_counter()
 }
 
+static void
+_inc_balanced(LogSource *self, gsize inc)
+{
+  gsize offered_dynamic = dynamic_window_request(&self->dynamic_window, inc);
+
+  self->full_window_size += offered_dynamic;
+
+  gsize old_window_size = window_size_counter_add(&self->window_size, offered_dynamic, NULL);
+  if (old_window_size == 0 && offered_dynamic != 0)
+    log_source_wakeup(self);
+}
+
+static void
+_dec_balanced(LogSource *self, gsize dec)
+{
+  gsize new_full_window_size = MAX(self->options->init_window_size, dec);
+  gsize subtrahend = self->full_window_size - new_full_window_size;
+
+  gsize empty_window = window_size_counter_get(&self->window_size, NULL);
+  gsize remaining_sub = 0;
+  if (empty_window <= subtrahend)
+    {
+      remaining_sub = subtrahend - empty_window;
+      if (empty_window == 0)
+        {
+          subtrahend = 0;
+        }
+      else
+        {
+          subtrahend = empty_window - 1;
+        }
+      new_full_window_size = self->full_window_size - subtrahend;
+      _reclaim_dynamic_window(self, remaining_sub);
+    }
+
+  window_size_counter_sub(&self->window_size, subtrahend, NULL);
+
+  self->full_window_size = new_full_window_size;
+  dynamic_window_release(&self->dynamic_window, subtrahend);
+}
+
+static gboolean
+_reclaim_window_instead_of_rebalance(LogSource *self)
+{
+  gboolean reclaim_in_progress = FALSE;
+  //check pending_reclaimed
+  gssize total_reclaim = (gssize)atomic_gssize_set_and_get(&self->pending_reclaimed, 0);
+
+  if (total_reclaim > 0)
+    {
+      self->full_window_size -= total_reclaim;
+      dynamic_window_release(&self->dynamic_window, total_reclaim);
+      if ((gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed) > 0)
+        {
+          reclaim_in_progress = TRUE;
+        }
+    }
+
+  return reclaim_in_progress;
+}
+
+static void
+_dynamic_window_rebalance(LogSource *self)
+{
+  gsize current_dynamic_win = self->full_window_size - self->options->init_window_size;
+  gboolean have_to_increase = current_dynamic_win < self->dynamic_window.ctr->balanced_window;
+  gboolean have_to_decrease = current_dynamic_win > self->dynamic_window.ctr->balanced_window;
+
+  if (have_to_increase)
+    _inc_balanced(self, self->dynamic_window.ctr->balanced_window - current_dynamic_win);
+  else if (have_to_decrease)
+    _dec_balanced(self, current_dynamic_win - self->dynamic_window.ctr->balanced_window);
+}
+
 void
 log_source_dynamic_window_realloc(LogSource *self)
 {
+  if (!_reclaim_window_instead_of_rebalance(self))
+    _dynamic_window_rebalance(self);
+
+  dynamic_window_stat_reset(&self->dynamic_window.stat);
 }
 
 void
