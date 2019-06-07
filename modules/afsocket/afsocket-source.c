@@ -548,7 +548,7 @@ _dynamic_window_set_balanced_window(AFSocketSourceDriver *self)
   if (self->num_connections <= 0)
     return;
 
-  gsize new_balanced_win = self->dynamic_window_ctr->iw_size / self->num_connections;
+  gsize new_balanced_win = self->dynamic_window_ctr->pool_size / self->num_connections;
   if (new_balanced_win == 0)
     {
       msg_info("Cannot allocate more dynamic window for new clients. From now, only static window is allocated."
