@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Balabit
- * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
+ * Copyright (c) 2018-2019 László Várady <laszlo.varady@balabit.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@
 #include "cfg.h"
 #include "logpipe.h"
 #include "logmsg/logmsg.h"
+#include "mainloop-worker.h"
 
 typedef struct _LogThreadedSourceDriver LogThreadedSourceDriver;
 typedef struct _LogThreadedSourceWorker LogThreadedSourceWorker;
@@ -45,6 +46,26 @@ typedef struct _LogThreadedSourceWorkerOptions
   MsgFormatOptions parse_options;
   gboolean position_tracked;
 } LogThreadedSourceWorkerOptions;
+
+typedef struct _LogThreadedSourceWakeupCondition
+{
+  GMutex *lock;
+  GCond *cond;
+  gboolean awoken;
+} LogThreadedSourceWakeupCondition;
+
+struct _LogThreadedSourceWorker
+{
+  LogSource super;
+  LogThreadedSourceDriver *control;
+  LogThreadedSourceWakeupCondition wakeup_cond;
+  WorkerOptions options;
+  gboolean under_termination;
+
+  LogThreadedSourceWorkerRunFunc run;
+  LogThreadedSourceWorkerRequestExitFunc request_exit;
+  LogThreadedSourceWorkerWakeupFunc wakeup;
+};
 
 struct _LogThreadedSourceDriver
 {

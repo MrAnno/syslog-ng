@@ -23,31 +23,10 @@
  */
 
 #include "logthrsourcedrv.h"
-#include "mainloop-worker.h"
 #include "messages.h"
 #include "apphook.h"
 
 #include <iv.h>
-
-typedef struct _LogThreadedSourceWakeupCondition
-{
-  GMutex *lock;
-  GCond *cond;
-  gboolean awoken;
-} LogThreadedSourceWakeupCondition;
-
-struct _LogThreadedSourceWorker
-{
-  LogSource super;
-  LogThreadedSourceDriver *control;
-  LogThreadedSourceWakeupCondition wakeup_cond;
-  WorkerOptions options;
-  gboolean under_termination;
-
-  LogThreadedSourceWorkerRunFunc run;
-  LogThreadedSourceWorkerRequestExitFunc request_exit;
-  LogThreadedSourceWorkerWakeupFunc wakeup;
-};
 
 static void
 wakeup_cond_init(LogThreadedSourceWakeupCondition *cond)
