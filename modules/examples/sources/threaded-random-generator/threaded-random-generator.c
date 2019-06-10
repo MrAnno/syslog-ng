@@ -168,8 +168,8 @@ threaded_random_generator_sd_new(GlobalConfig *cfg)
   self->flags = GRND_RANDOM;
   g_atomic_counter_set(&self->exit_requested, FALSE);
 
-  log_threaded_source_driver_set_worker_run_func(&self->super, _run);
-  log_threaded_source_driver_set_worker_request_exit_func(&self->super, _request_exit);
+  self->super.worker->run = _run;
+  self->super.worker->request_exit = _request_exit;
 
   self->super.super.super.super.init = _init;
   self->super.format_stats_instance = _format_stats_instance;

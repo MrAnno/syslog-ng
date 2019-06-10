@@ -36,10 +36,6 @@
 typedef struct _LogThreadedSourceDriver LogThreadedSourceDriver;
 typedef struct _LogThreadedSourceWorker LogThreadedSourceWorker;
 
-typedef void (*LogThreadedSourceWorkerRunFunc)(LogThreadedSourceDriver *);
-typedef void (*LogThreadedSourceWorkerRequestExitFunc)(LogThreadedSourceDriver *);
-typedef void (*LogThreadedSourceWorkerWakeupFunc)(LogThreadedSourceDriver *);
-
 typedef struct _LogThreadedSourceWorkerOptions
 {
   LogSourceOptions super;
@@ -62,9 +58,9 @@ struct _LogThreadedSourceWorker
   WorkerOptions options;
   gboolean under_termination;
 
-  LogThreadedSourceWorkerRunFunc run;
-  LogThreadedSourceWorkerRequestExitFunc request_exit;
-  LogThreadedSourceWorkerWakeupFunc wakeup;
+  void (*run)(LogThreadedSourceDriver *self);
+  void (*request_exit)(LogThreadedSourceDriver *self);
+  void (*wakeup)(LogThreadedSourceDriver *self);
 };
 
 struct _LogThreadedSourceDriver
@@ -86,10 +82,6 @@ gboolean log_threaded_source_driver_init_method(LogPipe *s);
 gboolean log_threaded_source_driver_deinit_method(LogPipe *s);
 void log_threaded_source_driver_free_method(LogPipe *s);
 
-void log_threaded_source_driver_set_worker_run_func(LogThreadedSourceDriver *self, LogThreadedSourceWorkerRunFunc run);
-void log_threaded_source_driver_set_worker_request_exit_func(LogThreadedSourceDriver *self,
-    LogThreadedSourceWorkerRequestExitFunc request_exit);
-
 static inline LogSourceOptions *
 log_threaded_source_driver_get_source_options(LogDriver *s)
 {
@@ -110,7 +102,7 @@ log_threaded_source_driver_get_parse_options(LogDriver *s)
 void log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg);
 
 /* non-blocking API, use it wisely (thread boundaries) */
-void log_threaded_source_set_wakeup_func(LogThreadedSourceDriver *self, LogThreadedSourceWorkerWakeupFunc wakeup);
+void log_threaded_source_set_wakeup_func(LogThreadedSourceDriver *self, void (*wakeup)(LogThreadedSourceDriver *self));
 void log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg);
 gboolean log_threaded_source_free_to_send(LogThreadedSourceDriver *self);
 
