@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Balabit
- * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
+ * Copyright (c) 2018-2019 László Várady <laszlo.varady@balabit.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,18 +29,18 @@
 
 #include <iv.h>
 
-typedef struct _WakeupCondition
+typedef struct _LogThreadedSourceWakeupCondition
 {
   GMutex *lock;
   GCond *cond;
   gboolean awoken;
-} WakeupCondition;
+} LogThreadedSourceWakeupCondition;
 
 struct _LogThreadedSourceWorker
 {
   LogSource super;
   LogThreadedSourceDriver *control;
-  WakeupCondition wakeup_cond;
+  LogThreadedSourceWakeupCondition wakeup_cond;
   WorkerOptions options;
   gboolean under_termination;
 
@@ -50,7 +50,7 @@ struct _LogThreadedSourceWorker
 };
 
 static void
-wakeup_cond_init(WakeupCondition *cond)
+wakeup_cond_init(LogThreadedSourceWakeupCondition *cond)
 {
   cond->lock = g_mutex_new();
   cond->cond = g_cond_new();
@@ -58,27 +58,27 @@ wakeup_cond_init(WakeupCondition *cond)
 }
 
 static void
-wakeup_cond_destroy(WakeupCondition *cond)
+wakeup_cond_destroy(LogThreadedSourceWakeupCondition *cond)
 {
   g_cond_free(cond->cond);
   g_mutex_free(cond->lock);
 }
 
 static inline void
-wakeup_cond_lock(WakeupCondition *cond)
+wakeup_cond_lock(LogThreadedSourceWakeupCondition *cond)
 {
   g_mutex_lock(cond->lock);
 }
 
 static inline void
-wakeup_cond_unlock(WakeupCondition *cond)
+wakeup_cond_unlock(LogThreadedSourceWakeupCondition *cond)
 {
   g_mutex_unlock(cond->lock);
 }
 
 /* The wakeup lock must be held before calling this function. */
 static inline void
-wakeup_cond_wait(WakeupCondition *cond)
+wakeup_cond_wait(LogThreadedSourceWakeupCondition *cond)
 {
   cond->awoken = FALSE;
   while (!cond->awoken)
@@ -86,7 +86,7 @@ wakeup_cond_wait(WakeupCondition *cond)
 }
 
 static inline void
-wakeup_cond_signal(WakeupCondition *cond)
+wakeup_cond_signal(LogThreadedSourceWakeupCondition *cond)
 {
   g_mutex_lock(cond->lock);
   cond->awoken = TRUE;
