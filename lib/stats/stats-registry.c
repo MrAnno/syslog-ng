@@ -141,7 +141,6 @@ _register_counter(gint stats_level, const StatsClusterKey *sc_key, gint type,
   if (sc)
     {
       *counter = stats_cluster_track_counter(sc, type);
-      (*counter)->type = type;
     }
   else
     {
@@ -385,4 +384,3 @@ stats_registry_deinit(void)
   stats_cluster_container.dynamic_clusters = NULL;
   g_static_mutex_free(&stats_mutex);
 }
-

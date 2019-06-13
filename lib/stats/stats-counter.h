@@ -31,7 +31,6 @@ typedef struct _StatsCounterItem
 {
   atomic_gssize value;
   gchar *name;
-  gint type;
 } StatsCounterItem;
 
 
