@@ -26,6 +26,7 @@
 #include "messages.h"
 #include "host-resolve.h"
 #include "stats/stats-registry.h"
+#include "stats/stats-cluster-single.h"
 #include "msg-stats.h"
 #include "logmsg/tags.h"
 #include "ack_tracker.h"
@@ -77,6 +78,7 @@ _flow_control_window_size_adjust(LogSource *self, guint32 window_size_increment,
     window_size_increment = _take_reclaimed_window(self, window_size_increment);
 
   gsize old_window_size = window_size_counter_add(&self->window_size, window_size_increment, &suspended);
+  stats_counter_add(self->stat_window_size, window_size_increment);
 
   msg_diagnostics("Window size adjustment",
                   evt_tag_int("old_window_size", old_window_size),
@@ -226,8 +228,12 @@ _release_dynamic_window(LogSource *self)
   gsize dynamic_part = self->full_window_size - self->options->init_window_size;
   msg_trace("Releasing dynamic part of the window", evt_tag_int("dynamic_window_to_be_released", dynamic_part),
             log_pipe_location_tag(&self->super));
+
   self->full_window_size -= dynamic_part;
+  stats_counter_sub(self->stat_full_window, dynamic_part);
+
   window_size_counter_sub(&self->window_size, dynamic_part, NULL);
+  stats_counter_sub(self->stat_window_size, dynamic_part);
   dynamic_window_release(&self->dynamic_window, dynamic_part); //TODO: rename release to ...
 
   dynamic_window_pool_unref(self->dynamic_window.ctr); //TODO: move to dynamic_window_release_counter()
@@ -245,8 +251,10 @@ _inc_balanced(LogSource *self, gsize inc)
               evt_tag_int("new_full_window_size", self->full_window_size + offered_dynamic));
 
   self->full_window_size += offered_dynamic;
+  stats_counter_add(self->stat_full_window, offered_dynamic);
 
   gsize old_window_size = window_size_counter_add(&self->window_size, offered_dynamic, NULL);
+  stats_counter_add(self->stat_window_size, offered_dynamic);
   if (old_window_size == 0 && offered_dynamic != 0)
     log_source_wakeup(self);
 }
@@ -275,6 +283,7 @@ _dec_balanced(LogSource *self, gsize dec)
     }
 
   window_size_counter_sub(&self->window_size, subtrahend, NULL);
+  stats_counter_sub(self->stat_window_size, subtrahend);
 
   msg_warning("Balance::decrease",
               log_pipe_location_tag(&self->super),
@@ -284,6 +293,7 @@ _dec_balanced(LogSource *self, gsize dec)
               evt_tag_int("to_be_reclaimed", remaining_sub));
 
   self->full_window_size = new_full_window_size;
+  stats_counter_set(self->stat_full_window, new_full_window_size);
   dynamic_window_release(&self->dynamic_window, subtrahend);
 }
 
@@ -297,6 +307,7 @@ _reclaim_window_instead_of_rebalance(LogSource *self)
   if (total_reclaim > 0)
     {
       self->full_window_size -= total_reclaim;
+      stats_counter_sub(self->stat_full_window, total_reclaim);
       dynamic_window_release(&self->dynamic_window, total_reclaim);
       if ((gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed) > 0)
         {
@@ -400,6 +411,40 @@ log_source_mangle_hostname(LogSource *self, LogMessage *msg)
     }
 }
 
+static void
+_register_window_stats(LogSource *self)
+{
+  if (!stats_check_level(3))
+    return;
+
+  StatsClusterKey sc_key;
+
+  stats_cluster_single_key_set_with_name(&sc_key, self->options->stats_source | SCS_SOURCE, self->stats_id,
+                                        self->stats_instance, "window_size");
+  self->stat_window_size_cluster = stats_register_dynamic_counter(3, &sc_key, SC_TYPE_SINGLE_VALUE,
+                                                                  &self->stat_window_size);
+  stats_counter_set(self->stat_window_size, window_size_counter_get(&self->window_size, NULL));
+
+
+  stats_cluster_single_key_set_with_name(&sc_key, self->options->stats_source | SCS_SOURCE, self->stats_id,
+                                        self->stats_instance, "full_window");
+  self->stat_full_window_cluster = stats_register_dynamic_counter(3, &sc_key, SC_TYPE_SINGLE_VALUE,
+                                                                  &self->stat_full_window);
+  stats_counter_set(self->stat_full_window, self->full_window_size);
+
+}
+
+static void
+_unregister_window_stats(LogSource *self)
+{
+  if (!stats_check_level(3))
+    return;
+
+  stats_unregister_dynamic_counter(self->stat_window_size_cluster, SC_TYPE_SINGLE_VALUE, &self->stat_window_size);
+  stats_unregister_dynamic_counter(self->stat_full_window_cluster, SC_TYPE_SINGLE_VALUE, &self->stat_full_window);
+
+}
+
 static inline void
 _create_ack_tracker_if_not_exists(LogSource *self)
 {
@@ -425,6 +470,9 @@ log_source_init(LogPipe *s)
   stats_register_counter(self->options->stats_level, &sc_key,
                          SC_TYPE_PROCESSED, &self->recvd_messages);
   stats_register_counter(self->options->stats_level, &sc_key, SC_TYPE_STAMP, &self->last_message_seen);
+
+  _register_window_stats(self);
+
   stats_unlock();
 
   return TRUE;
@@ -440,6 +488,9 @@ log_source_deinit(LogPipe *s)
   stats_cluster_logpipe_key_set(&sc_key, self->options->stats_source | SCS_SOURCE, self->stats_id, self->stats_instance);
   stats_unregister_counter(&sc_key, SC_TYPE_PROCESSED, &self->recvd_messages);
   stats_unregister_counter(&sc_key, SC_TYPE_STAMP, &self->last_message_seen);
+
+  _unregister_window_stats(self);
+
   stats_unlock();
 
   return TRUE;
@@ -460,6 +511,7 @@ log_source_post(LogSource *self, LogMessage *msg)
   msg->ack_func = log_source_msg_ack;
 
   old_window_size = window_size_counter_sub(&self->window_size, 1, NULL);
+  stats_counter_sub(self->stat_window_size, 1);
 
   if (G_UNLIKELY(old_window_size == 1))
     {
