@@ -197,7 +197,7 @@ stats_cluster_hash(const StatsCluster *self)
   return g_str_hash(self->key.id) + g_str_hash(self->key.instance) + self->key.component;
 }
 
-StatsCounterItem *
+StatsCounter *
 stats_cluster_track_counter(StatsCluster *self, gint type)
 {
   gint type_mask = 1 << type;
@@ -209,7 +209,7 @@ stats_cluster_track_counter(StatsCluster *self, gint type)
   return &self->counter_group.counters[type];
 }
 
-StatsCounterItem *
+StatsCounter *
 stats_cluster_get_counter(StatsCluster *self, gint type)
 {
   gint type_mask = 1 << type;
@@ -223,7 +223,7 @@ stats_cluster_get_counter(StatsCluster *self, gint type)
 }
 
 void
-stats_cluster_untrack_counter(StatsCluster *self, gint type, StatsCounterItem **counter)
+stats_cluster_untrack_counter(StatsCluster *self, gint type, StatsCounter **counter)
 {
   g_assert(self && (self->live_mask & (1 << type)) && &self->counter_group.counters[type] == (*counter));
   g_assert(self->use_count > 0);
@@ -300,7 +300,7 @@ stats_counter_group_free(StatsCounterGroup *self)
 
 
 static void
-stats_cluster_free_counter(StatsCluster *self, gint type, StatsCounterItem *item, gpointer user_data)
+stats_cluster_free_counter(StatsCluster *self, gint type, StatsCounter *item, gpointer user_data)
 {
   stats_counter_free(item);
 }

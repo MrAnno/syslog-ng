@@ -38,4 +38,3 @@ void stats_cluster_single_key_set_with_name(StatsClusterKey *key, guint16 compon
                                             const gchar *instance, const gchar *name);
 
 #endif
-

@@ -27,10 +27,27 @@
 #include "syslog-ng.h"
 #include "atomic-gssize.h"
 
+typedef struct _StatsCounter StatsCounter;
+
+struct _StatsCounter
+{
+  gchar *name;
+
+  gsize (*get)(StatsCounter *self);
+  gsize (*reset)(StatsCounter *self);
+};
+
+static inline void
+stats_counter_reset(StatsCounter *counter)
+{
+  if (counter)
+    counter->reset(counter);
+}
+
 typedef struct _StatsCounterItem
 {
+  StatsCounter super;
   atomic_gssize value;
-  gchar *name;
 } StatsCounterItem;
 
 
@@ -82,7 +99,7 @@ stats_counter_get(StatsCounterItem *counter)
 }
 
 static inline gchar *
-stats_counter_get_name(StatsCounterItem *counter)
+stats_counter_get_name(StatsCounter *counter)
 {
   if (counter)
     return counter->name;
@@ -90,6 +107,8 @@ stats_counter_get_name(StatsCounterItem *counter)
 }
 
 void stats_reset_counters(void);
-void stats_counter_free(StatsCounterItem *counter);
+
+void stats_counter_item_init_instance(StatsCounterItem *self);
+void stats_counter_free(StatsCounter *counter);
 
 #endif

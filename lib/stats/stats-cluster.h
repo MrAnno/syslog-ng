@@ -86,7 +86,7 @@ typedef struct _StatsCounterGroupInit StatsCounterGroupInit;
 
 struct _StatsCounterGroup
 {
-  StatsCounterItem *counters;
+  StatsCounter *counters;
   const gchar **counter_names;
   guint16 capacity;
   void (*free_fn)(StatsCounterGroup *self);
@@ -132,7 +132,7 @@ typedef struct _StatsCluster
   gchar *query_key;
 } StatsCluster;
 
-typedef void (*StatsForeachCounterFunc)(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data);
+typedef void (*StatsForeachCounterFunc)(StatsCluster *sc, gint type, StatsCounter *counter, gpointer user_data);
 
 const gchar *stats_cluster_get_type_name(StatsCluster *self, gint type);
 const gchar *stats_cluster_get_component_name(StatsCluster *self, gchar *buf, gsize buf_len);
@@ -143,9 +143,9 @@ gboolean stats_cluster_key_equal(const StatsClusterKey *key1, const StatsCluster
 gboolean stats_cluster_equal(const StatsCluster *sc1, const StatsCluster *sc2);
 guint stats_cluster_hash(const StatsCluster *self);
 
-StatsCounterItem *stats_cluster_track_counter(StatsCluster *self, gint type);
-StatsCounterItem *stats_cluster_get_counter(StatsCluster *self, gint type);
-void stats_cluster_untrack_counter(StatsCluster *self, gint type, StatsCounterItem **counter);
+StatsCounter *stats_cluster_track_counter(StatsCluster *self, gint type);
+StatsCounter *stats_cluster_get_counter(StatsCluster *self, gint type);
+void stats_cluster_untrack_counter(StatsCluster *self, gint type, StatsCounter **counter);
 gboolean stats_cluster_is_alive(StatsCluster *self, gint type);
 gboolean stats_cluster_is_indexed(StatsCluster *self, gint type);
 

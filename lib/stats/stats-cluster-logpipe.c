@@ -45,10 +45,21 @@ _counter_group_logpipe_free(StatsCounterGroup *counter_group)
   g_free(counter_group->counters);
 }
 
+static StatsCounter *
+_create_counters(void)
+{
+  StatsCounterItem *counters = g_new0(StatsCounterItem, SC_TYPE_MAX);
+
+  for(gsize i = 0; i < SC_TYPE_MAX; ++i)
+    stats_counter_item_init_instance(&counters[i]);
+
+  return &counters->super;
+}
+
 static void
 _counter_group_logpipe_init(StatsCounterGroupInit *self, StatsCounterGroup *counter_group)
 {
-  counter_group->counters = g_new0(StatsCounterItem, SC_TYPE_MAX);
+  counter_group->counters = _create_counters();
   counter_group->capacity = SC_TYPE_MAX;
   counter_group->counter_names = self->counter_names;
   counter_group->free_fn = _counter_group_logpipe_free;

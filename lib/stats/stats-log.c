@@ -25,7 +25,7 @@
 #include "stats/stats.h"
 
 static void
-stats_log_format_counter(StatsCluster *sc, gint type, StatsCounterItem *item, gpointer user_data)
+stats_log_format_counter(StatsCluster *sc, gint type, StatsCounter *item, gpointer user_data)
 {
   EVTREC *e = (EVTREC *) user_data;
   EVTTAG *tag;

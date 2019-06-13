@@ -131,7 +131,7 @@ _grab_cluster(gint stats_level, const StatsClusterKey *sc_key, gboolean dynamic)
 
 static StatsCluster *
 _register_counter(gint stats_level, const StatsClusterKey *sc_key, gint type,
-                  gboolean dynamic, StatsCounterItem **counter)
+                  gboolean dynamic, StatsCounter **counter)
 {
   StatsCluster *sc;
 
@@ -169,14 +169,14 @@ StatsCluster *
 stats_register_counter(gint stats_level, const StatsClusterKey *sc_key, gint type,
                        StatsCounterItem **counter)
 {
-  return _register_counter(stats_level, sc_key, type, FALSE, counter);
+  return _register_counter(stats_level, sc_key, type, FALSE, (StatsCounter **)counter);
 }
 
 StatsCluster *
 stats_register_counter_and_index(gint stats_level, const StatsClusterKey *sc_key, gint type,
                                  StatsCounterItem **counter)
 {
-  StatsCluster *cluster =  _register_counter(stats_level, sc_key, type, FALSE, counter);
+  StatsCluster *cluster =  _register_counter(stats_level, sc_key, type, FALSE, (StatsCounter **)counter);
   if (cluster)
     stats_query_index_counter(cluster, type);
 
@@ -187,7 +187,7 @@ StatsCluster *
 stats_register_dynamic_counter(gint stats_level, const StatsClusterKey *sc_key,
                                gint type, StatsCounterItem **counter)
 {
-  return _register_counter(stats_level, sc_key, type, TRUE, counter);
+  return _register_counter(stats_level, sc_key, type, TRUE, (StatsCounter **) counter);
 }
 
 /*
@@ -236,7 +236,7 @@ stats_register_associated_counter(StatsCluster *sc, gint type, StatsCounterItem 
     return;
   g_assert(sc->dynamic);
 
-  *counter = stats_cluster_track_counter(sc, type);
+  *counter = (StatsCounterItem *) stats_cluster_track_counter(sc, type);
 }
 
 void
@@ -252,7 +252,7 @@ stats_unregister_counter(const StatsClusterKey *sc_key, gint type,
 
   sc = g_hash_table_lookup(stats_cluster_container.static_clusters, sc_key);
 
-  stats_cluster_untrack_counter(sc, type, counter);
+  stats_cluster_untrack_counter(sc, type, (StatsCounter **)counter);
 }
 
 void
@@ -261,7 +261,7 @@ stats_unregister_dynamic_counter(StatsCluster *sc, gint type, StatsCounterItem *
   g_assert(stats_locked);
   if (!sc)
     return;
-  stats_cluster_untrack_counter(sc, type, counter);
+  stats_cluster_untrack_counter(sc, type, (StatsCounter **)counter);
 }
 
 static StatsCluster *
@@ -300,7 +300,7 @@ stats_get_counter(const StatsClusterKey *sc_key, gint type)
   if (!sc)
     return NULL;
 
-  return stats_cluster_get_counter(sc, type);
+  return (StatsCounterItem *) stats_cluster_get_counter(sc, type);
 }
 
 static void

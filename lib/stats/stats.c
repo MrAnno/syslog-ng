@@ -85,8 +85,6 @@
 static gboolean
 stats_cluster_is_expired(StatsOptions *options, StatsCluster *sc, time_t now)
 {
-  time_t tstamp;
-
   /* check if dynamic entry, non-dynamic entries cannot be too large in
    * numbers, those are never pruned */
   if (!sc->dynamic)
@@ -101,7 +99,7 @@ stats_cluster_is_expired(StatsOptions *options, StatsCluster *sc, time_t now)
   if ((sc->live_mask & (1 << SC_TYPE_STAMP)) == 0)
     return FALSE;
 
-  tstamp = atomic_gssize_racy_get(&(sc->counter_group.counters[SC_TYPE_STAMP].value));
+  time_t tstamp = stats_counter_get((StatsCounterItem* ) &sc->counter_group.counters[SC_TYPE_STAMP]);
   return (tstamp <= now - options->lifetime);
 }
 
@@ -122,7 +120,7 @@ stats_prune_cluster(StatsCluster *sc, StatsTimerState *st)
   expired = stats_cluster_is_expired(st->options, sc, st->now.tv_sec);
   if (expired)
     {
-      time_t tstamp = atomic_gssize_racy_get(&(sc->counter_group.counters[SC_TYPE_STAMP].value));
+      time_t tstamp = stats_counter_get((StatsCounterItem* ) &sc->counter_group.counters[SC_TYPE_STAMP]);
       if ((st->oldest_counter) == 0 || st->oldest_counter > tstamp)
         st->oldest_counter = tstamp;
       st->dropped_counters++;

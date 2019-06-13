@@ -54,7 +54,7 @@ _append_reset_msg_if_found_matching_counters(gboolean found_match, GString *resu
 }
 
 static gboolean
-_ctl_format_get(StatsCounterItem *ctr, gpointer user_data)
+_ctl_format_get(StatsCounter *ctr, gpointer user_data)
 {
   GString *str = (GString *)user_data;
   g_string_append_printf(str, "%s=%"G_GSIZE_FORMAT"\n", stats_counter_get_name(ctr), stats_counter_get(ctr));
@@ -62,7 +62,7 @@ _ctl_format_get(StatsCounterItem *ctr, gpointer user_data)
 }
 
 static gboolean
-_ctl_format_name_without_value(StatsCounterItem *ctr, gpointer user_data)
+_ctl_format_name_without_value(StatsCounter *ctr, gpointer user_data)
 {
   GString *str = (GString *)user_data;
   g_string_append_printf(str, "%s\n", stats_counter_get_name(ctr));

@@ -58,7 +58,7 @@ stats_format_csv_escapevar(const gchar *var)
 }
 
 static void
-stats_format_csv(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data)
+stats_format_csv(StatsCluster *sc, gint type, StatsCounter *counter, gpointer user_data)
 {
   GString *csv = (GString *) user_data;
   gchar *s_id, *s_instance, *tag_name;

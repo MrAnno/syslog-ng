@@ -25,14 +25,8 @@
 #include "stats/stats-cluster.h"
 #include "stats/stats-registry.h"
 
-static void
-_reset_counter(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data)
-{
-  stats_counter_set(counter, 0);
-}
-
 static inline void
-_reset_counter_if_needed(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data)
+_reset_counter_if_needed(StatsCluster *sc, gint type, StatsCounter *counter, gpointer user_data)
 {
   switch (type)
     {
@@ -40,7 +34,7 @@ _reset_counter_if_needed(StatsCluster *sc, gint type, StatsCounterItem *counter,
     case SC_TYPE_MEMORY_USAGE:
       return;
     default:
-      _reset_counter(sc, type, counter, user_data);
+      stats_counter_reset(counter);
     }
 }
 
@@ -52,8 +46,23 @@ stats_reset_counters(void)
   stats_unlock();
 }
 
+
+static void
+stats_counter_item_reset(StatsCounter *ctr)
+{
+  StatsCounterItem *counter = (StatsCounterItem *) ctr;
+  stats_counter_set(counter, 0);
+}
+
 void
-stats_counter_free(StatsCounterItem *counter)
+stats_counter_item_init_instance(StatsCounterItem *self)
+{
+  self->super.get = stats_counter_get;
+  self->super.reset = stats_counter_item_reset;
+}
+
+void
+stats_counter_free(StatsCounter *counter)
 {
   g_free(counter->name);
 }

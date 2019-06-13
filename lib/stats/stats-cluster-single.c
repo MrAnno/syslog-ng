@@ -39,7 +39,12 @@ _counter_group_free(StatsCounterGroup *counter_group)
 static void
 _counter_group_init(StatsCounterGroupInit *self, StatsCounterGroup *counter_group)
 {
-  counter_group->counters = g_new0(StatsCounterItem, SC_TYPE_SINGLE_MAX);
+  G_STATIC_ASSERT(SC_TYPE_SINGLE_MAX == 1);
+
+  StatsCounterItem *counter = g_new0(StatsCounterItem, SC_TYPE_SINGLE_MAX);
+  stats_counter_item_init_instance(counter);
+
+  counter_group->counters = &counter->super;
   counter_group->capacity = SC_TYPE_SINGLE_MAX;
   counter_group->counter_names = self->counter_names;
   counter_group->free_fn = _counter_group_free;
@@ -88,4 +93,3 @@ stats_cluster_single_key_set_with_name(StatsClusterKey *key, guint16 component, 
   key->counter_group_init.counter_names = g_new0(const char *, 1);
   key->counter_group_init.counter_names[0] = name;
 }
-

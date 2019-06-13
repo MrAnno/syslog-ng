@@ -36,7 +36,7 @@ static GHashTable *stats_views;
 typedef struct _ViewRecord
 {
   GList *queries;
-  StatsCounterItem *counter;
+  StatsCounter *counter;
   AggregatedMetricsCb aggregate;
 } ViewRecord;
 
@@ -54,7 +54,8 @@ void
 stats_register_view(gchar *name, GList *queries, const AggregatedMetricsCb aggregate)
 {
   ViewRecord *record = g_new0(ViewRecord, 1);
-  record->counter = g_new0(StatsCounterItem, 1);
+  record->counter = &g_new0(StatsCounterItem, 1)->super;
+  stats_counter_item_init_instance((StatsCounterItem *) record->counter);
   record->counter->name = g_strdup(name);
   record->queries = queries;
   record->aggregate = aggregate;
@@ -85,7 +86,7 @@ _construct_counter_item_name(StatsCluster *sc, gint type)
 static void
 _add_counter_to_index(StatsCluster *sc, gint type)
 {
-  StatsCounterItem *counter = &sc->counter_group.counters[type];
+  StatsCounter *counter = &sc->counter_group.counters[type];
 
   gchar *counter_full_name = stats_counter_get_name(counter);
   if (counter_full_name == NULL)
@@ -107,7 +108,7 @@ _remove_counter_from_index(StatsCluster *sc, gint type)
 }
 
 static void
-_index_counter(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data)
+_index_counter(StatsCluster *sc, gint type, StatsCounter *counter, gpointer user_data)
 {
   if (!stats_cluster_is_indexed(sc, type) && stats_cluster_is_alive(sc, type))
     {
@@ -166,7 +167,7 @@ _query_counter_hash(const gchar *key_str)
     {
       if (_is_pattern_matches_key(pattern, key))
         {
-          StatsCounterItem *counter = (StatsCounterItem *) value;
+          StatsCounter *counter = (StatsCounter *) value;
           counters = g_list_append(counters, counter);
 
           if (single_match)
@@ -273,7 +274,7 @@ _format_selected_counters(GList *counters, StatsFormatCb format_cb, gpointer res
 {
   for (GList *counter = counters; counter; counter = counter->next)
     {
-      StatsCounterItem *c = counter->data;
+      StatsCounter *c = counter->data;
       format_cb(c, result);
     }
 }
@@ -284,8 +285,8 @@ _reset_selected_counters(GList *counters)
   GList *c;
   for (c = counters; c; c = c->next)
     {
-      StatsCounterItem *counter = c->data;
-      stats_counter_set(counter, 0);
+      StatsCounter *counter = c->data;
+      stats_counter_reset(counter);
     }
 }
 
@@ -339,7 +340,7 @@ _sum_selected_counters(GList *counters, gpointer user_data)
   gint64 *sum = (gint64 *) args[1];
   for (c = counters; c; c = c->next)
     {
-      StatsCounterItem *counter = c->data;
+      StatsCounter *counter = c->data;
       if (!_is_timestamp(stats_counter_get_name(counter)))
         *sum += stats_counter_get(counter);
     }
@@ -440,7 +441,7 @@ stats_query_index_counter(StatsCluster *cluster, gint type)
 }
 
 static void
-_deindex_cluster_helper(StatsCluster *cluster, gint type, StatsCounterItem *item, gpointer user_data)
+_deindex_cluster_helper(StatsCluster *cluster, gint type, StatsCounter *item, gpointer user_data)
 {
   if (stats_cluster_is_indexed(cluster, type))
     _remove_counter_from_index(cluster, type);
