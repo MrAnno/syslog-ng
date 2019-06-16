@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Balabit
- * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
+ * Copyright (c) 2018-2019 László Várady <laszlo.varady@balabit.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -30,6 +30,7 @@
 #include "string-list.h"
 
 typedef struct _PythonSourceDriver PythonSourceDriver;
+typedef struct _PythonSourceWorker PythonSourceWorker;
 
 struct _PythonSourceDriver
 {
@@ -38,14 +39,23 @@ struct _PythonSourceDriver
   gchar *class;
   GList *loaders;
   GHashTable *options;
-  ThreadId thread_id;
-
-  void (*post_message)(PythonSourceDriver *self, LogMessage *msg);
 
   struct
   {
     PyObject *class;
     PyObject *instance;
+  } py;
+};
+
+struct _PythonSourceWorker
+{
+  LogThreadedSourceWorker super;
+  ThreadId thread_id;
+
+  void (*post_message)(PythonSourceWorker *self, LogMessage *msg);
+
+  struct
+  {
     PyObject *run_method;
     PyObject *request_exit_method;
     PyObject *suspend_method;
@@ -56,7 +66,7 @@ struct _PythonSourceDriver
 typedef struct _PyLogSource
 {
   PyObject_HEAD
-  PythonSourceDriver *driver;
+  PythonSourceWorker *worker;
 } PyLogSource;
 
 static PyTypeObject py_log_source_type;
@@ -134,27 +144,31 @@ _py_invoke_deinit(PythonSourceDriver *self)
 }
 
 static void
-_py_invoke_run(PythonSourceDriver *self)
+_py_invoke_run(PythonSourceWorker *self)
 {
-  _ps_py_invoke_void_function(self, self->py.run_method, NULL);
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+  _ps_py_invoke_void_function(owner, self->py.run_method, NULL);
 }
 
 static void
-_py_invoke_request_exit(PythonSourceDriver *self)
+_py_invoke_request_exit(PythonSourceWorker *self)
 {
-  _ps_py_invoke_void_function(self, self->py.request_exit_method, NULL);
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+  _ps_py_invoke_void_function(owner, self->py.request_exit_method, NULL);
 }
 
 static void
-_py_invoke_suspend(PythonSourceDriver *self)
+_py_invoke_suspend(PythonSourceWorker *self)
 {
-  _ps_py_invoke_void_function(self, self->py.suspend_method, NULL);
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+  _ps_py_invoke_void_function(owner, self->py.suspend_method, NULL);
 }
 
 static void
-_py_invoke_wakeup(PythonSourceDriver *self)
+_py_invoke_wakeup(PythonSourceWorker *self)
 {
-  _ps_py_invoke_void_function(self, self->py.wakeup_method, NULL);
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+  _ps_py_invoke_void_function(owner, self->py.wakeup_method, NULL);
 }
 
 static gboolean
@@ -168,6 +182,11 @@ _py_free_bindings(PythonSourceDriver *self)
 {
   Py_CLEAR(self->py.class);
   Py_CLEAR(self->py.instance);
+}
+
+static void
+_py_free_methods(PythonSourceWorker *self)
+{
   Py_CLEAR(self->py.run_method);
   Py_CLEAR(self->py.request_exit_method);
   Py_CLEAR(self->py.suspend_method);
@@ -219,21 +238,23 @@ _py_init_instance(PythonSourceDriver *self)
       return FALSE;
     }
 
-  ((PyLogSource *) self->py.instance)->driver = self;
+  ((PyLogSource *) self->py.instance)->worker = NULL;
 
   return TRUE;
 }
 
 static gboolean
-_py_lookup_run_method(PythonSourceDriver *self)
+_py_lookup_run_method(PythonSourceWorker *self)
 {
-  self->py.run_method = _py_get_attr_or_null(self->py.instance, "run");
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+
+  self->py.run_method = _py_get_attr_or_null(owner->py.instance, "run");
 
   if (!self->py.run_method)
     {
       msg_error("Error initializing Python source, class does not have a run() method",
-                evt_tag_str("driver", self->super.super.super.id),
-                evt_tag_str("class", self->class));
+                evt_tag_str("driver", owner->super.super.super.id),
+                evt_tag_str("class", owner->class));
       return FALSE;
     }
 
@@ -241,15 +262,17 @@ _py_lookup_run_method(PythonSourceDriver *self)
 }
 
 static gboolean
-_py_lookup_request_exit_method(PythonSourceDriver *self)
+_py_lookup_request_exit_method(PythonSourceWorker *self)
 {
-  self->py.request_exit_method = _py_get_attr_or_null(self->py.instance, "request_exit");
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+
+  self->py.request_exit_method = _py_get_attr_or_null(owner->py.instance, "request_exit");
 
   if (!self->py.request_exit_method)
     {
       msg_error("Error initializing Python source, class does not have a request_exit() method",
-                evt_tag_str("driver", self->super.super.super.id),
-                evt_tag_str("class", self->class));
+                evt_tag_str("driver", owner->super.super.super.id),
+                evt_tag_str("class", owner->class));
       return FALSE;
     }
 
@@ -257,18 +280,20 @@ _py_lookup_request_exit_method(PythonSourceDriver *self)
 }
 
 static gboolean
-_py_lookup_suspend_and_wakeup_methods(PythonSourceDriver *self)
+_py_lookup_suspend_and_wakeup_methods(PythonSourceWorker *self)
 {
-  self->py.suspend_method = _py_get_attr_or_null(self->py.instance, "suspend");
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+
+  self->py.suspend_method = _py_get_attr_or_null(owner->py.instance, "suspend");
 
   if (self->py.suspend_method)
     {
-      self->py.wakeup_method = _py_get_attr_or_null(self->py.instance, "wakeup");
+      self->py.wakeup_method = _py_get_attr_or_null(owner->py.instance, "wakeup");
       if (!self->py.wakeup_method)
         {
           msg_error("Error initializing Python source, class implements suspend() but wakeup() is missing",
-                    evt_tag_str("driver", self->super.super.super.id),
-                    evt_tag_str("class", self->class));
+                    evt_tag_str("driver", owner->super.super.super.id),
+                    evt_tag_str("class", owner->class));
           return FALSE;
         }
     }
@@ -277,7 +302,7 @@ _py_lookup_suspend_and_wakeup_methods(PythonSourceDriver *self)
 }
 
 static gboolean
-_py_init_methods(PythonSourceDriver *self)
+_py_init_methods(PythonSourceWorker *self)
 {
   return _py_lookup_run_method(self)
          && _py_lookup_request_exit_method(self)
@@ -288,8 +313,7 @@ static gboolean
 _py_init_bindings(PythonSourceDriver *self)
 {
   gboolean initialized = _py_resolve_class(self)
-                         && _py_init_instance(self)
-                         && _py_init_methods(self);
+                         && _py_init_instance(self);
 
   if (!initialized)
     _py_free_bindings(self);
@@ -366,7 +390,7 @@ _py_set_parse_options(PythonSourceDriver *self)
 }
 
 static void
-python_sd_suspend(PythonSourceDriver *self)
+python_sw_suspend(PythonSourceWorker *self)
 {
   PyGILState_STATE gstate = PyGILState_Ensure();
   _py_invoke_suspend(self);
@@ -374,9 +398,9 @@ python_sd_suspend(PythonSourceDriver *self)
 }
 
 static void
-python_sd_wakeup(LogThreadedSourceDriver *s)
+python_sw_wakeup(LogThreadedSourceWorker *s)
 {
-  PythonSourceDriver *self = (PythonSourceDriver *) s;
+  PythonSourceWorker *self = (PythonSourceWorker *) s;
 
   PyGILState_STATE gstate = PyGILState_Ensure();
   _py_invoke_wakeup(self);
@@ -384,7 +408,7 @@ python_sd_wakeup(LogThreadedSourceDriver *s)
 }
 
 static void
-_post_message_non_blocking(PythonSourceDriver *self, LogMessage *msg)
+_post_message_non_blocking(PythonSourceWorker *self, LogMessage *msg)
 {
   PyThreadState *state = PyEval_SaveThread();
   log_threaded_source_post(&self->super, msg);
@@ -392,11 +416,11 @@ _post_message_non_blocking(PythonSourceDriver *self, LogMessage *msg)
 
   /* GIL is used to synchronize free_to_send(), suspend() and wakeup() */
   if (!log_threaded_source_free_to_send(&self->super))
-    python_sd_suspend(self);
+    python_sw_suspend(self);
 }
 
 static void
-_post_message_blocking(PythonSourceDriver *self, LogMessage *msg)
+_post_message_blocking(PythonSourceWorker *self, LogMessage *msg)
 {
   PyThreadState *state = PyEval_SaveThread();
   log_threaded_source_blocking_post(&self->super, msg);
@@ -412,12 +436,6 @@ _py_sd_init(PythonSourceDriver *self)
   if (!_py_init_bindings(self))
     goto error;
 
-  if (self->py.suspend_method && self->py.wakeup_method)
-    {
-      self->post_message = _post_message_non_blocking;
-      log_threaded_source_set_wakeup_func(&self->super, python_sd_wakeup);
-    }
-
   if (!_py_init_object(self))
     goto error;
 
@@ -432,12 +450,46 @@ error:
   return FALSE;
 }
 
+static gboolean
+_py_sw_init(PythonSourceWorker *self)
+{
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+
+  ((PyLogSource *) owner->py.instance)->worker = self;
+
+  if (!_py_init_methods(self))
+    {
+      _py_free_methods(self);
+      PyGILState_Release(gstate);
+      return FALSE;
+    }
+
+  if (self->py.suspend_method && self->py.wakeup_method)
+    {
+      self->post_message = _post_message_non_blocking;
+      log_threaded_source_worker_set_wakeup_func(&self->super, python_sw_wakeup);
+    }
+
+  PyGILState_Release(gstate);
+  return TRUE;
+}
+
 static PyObject *
 py_log_source_post(PyObject *s, PyObject *args, PyObject *kwrds)
 {
   PyLogSource *self = (PyLogSource *) s;
+  PythonSourceWorker *sw = self->worker;
+  PythonSourceDriver *owner = (PythonSourceDriver *) sw->super.owner;
 
-  if (self->driver->thread_id != get_thread_id())
+  if (!sw)
+    {
+      PyErr_Format(PyExc_RuntimeError, "post_message() can not be called on uninitialized worker");
+      return NULL;
+    }
+
+  if (sw->thread_id != get_thread_id())
     {
       /*
          Message posting must happen in a syslog-ng thread that was
@@ -449,8 +501,6 @@ py_log_source_post(PyObject *s, PyObject *args, PyObject *kwrds)
       PyErr_Format(PyExc_RuntimeError, "post_message must be called from main thread");
       return NULL;
     }
-
-  PythonSourceDriver *sd = self->driver;
 
   PyLogMessage *pymsg;
 
@@ -464,24 +514,24 @@ py_log_source_post(PyObject *s, PyObject *args, PyObject *kwrds)
       return NULL;
     }
 
-  if (!log_threaded_source_free_to_send(&sd->super))
+  if (!log_threaded_source_free_to_send(&sw->super))
     {
       msg_error("Incorrectly suspended source, dropping message",
-                evt_tag_str("driver", sd->super.super.super.id));
+                evt_tag_str("driver", owner->super.super.super.id));
       Py_RETURN_NONE;
     }
 
   /* keep a reference until the PyLogMessage instance is freed */
   LogMessage *message = log_msg_ref(pymsg->msg);
-  sd->post_message(sd, message);
+  sw->post_message(sw, message);
 
   Py_RETURN_NONE;
 }
 
 static void
-python_sd_run(LogThreadedSourceDriver *s)
+python_sw_run(LogThreadedSourceWorker *s)
 {
-  PythonSourceDriver *self = (PythonSourceDriver *) s;
+  PythonSourceWorker *self = (PythonSourceWorker *) s;
 
   self->thread_id = get_thread_id();
   PyGILState_STATE gstate = PyGILState_Ensure();
@@ -490,14 +540,60 @@ python_sd_run(LogThreadedSourceDriver *s)
 }
 
 static void
-python_sd_request_exit(LogThreadedSourceDriver *s)
+python_sw_request_exit(LogThreadedSourceWorker *s)
 {
-  PythonSourceDriver *self = (PythonSourceDriver *) s;
+  PythonSourceWorker *self = (PythonSourceWorker *) s;
 
   PyGILState_STATE gstate = PyGILState_Ensure();
   _py_invoke_request_exit(self);
   PyGILState_Release(gstate);
 }
+
+static gboolean
+python_sw_init(LogPipe *s)
+{
+  PythonSourceWorker *self = (PythonSourceWorker *) s;
+
+  if (!_py_sw_init(self))
+    return FALSE;
+
+  return log_threaded_source_worker_init_method(s);
+}
+
+static void
+python_sw_free(LogPipe *s)
+{
+  PythonSourceWorker *self = (PythonSourceWorker *) s;
+  PythonSourceDriver *owner = (PythonSourceDriver *) self->super.owner;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+
+  _py_free_methods(self);
+  ((PyLogSource *) owner->py.instance)->worker = NULL;
+
+  PyGILState_Release(gstate);
+  log_threaded_source_worker_free_method(s);
+}
+
+static LogThreadedSourceWorker *
+python_sw_new(LogThreadedSourceDriver *drv)
+{
+  GlobalConfig *cfg = log_pipe_get_config(&drv->super.super.super);
+
+  PythonSourceWorker *self = g_new0(PythonSourceWorker, 1);
+  log_threaded_source_worker_init_instance(&self->super, cfg);
+
+  self->post_message = _post_message_blocking;
+
+  self->super.run = python_sw_run;
+  self->super.request_exit = python_sw_request_exit;
+
+  self->super.super.super.init = python_sw_init;
+  self->super.super.super.free_fn = python_sw_free;
+
+  return &self->super;
+}
+
 
 static gboolean
 python_sd_init(LogPipe *s)
@@ -559,15 +655,12 @@ python_sd_new(GlobalConfig *cfg)
   self->super.super.super.super.deinit = python_sd_deinit;
   self->super.super.super.super.free_fn = python_sd_free;
 
+  self->super.construct_worker = python_sw_new;
   self->super.format_stats_instance = python_sd_format_stats_instance;
   self->super.worker_options.super.stats_level = STATS_LEVEL0;
   self->super.worker_options.super.stats_source = stats_register_type("python");
 
-  self->super.worker->run = python_sd_run;
-  self->super.worker->request_exit = python_sd_request_exit;
-
   self->options = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-  self->post_message = _post_message_blocking;
 
   return &self->super.super.super;
 }

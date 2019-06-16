@@ -34,12 +34,17 @@
 struct ThreadedRandomGeneratorSourceDriver
 {
   LogThreadedSourceDriver super;
-  GAtomicCounter exit_requested;
 
   guint freq;
   guint bytes;
   guint flags;
 };
+
+typedef struct ThreadedRandomGeneratorSourceWorker
+{
+  LogThreadedSourceWorker super;
+  GAtomicCounter exit_requested;
+} ThreadedRandomGeneratorSourceWorker;
 
 static gboolean
 _generate_random_bytes(guint8 *random, guint size, guint flags)
@@ -65,20 +70,21 @@ _generate_random_bytes(guint8 *random, guint size, guint flags)
 
 /* runs in a dedicated thread */
 static void
-_run(LogThreadedSourceDriver *s)
+_run(LogThreadedSourceWorker *s)
 {
-  ThreadedRandomGeneratorSourceDriver *self = (ThreadedRandomGeneratorSourceDriver *) s;
+  ThreadedRandomGeneratorSourceWorker *self = (ThreadedRandomGeneratorSourceWorker *) s;
+  ThreadedRandomGeneratorSourceDriver *owner = (ThreadedRandomGeneratorSourceDriver *) self->super.owner;
 
-  guint8 *random_bytes = g_malloc(self->bytes);
+  guint8 *random_bytes = g_malloc(owner->bytes);
 
-  const gsize random_hex_str_size = self->bytes * 2 + 1;
+  const gsize random_hex_str_size = owner->bytes * 2 + 1;
   gchar *random_hex_str = g_malloc(random_hex_str_size);
 
   while (!g_atomic_counter_get(&self->exit_requested))
     {
-      if (_generate_random_bytes(random_bytes, self->bytes, self->flags))
+      if (_generate_random_bytes(random_bytes, owner->bytes, owner->flags))
         {
-          format_hex_string(random_bytes, self->bytes, random_hex_str, random_hex_str_size);
+          format_hex_string(random_bytes, owner->bytes, random_hex_str, random_hex_str_size);
 
           LogMessage *msg = log_msg_new_empty();
           log_msg_set_value(msg, LM_V_MESSAGE, random_hex_str, -1);
@@ -86,7 +92,7 @@ _run(LogThreadedSourceDriver *s)
           log_threaded_source_blocking_post(s, msg);
         }
 
-      usleep(self->freq * 1000);
+      usleep(owner->freq * 1000);
     }
 
   g_free(random_hex_str);
@@ -94,12 +100,29 @@ _run(LogThreadedSourceDriver *s)
 }
 
 static void
-_request_exit(LogThreadedSourceDriver *s)
+_request_exit(LogThreadedSourceWorker *s)
 {
-  ThreadedRandomGeneratorSourceDriver *self = (ThreadedRandomGeneratorSourceDriver *) s;
+  ThreadedRandomGeneratorSourceWorker *self = (ThreadedRandomGeneratorSourceWorker *) s;
 
   g_atomic_counter_set(&self->exit_requested, TRUE);
 }
+
+static LogThreadedSourceWorker *
+_worker_new(LogThreadedSourceDriver *drv)
+{
+  GlobalConfig *cfg = log_pipe_get_config(&drv->super.super.super);
+
+  ThreadedRandomGeneratorSourceWorker *self = g_new0(ThreadedRandomGeneratorSourceWorker, 1);
+  log_threaded_source_worker_init_instance(&self->super, cfg);
+
+  g_atomic_counter_set(&self->exit_requested, FALSE);
+
+  self->super.run = _run;
+  self->super.request_exit = _request_exit;
+
+  return &self->super;
+}
+
 
 static gboolean
 _init(LogPipe *s)
@@ -166,10 +189,8 @@ threaded_random_generator_sd_new(GlobalConfig *cfg)
 
   self->freq = 1000;
   self->flags = GRND_RANDOM;
-  g_atomic_counter_set(&self->exit_requested, FALSE);
 
-  self->super.worker->run = _run;
-  self->super.worker->request_exit = _request_exit;
+  self->super.construct_worker = _worker_new;
 
   self->super.super.super.super.init = _init;
   self->super.format_stats_instance = _format_stats_instance;

@@ -73,6 +73,7 @@ wakeup_cond_signal(LogThreadedSourceWakeupCondition *cond)
   g_mutex_unlock(cond->lock);
 }
 
+
 static LogPipe *
 log_threaded_source_worker_logpipe(LogThreadedSourceWorker *self)
 {
@@ -115,22 +116,59 @@ log_threaded_source_worker_options_destroy(LogThreadedSourceWorkerOptions *optio
   msg_format_options_destroy(&options->parse_options);
 }
 
+
 /* The wakeup lock must be held before calling this function. */
 static void
-log_threaded_source_suspend(LogThreadedSourceDriver *self)
+log_threaded_source_suspend(LogThreadedSourceWorker *self)
 {
-  LogThreadedSourceWorker *worker = self->worker;
+  while (!log_threaded_source_free_to_send(self) && !self->under_termination)
+    wakeup_cond_wait(&self->wakeup_cond);
+}
 
-  while (!log_threaded_source_free_to_send(self) && !worker->under_termination)
-    wakeup_cond_wait(&worker->wakeup_cond);
+void
+log_threaded_source_worker_set_wakeup_func(LogThreadedSourceWorker *self, void (*wakeup)(LogThreadedSourceWorker *self))
+{
+  self->wakeup = wakeup;
+}
+
+void
+log_threaded_source_post(LogThreadedSourceWorker *self, LogMessage *msg)
+{
+  msg_debug("Incoming log message", evt_tag_str("msg", log_msg_get_value(msg, LM_V_MESSAGE, NULL)));
+  log_source_post(&self->super, msg);
+}
+
+gboolean
+log_threaded_source_free_to_send(LogThreadedSourceWorker *self)
+{
+  return log_source_free_to_send(&self->super);
+}
+
+void
+log_threaded_source_blocking_post(LogThreadedSourceWorker *self, LogMessage *msg)
+{
+  log_threaded_source_post(self, msg);
+
+  /*
+   * The wakeup lock must be held before calling free_to_send() and suspend(),
+   * otherwise g_cond_signal() might be called between free_to_send() and
+   * suspend(). We'd hang in that case.
+   *
+   * LogReader does not have such a lock, but this is because it runs an ivykis
+   * loop with a _synchronized_ event queue, where suspend() and the
+   * "schedule_wakeup" event are guaranteed to be scheduled in the right order.
+   */
+
+  wakeup_cond_lock(&self->wakeup_cond);
+  if (!log_threaded_source_free_to_send(self))
+    log_threaded_source_suspend(self);
+  wakeup_cond_unlock(&self->wakeup_cond);
 }
 
 static void
-log_threaded_source_wakeup(LogThreadedSourceDriver *self)
+log_threaded_source_wakeup(LogThreadedSourceWorker *self)
 {
-  LogThreadedSourceWorker *worker = self->worker;
-
-  wakeup_cond_signal(&worker->wakeup_cond);
+  wakeup_cond_signal(&self->wakeup_cond);
 }
 
 static void
@@ -141,7 +179,7 @@ log_threaded_source_worker_run(LogThreadedSourceWorker *self)
   /* ivykis is not used here, but mark-freq() requires all source threads to be iv-initialized. */
   iv_init();
 
-  self->run(self->owner);
+  self->run(self);
 
   iv_deinit();
 
@@ -153,8 +191,8 @@ log_threaded_source_worker_request_exit(LogThreadedSourceWorker *self)
 {
   msg_debug("Requesting worker thread exit", evt_tag_str("driver", self->owner->super.super.id));
   self->under_termination = TRUE;
-  self->request_exit(self->owner);
-  log_threaded_source_wakeup(self->owner);
+  self->request_exit(self);
+  log_threaded_source_wakeup(self);
 }
 
 static void
@@ -162,7 +200,7 @@ _worker_wakeup(LogSource *s)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
 
-  self->wakeup(self->owner);
+  self->wakeup(self);
 }
 
 static void
@@ -175,8 +213,8 @@ _start_worker_thread(gint type, gpointer data)
                                  self, &self->options);
 }
 
-static gboolean
-log_threaded_source_worker_init(LogPipe *s)
+gboolean
+log_threaded_source_worker_init_method(LogPipe *s)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
   if (!log_source_init(s))
@@ -191,8 +229,14 @@ log_threaded_source_worker_init(LogPipe *s)
   return TRUE;
 }
 
-static void
-log_threaded_source_worker_free(LogPipe *s)
+gboolean
+log_threaded_source_worker_deinit_method(LogPipe *s)
+{
+  return log_source_deinit(s);
+}
+
+void
+log_threaded_source_worker_free_method(LogPipe *s)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
 
@@ -204,21 +248,21 @@ log_threaded_source_worker_free(LogPipe *s)
   log_source_free(s);
 }
 
-static LogThreadedSourceWorker *
-log_threaded_source_worker_new(GlobalConfig *cfg)
+void
+log_threaded_source_worker_init_instance(LogThreadedSourceWorker *self, GlobalConfig *cfg)
 {
-  LogThreadedSourceWorker *self = g_new0(LogThreadedSourceWorker, 1);
   log_source_init_instance(&self->super, cfg);
 
   wakeup_cond_init(&self->wakeup_cond);
 
   self->options.is_external_input = TRUE;
 
-  self->super.super.init = log_threaded_source_worker_init;
-  self->super.super.free_fn = log_threaded_source_worker_free;
-  self->super.wakeup = _worker_wakeup;
+  self->wakeup = log_threaded_source_wakeup;
 
-  return self;
+  self->super.super.init = log_threaded_source_worker_init_method;
+  self->super.super.deinit = log_threaded_source_worker_deinit_method;
+  self->super.super.free_fn = log_threaded_source_worker_free_method;
+  self->super.wakeup = _worker_wakeup;
 }
 
 
@@ -231,6 +275,7 @@ log_threaded_source_driver_init_method(LogPipe *s)
   if (!log_src_driver_init_method(s))
     return FALSE;
 
+  g_assert(self->construct_worker);
   g_assert(self->format_stats_instance);
 
   log_threaded_source_worker_options_init(&self->worker_options, cfg, self->super.super.group);
@@ -272,56 +317,13 @@ log_threaded_source_driver_free_method(LogPipe *s)
 }
 
 void
-log_threaded_source_set_wakeup_func(LogThreadedSourceDriver *self, void (*wakeup)(LogThreadedSourceDriver *self))
-{
-  self->worker->wakeup = wakeup;
-}
-
-void
-log_threaded_source_post(LogThreadedSourceDriver *self, LogMessage *msg)
-{
-  msg_debug("Incoming log message", evt_tag_str("msg", log_msg_get_value(msg, LM_V_MESSAGE, NULL)));
-  log_source_post(&self->worker->super, msg);
-}
-
-gboolean
-log_threaded_source_free_to_send(LogThreadedSourceDriver *self)
-{
-  return log_source_free_to_send(&self->worker->super);
-}
-
-void
-log_threaded_source_blocking_post(LogThreadedSourceDriver *self, LogMessage *msg)
-{
-  LogThreadedSourceWorker *worker = self->worker;
-
-  log_threaded_source_post(self, msg);
-
-  /*
-   * The wakeup lock must be held before calling free_to_send() and suspend(),
-   * otherwise g_cond_signal() might be called between free_to_send() and
-   * suspend(). We'd hang in that case.
-   *
-   * LogReader does not have such a lock, but this is because it runs an ivykis
-   * loop with a _synchronized_ event queue, where suspend() and the
-   * "schedule_wakeup" event are guaranteed to be scheduled in the right order.
-   */
-
-  wakeup_cond_lock(&worker->wakeup_cond);
-  if (!log_threaded_source_free_to_send(self))
-    log_threaded_source_suspend(self);
-  wakeup_cond_unlock(&worker->wakeup_cond);
-}
-
-void
 log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalConfig *cfg)
 {
   log_src_driver_init_instance(&self->super, cfg);
 
   log_threaded_source_worker_options_defaults(&self->worker_options);
 
-  self->worker = log_threaded_source_worker_new(cfg);
-  self->worker->wakeup = log_threaded_source_wakeup;
+  self->worker = self->construct_worker(self);
 
   self->super.super.super.init = log_threaded_source_driver_init_method;
   self->super.super.super.deinit = log_threaded_source_driver_deinit_method;
