@@ -80,16 +80,16 @@ log_threaded_source_worker_logpipe(LogThreadedSourceWorker *self)
 }
 
 static void
-log_threaded_source_worker_set_options(LogThreadedSourceWorker *self, LogThreadedSourceDriver *control,
+log_threaded_source_worker_set_options(LogThreadedSourceWorker *self, LogThreadedSourceDriver *owner,
                                        LogThreadedSourceWorkerOptions *options,
                                        const gchar *stats_id, const gchar *stats_instance)
 {
   log_source_set_options(&self->super, &options->super, stats_id, stats_instance, TRUE, options->position_tracked,
-                         control->super.super.super.expr_node);
+                         owner->super.super.super.expr_node);
 
-  log_pipe_unref(&self->control->super.super.super);
-  log_pipe_ref(&control->super.super.super);
-  self->control = control;
+  log_pipe_unref(&self->owner->super.super.super);
+  log_pipe_ref(&owner->super.super.super);
+  self->owner = owner;
 }
 
 void
@@ -136,25 +136,25 @@ log_threaded_source_wakeup(LogThreadedSourceDriver *self)
 static void
 log_threaded_source_worker_run(LogThreadedSourceWorker *self)
 {
-  msg_debug("Worker thread started", evt_tag_str("driver", self->control->super.super.id));
+  msg_debug("Worker thread started", evt_tag_str("driver", self->owner->super.super.id));
 
   /* ivykis is not used here, but mark-freq() requires all source threads to be iv-initialized. */
   iv_init();
 
-  self->run(self->control);
+  self->run(self->owner);
 
   iv_deinit();
 
-  msg_debug("Worker thread finished", evt_tag_str("driver", self->control->super.super.id));
+  msg_debug("Worker thread finished", evt_tag_str("driver", self->owner->super.super.id));
 }
 
 static void
 log_threaded_source_worker_request_exit(LogThreadedSourceWorker *self)
 {
-  msg_debug("Requesting worker thread exit", evt_tag_str("driver", self->control->super.super.id));
+  msg_debug("Requesting worker thread exit", evt_tag_str("driver", self->owner->super.super.id));
   self->under_termination = TRUE;
-  self->request_exit(self->control);
-  log_threaded_source_wakeup(self->control);
+  self->request_exit(self->owner);
+  log_threaded_source_wakeup(self->owner);
 }
 
 static void
@@ -162,7 +162,7 @@ _worker_wakeup(LogSource *s)
 {
   LogThreadedSourceWorker *self = (LogThreadedSourceWorker *) s;
 
-  self->wakeup(self->control);
+  self->wakeup(self->owner);
 }
 
 static void
@@ -198,8 +198,8 @@ log_threaded_source_worker_free(LogPipe *s)
 
   wakeup_cond_destroy(&self->wakeup_cond);
 
-  log_pipe_unref(&self->control->super.super.super);
-  self->control = NULL;
+  log_pipe_unref(&self->owner->super.super.super);
+  self->owner = NULL;
 
   log_source_free(s);
 }

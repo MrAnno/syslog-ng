@@ -53,7 +53,7 @@ typedef struct _LogThreadedSourceWakeupCondition
 struct _LogThreadedSourceWorker
 {
   LogSource super;
-  LogThreadedSourceDriver *control;
+  LogThreadedSourceDriver *owner;
   LogThreadedSourceWakeupCondition wakeup_cond;
   WorkerOptions options;
   gboolean under_termination;
