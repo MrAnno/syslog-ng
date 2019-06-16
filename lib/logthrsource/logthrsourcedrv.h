@@ -40,7 +40,6 @@ typedef struct _LogThreadedSourceWorkerOptions
 {
   LogSourceOptions super;
   MsgFormatOptions parse_options;
-  gboolean position_tracked;
 } LogThreadedSourceWorkerOptions;
 
 typedef struct _LogThreadedSourceWakeupCondition
@@ -57,6 +56,8 @@ struct _LogThreadedSourceWorker
   LogThreadedSourceWakeupCondition wakeup_cond;
   WorkerOptions options;
   gboolean under_termination;
+
+  gboolean position_tracked;
 
   void (*run)(LogThreadedSourceWorker *self);
   void (*request_exit)(LogThreadedSourceWorker *self);
