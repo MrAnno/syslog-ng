@@ -42,7 +42,7 @@
 #include "logmatcher.h"
 #include "logthrdest/logthrdestdrv.h"
 #include "logthrsource/logthrsourcedrv.h"
-#include "logthrsource/logthrfetcherdrv.h"
+#include "logthrsource/logthrfetcher.h"
 #include "str-utils.h"
 #include <sys/stat.h>
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Balabit
- * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
+ * Copyright (c) 2018-2019 László Várady <laszlo.varady@balabit.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef LOGTHRFETCHERDRV_H
-#define LOGTHRFETCHERDRV_H
+#ifndef LOGTHRFETCHER_H
+#define LOGTHRFETCHER_H
 
 #include "syslog-ng.h"
 #include "logthrsourcedrv.h"
@@ -33,7 +33,7 @@
 #include <iv.h>
 #include <iv_event.h>
 
-typedef struct _LogThreadedFetcherDriver LogThreadedFetcherDriver;
+typedef struct _LogThreadedFetcher LogThreadedFetcher;
 
 typedef enum
 {
@@ -50,7 +50,7 @@ typedef struct _LogThreadedFetchResult
   LogMessage *msg;
 } LogThreadedFetchResult;
 
-struct _LogThreadedFetcherDriver
+struct _LogThreadedFetcher
 {
   LogThreadedSourceDriver super;
   time_t time_reopen;
@@ -63,19 +63,19 @@ struct _LogThreadedFetcherDriver
   gboolean suspended;
   gboolean under_termination;
 
-  void (*thread_init)(LogThreadedFetcherDriver *self);
-  void (*thread_deinit)(LogThreadedFetcherDriver *self);
-  gboolean (*connect)(LogThreadedFetcherDriver *self);
-  void (*disconnect)(LogThreadedFetcherDriver *self);
-  LogThreadedFetchResult (*fetch)(LogThreadedFetcherDriver *self);
+  void (*thread_init)(LogThreadedFetcher *self);
+  void (*thread_deinit)(LogThreadedFetcher *self);
+  gboolean (*connect)(LogThreadedFetcher *self);
+  void (*disconnect)(LogThreadedFetcher *self);
+  LogThreadedFetchResult (*fetch)(LogThreadedFetcher *self);
 
-  void (*request_exit)(LogThreadedFetcherDriver *self);
+  void (*request_exit)(LogThreadedFetcher *self);
 };
 
-void log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, GlobalConfig *cfg);
-gboolean log_threaded_fetcher_driver_init_method(LogPipe *s);
-gboolean log_threaded_fetcher_driver_deinit_method(LogPipe *s);
-void log_threaded_fetcher_driver_free_method(LogPipe *s);
+void log_threaded_fetcher_init_instance(LogThreadedFetcher *self, GlobalConfig *cfg);
+gboolean log_threaded_fetcher_init_method(LogPipe *s);
+gboolean log_threaded_fetcher_deinit_method(LogPipe *s);
+void log_threaded_fetcher_free_method(LogPipe *s);
 
 void log_threaded_fetcher_driver_set_fetch_no_data_delay(LogDriver *self, time_t no_data_delay);
 

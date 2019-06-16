@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Balabit
- * Copyright (c) 2018 László Várady <laszlo.varady@balabit.com>
+ * Copyright (c) 2018-2019 László Várady <laszlo.varady@balabit.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,24 +22,24 @@
  *
  */
 
-#include "logthrfetcherdrv.h"
+#include "logthrfetcher.h"
 #include "messages.h"
 
 void
-log_threaded_fetcher_driver_set_fetch_no_data_delay(LogDriver *s, time_t no_data_delay)
+log_threaded_fetcher_set_fetch_no_data_delay(LogDriver *s, time_t no_data_delay)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
   self->no_data_delay = no_data_delay;
 }
 
 static EVTTAG *
-_tag_driver(LogThreadedFetcherDriver *f)
+_tag_driver(LogThreadedFetcher *f)
 {
   return evt_tag_str("driver", f->super.super.super.id);
 }
 
 static inline void
-_thread_init(LogThreadedFetcherDriver *self)
+_thread_init(LogThreadedFetcher *self)
 {
   msg_trace("Fetcher thread_init()", _tag_driver(self));
   if (self->thread_init)
@@ -47,7 +47,7 @@ _thread_init(LogThreadedFetcherDriver *self)
 }
 
 static inline void
-_thread_deinit(LogThreadedFetcherDriver *self)
+_thread_deinit(LogThreadedFetcher *self)
 {
   msg_trace("Fetcher thread_deinit()", _tag_driver(self));
   if (self->thread_deinit)
@@ -55,7 +55,7 @@ _thread_deinit(LogThreadedFetcherDriver *self)
 }
 
 static inline gboolean
-_connect(LogThreadedFetcherDriver *self)
+_connect(LogThreadedFetcher *self)
 {
   msg_trace("Fetcher connect()", _tag_driver(self));
   if (!self->connect)
@@ -71,7 +71,7 @@ _connect(LogThreadedFetcherDriver *self)
 }
 
 static inline void
-_disconnect(LogThreadedFetcherDriver *self)
+_disconnect(LogThreadedFetcher *self)
 {
   msg_trace("Fetcher disconnect()", _tag_driver(self));
   if (self->disconnect)
@@ -79,7 +79,7 @@ _disconnect(LogThreadedFetcherDriver *self)
 }
 
 static void
-_start_reconnect_timer(LogThreadedFetcherDriver *self)
+_start_reconnect_timer(LogThreadedFetcher *self)
 {
   iv_validate_now();
   self->reconnect_timer.expires  = iv_now;
@@ -88,7 +88,7 @@ _start_reconnect_timer(LogThreadedFetcherDriver *self)
 }
 
 static void
-_start_no_data_timer(LogThreadedFetcherDriver *self)
+_start_no_data_timer(LogThreadedFetcher *self)
 {
   iv_validate_now();
   self->no_data_timer.expires  = iv_now;
@@ -99,7 +99,7 @@ _start_no_data_timer(LogThreadedFetcherDriver *self)
 static void
 _worker_run(LogThreadedSourceDriver *s)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
   /* iv_init() and iv_deinit() are called by LogThreadedSourceDriver */
 
@@ -121,7 +121,7 @@ _worker_run(LogThreadedSourceDriver *s)
 static void
 _worker_request_exit(LogThreadedSourceDriver *s)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
   self->under_termination = TRUE;
 
@@ -134,14 +134,14 @@ _worker_request_exit(LogThreadedSourceDriver *s)
 static void
 _wakeup(LogThreadedSourceDriver *s)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
   if (!self->under_termination)
     iv_event_post(&self->wakeup_event);
 }
 
 static inline void
-_schedule_next_fetch_if_free_to_send(LogThreadedFetcherDriver *self)
+_schedule_next_fetch_if_free_to_send(LogThreadedFetcher *self)
 {
   if (log_threaded_source_free_to_send(&self->super))
     iv_task_register(&self->fetch_task);
@@ -150,7 +150,7 @@ _schedule_next_fetch_if_free_to_send(LogThreadedFetcherDriver *self)
 }
 
 static void
-_on_fetch_error(LogThreadedFetcherDriver *self)
+_on_fetch_error(LogThreadedFetcher *self)
 {
   msg_error("Error during fetching messages", _tag_driver(self));
   _disconnect(self);
@@ -158,28 +158,28 @@ _on_fetch_error(LogThreadedFetcherDriver *self)
 }
 
 static void
-_on_not_connected(LogThreadedFetcherDriver *self)
+_on_not_connected(LogThreadedFetcher *self)
 {
   msg_info("Fetcher disconnected while receiving messages, reconnecting", _tag_driver(self));
   _start_reconnect_timer(self);
 }
 
 static void
-_on_fetch_success(LogThreadedFetcherDriver *self, LogMessage *msg)
+_on_fetch_success(LogThreadedFetcher *self, LogMessage *msg)
 {
   log_threaded_source_post(&self->super, msg);
   _schedule_next_fetch_if_free_to_send(self);
 }
 
 static void
-_on_fetch_try_again(LogThreadedFetcherDriver *self)
+_on_fetch_try_again(LogThreadedFetcher *self)
 {
   msg_debug("Try again when fetching messages", _tag_driver(self));
   iv_task_register(&self->fetch_task);
 }
 
 static void
-_on_fetch_no_data(LogThreadedFetcherDriver *self)
+_on_fetch_no_data(LogThreadedFetcher *self)
 {
   msg_debug("No data during fetching messages", _tag_driver(self));
   _start_no_data_timer(self);
@@ -189,7 +189,7 @@ _on_fetch_no_data(LogThreadedFetcherDriver *self)
 static void
 _fetch(gpointer data)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) data;
 
   msg_trace("Fetcher fetch()", _tag_driver(self));
 
@@ -225,7 +225,7 @@ _fetch(gpointer data)
 static void
 _wakeup_event_handler(gpointer data)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) data;
 
   if (self->suspended && log_threaded_source_free_to_send(&self->super))
     {
@@ -237,7 +237,7 @@ _wakeup_event_handler(gpointer data)
 }
 
 static void
-_stop_watches(LogThreadedFetcherDriver *self)
+_stop_watches(LogThreadedFetcher *self)
 {
   iv_event_unregister(&self->wakeup_event);
   iv_event_unregister(&self->shutdown_event);
@@ -255,7 +255,7 @@ _stop_watches(LogThreadedFetcherDriver *self)
 static void
 _shutdown_event_handler(gpointer data)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) data;
 
   _stop_watches(self);
 
@@ -265,7 +265,7 @@ _shutdown_event_handler(gpointer data)
 static void
 _reconnect(gpointer data)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) data;
 
   if (_connect(self))
     _schedule_next_fetch_if_free_to_send(self);
@@ -276,13 +276,13 @@ _reconnect(gpointer data)
 static void
 _no_data(gpointer data)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) data;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) data;
 
   iv_task_register(&self->fetch_task);
 }
 
 static void
-_init_watches(LogThreadedFetcherDriver *self)
+_init_watches(LogThreadedFetcher *self)
 {
   IV_TASK_INIT(&self->fetch_task);
   self->fetch_task.cookie = self;
@@ -307,9 +307,9 @@ _init_watches(LogThreadedFetcherDriver *self)
 }
 
 gboolean
-log_threaded_fetcher_driver_init_method(LogPipe *s)
+log_threaded_fetcher_init_method(LogPipe *s)
 {
-  LogThreadedFetcherDriver *self = (LogThreadedFetcherDriver *) s;
+  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
 
   if (!log_threaded_source_driver_init_method(s))
@@ -327,19 +327,19 @@ log_threaded_fetcher_driver_init_method(LogPipe *s)
 }
 
 gboolean
-log_threaded_fetcher_driver_deinit_method(LogPipe *s)
+log_threaded_fetcher_deinit_method(LogPipe *s)
 {
   return log_threaded_source_driver_deinit_method(s);
 }
 
 void
-log_threaded_fetcher_driver_free_method(LogPipe *s)
+log_threaded_fetcher_free_method(LogPipe *s)
 {
   log_threaded_source_driver_free_method(s);
 }
 
 void
-log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, GlobalConfig *cfg)
+log_threaded_fetcher_init_instance(LogThreadedFetcher *self, GlobalConfig *cfg)
 {
   log_threaded_source_driver_init_instance(&self->super, cfg);
 
@@ -352,7 +352,7 @@ log_threaded_fetcher_driver_init_instance(LogThreadedFetcherDriver *self, Global
   self->super.worker->run = _worker_run;
   self->super.worker->request_exit = _worker_request_exit;
 
-  self->super.super.super.super.init = log_threaded_fetcher_driver_init_method;
-  self->super.super.super.super.deinit = log_threaded_fetcher_driver_deinit_method;
-  self->super.super.super.super.free_fn = log_threaded_fetcher_driver_free_method;
+  self->super.super.super.super.init = log_threaded_fetcher_init_method;
+  self->super.super.super.super.deinit = log_threaded_fetcher_deinit_method;
+  self->super.super.super.super.free_fn = log_threaded_fetcher_free_method;
 }

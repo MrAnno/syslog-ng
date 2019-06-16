@@ -1,11 +1,11 @@
 set(LOGTHRSOURCE_HEADERS
     logthrsource/logthrsourcedrv.h
-    logthrsource/logthrfetcherdrv.h
+    logthrsource/logthrfetcher.h
     PARENT_SCOPE)
 
 set(LOGTHRSOURCE_SOURCES
     logthrsource/logthrsourcedrv.c
-    logthrsource/logthrfetcherdrv.c
+    logthrsource/logthrfetcher.c
     PARENT_SCOPE)
 
 add_test_subdirectory(tests)
