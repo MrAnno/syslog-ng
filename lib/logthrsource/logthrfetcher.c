@@ -25,17 +25,10 @@
 #include "logthrfetcher.h"
 #include "messages.h"
 
-void
-log_threaded_fetcher_set_fetch_no_data_delay(LogDriver *s, time_t no_data_delay)
-{
-  LogThreadedFetcher *self = (LogThreadedFetcher *) s;
-  self->no_data_delay = no_data_delay;
-}
-
 static EVTTAG *
 _tag_driver(LogThreadedFetcher *f)
 {
-  return evt_tag_str("driver", f->super.super.super.id);
+  return evt_tag_str("driver", f->super.owner->super.super.id);
 }
 
 static inline void
@@ -97,11 +90,11 @@ _start_no_data_timer(LogThreadedFetcher *self)
 }
 
 static void
-_worker_run(LogThreadedSourceDriver *s)
+_worker_run(LogThreadedSourceWorker *s)
 {
   LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
-  /* iv_init() and iv_deinit() are called by LogThreadedSourceDriver */
+  /* iv_init() and iv_deinit() are called by LogThreadedSourceWorker */
 
   iv_event_register(&self->wakeup_event);
   iv_event_register(&self->shutdown_event);
@@ -119,7 +112,7 @@ _worker_run(LogThreadedSourceDriver *s)
 }
 
 static void
-_worker_request_exit(LogThreadedSourceDriver *s)
+_worker_request_exit(LogThreadedSourceWorker *s)
 {
   LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
@@ -132,7 +125,7 @@ _worker_request_exit(LogThreadedSourceDriver *s)
 }
 
 static void
-_wakeup(LogThreadedSourceDriver *s)
+_wakeup(LogThreadedSourceWorker *s)
 {
   LogThreadedFetcher *self = (LogThreadedFetcher *) s;
 
@@ -312,7 +305,7 @@ log_threaded_fetcher_init_method(LogPipe *s)
   LogThreadedFetcher *self = (LogThreadedFetcher *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
 
-  if (!log_threaded_source_driver_init_method(s))
+  if (!log_threaded_source_worker_init_method(s))
     return FALSE;
 
   g_assert(self->fetch);
@@ -329,30 +322,30 @@ log_threaded_fetcher_init_method(LogPipe *s)
 gboolean
 log_threaded_fetcher_deinit_method(LogPipe *s)
 {
-  return log_threaded_source_driver_deinit_method(s);
+  return log_threaded_source_worker_deinit_method(s);
 }
 
 void
 log_threaded_fetcher_free_method(LogPipe *s)
 {
-  log_threaded_source_driver_free_method(s);
+  log_threaded_source_worker_free_method(s);
 }
 
 void
 log_threaded_fetcher_init_instance(LogThreadedFetcher *self, GlobalConfig *cfg)
 {
-  log_threaded_source_driver_init_instance(&self->super, cfg);
+  log_threaded_source_worker_init_instance(&self->super, cfg);
 
   self->time_reopen = -1;
   self->no_data_delay = -1;
 
   _init_watches(self);
 
-  log_threaded_source_set_wakeup_func(&self->super, _wakeup);
-  self->super.worker->run = _worker_run;
-  self->super.worker->request_exit = _worker_request_exit;
+  log_threaded_source_worker_set_wakeup_func(&self->super, _wakeup);
+  self->super.run = _worker_run;
+  self->super.request_exit = _worker_request_exit;
 
-  self->super.super.super.super.init = log_threaded_fetcher_init_method;
-  self->super.super.super.super.deinit = log_threaded_fetcher_deinit_method;
-  self->super.super.super.super.free_fn = log_threaded_fetcher_free_method;
+  self->super.super.super.init = log_threaded_fetcher_init_method;
+  self->super.super.super.deinit = log_threaded_fetcher_deinit_method;
+  self->super.super.super.free_fn = log_threaded_fetcher_free_method;
 }

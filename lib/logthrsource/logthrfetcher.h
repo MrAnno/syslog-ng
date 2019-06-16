@@ -52,7 +52,7 @@ typedef struct _LogThreadedFetchResult
 
 struct _LogThreadedFetcher
 {
-  LogThreadedSourceDriver super;
+  LogThreadedSourceWorker super;
   time_t time_reopen;
   time_t no_data_delay;
   struct iv_task fetch_task;
@@ -76,7 +76,5 @@ void log_threaded_fetcher_init_instance(LogThreadedFetcher *self, GlobalConfig *
 gboolean log_threaded_fetcher_init_method(LogPipe *s);
 gboolean log_threaded_fetcher_deinit_method(LogPipe *s);
 void log_threaded_fetcher_free_method(LogPipe *s);
-
-void log_threaded_fetcher_driver_set_fetch_no_data_delay(LogDriver *self, time_t no_data_delay);
 
 #endif

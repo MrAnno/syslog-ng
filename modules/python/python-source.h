@@ -27,10 +27,16 @@
 #include "python-module.h"
 #include "driver.h"
 
+typedef struct _PythonSourceDriver PythonSourceDriver;
+
 LogDriver *python_sd_new(GlobalConfig *cfg);
 void python_sd_set_loaders(LogDriver *d, GList *loaders);
 void python_sd_set_class(LogDriver *d, gchar *class_name);
 void python_sd_set_option(LogDriver *d, gchar *key, gchar *value);
+
+const gchar *python_sd_get_class(PythonSourceDriver *self);
+const gchar *python_sd_get_driver_id(PythonSourceDriver *self);
+PyObject *python_sd_get_py_instance(PythonSourceDriver *self);
 
 void py_log_source_init(void);
 
