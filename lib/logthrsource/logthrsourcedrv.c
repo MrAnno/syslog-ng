@@ -279,6 +279,8 @@ log_threaded_source_driver_init_method(LogPipe *s)
   g_assert(self->format_stats_instance);
 
   log_threaded_source_worker_options_init(&self->worker_options, cfg, self->super.super.group);
+
+  self->worker = self->construct_worker(self);
   log_threaded_source_worker_set_options(self->worker, self, &self->worker_options,
                                          self->super.super.id, self->format_stats_instance(self));
 
@@ -302,6 +304,7 @@ log_threaded_source_driver_deinit_method(LogPipe *s)
 
   log_pipe_deinit(worker_pipe);
   log_pipe_unref(worker_pipe);
+  self->worker = NULL;
 
   return log_src_driver_deinit_method(s);
 }
@@ -322,8 +325,6 @@ log_threaded_source_driver_init_instance(LogThreadedSourceDriver *self, GlobalCo
   log_src_driver_init_instance(&self->super, cfg);
 
   log_threaded_source_worker_options_defaults(&self->worker_options);
-
-  self->worker = self->construct_worker(self);
 
   self->super.super.super.init = log_threaded_source_driver_init_method;
   self->super.super.super.deinit = log_threaded_source_driver_deinit_method;
