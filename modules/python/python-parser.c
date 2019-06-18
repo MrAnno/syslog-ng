@@ -32,7 +32,7 @@ int python_parse(CfgLexer *lexer, void **instance, gpointer arg);
 static CfgLexerKeyword python_keywords[] =
 {
   { "python",                   KW_PYTHON  },
-  { "python_fetcher",           KW_PYTHON_FETCHER },
+  { "python_fetcher",           KW_PYTHON_FETCHER, KWS_OBSOLETE, "python-fetcher() is deprecated, use python()" },
   { "class",                    KW_CLASS   },
   {
     "imports",                  KW_IMPORTS, KWS_OBSOLETE,
