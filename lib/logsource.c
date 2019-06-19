@@ -49,17 +49,16 @@ static inline guint32
 _take_reclaimed_window(LogSource *self, guint32 window_size_increment)
 {
   gssize old = atomic_gssize_sub(&self->window_size_to_be_reclaimed, window_size_increment);
-  gboolean need_to_reclaim = (old > 0);
+  gboolean reclaim_in_progress = (old > 0);
 
-  if (!need_to_reclaim)
+  if (!reclaim_in_progress)
     {
-      atomic_gssize_sub(&self->window_size_to_be_reclaimed, old);
       return window_size_increment;
     }
 
   guint32 remaining_window_size_increment = MAX(window_size_increment - old, 0);
-  guint32 pending_increment = window_size_increment - remaining_window_size_increment;
-  atomic_gssize_add(&self->pending_reclaimed, pending_increment);
+  guint32 reclaimed = window_size_increment - remaining_window_size_increment;
+  atomic_gssize_add(&self->pending_reclaimed, reclaimed);
 
   return remaining_window_size_increment;
 }
@@ -311,10 +310,11 @@ _reclaim_window_instead_of_rebalance(LogSource *self)
       self->full_window_size -= total_reclaim;
       stats_counter_sub(self->stat_full_window, total_reclaim);
       dynamic_window_release(&self->dynamic_window, total_reclaim);
-      if ((gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed) > 0)
-        {
-          reclaim_in_progress = TRUE;
-        }
+      gssize to_be_reclaimed = (gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed);
+      reclaim_in_progress = to_be_reclaimed > 0;
+      //to avoid underflow, we need to set a value <= 0
+      if (to_be_reclaimed < 0)
+        atomic_gssize_set(&self->window_size_to_be_reclaimed, 0);
     }
 
   msg_warning("Checking if reclaim is in progress...",
