@@ -51,7 +51,10 @@ _take_reclaimed_window(LogSource *self, guint32 window_size_increment)
   gboolean need_to_reclaim = (old > 0);
 
   if (!need_to_reclaim)
-    return window_size_increment;
+    {
+      atomic_gssize_sub(&self->window_size_to_be_reclaimed, old);
+      return window_size_increment;
+    }
 
   guint32 remaining_window_size_increment = MAX(window_size_increment - old, 0);
   guint32 pending_increment = window_size_increment - remaining_window_size_increment;
