@@ -255,27 +255,28 @@ _inc_balanced(LogSource *self, gsize inc)
 static void
 _dec_balanced(LogSource *self, gsize dec)
 {
-  gsize new_full_window_size = MAX(self->options->init_window_size, dec);
-  gsize subtrahend = self->full_window_size - new_full_window_size;
+  gsize new_full_window_size = self->full_window_size - dec; 
 
   gsize empty_window = window_size_counter_get(&self->window_size, NULL);
   gsize remaining_sub = 0;
-  if (empty_window <= subtrahend)
+
+  if (empty_window <= dec)
     {
-      remaining_sub = subtrahend - empty_window;
+      remaining_sub = dec - empty_window;
       if (empty_window == 0)
         {
-          subtrahend = 0;
+          dec = 0;
         }
       else
         {
-          subtrahend = empty_window - 1;
+          dec = empty_window - 1;
         }
-      new_full_window_size = self->full_window_size - subtrahend;
+
+      new_full_window_size = self->full_window_size - dec;
       _reclaim_dynamic_window(self, remaining_sub);
     }
 
-  window_size_counter_sub(&self->window_size, subtrahend, NULL);
+  window_size_counter_sub(&self->window_size, dec, NULL);
 
   msg_warning("Balance::decrease",
               log_pipe_location_tag(&self->super),
@@ -285,7 +286,7 @@ _dec_balanced(LogSource *self, gsize dec)
               evt_tag_int("to_be_reclaimed", remaining_sub));
 
   self->full_window_size = new_full_window_size;
-  dynamic_window_release(&self->dynamic_window, subtrahend);
+  dynamic_window_release(&self->dynamic_window, dec);
 }
 
 static gboolean
