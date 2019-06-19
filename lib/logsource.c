@@ -324,7 +324,7 @@ _dynamic_window_rebalance(LogSource *self)
               evt_tag_int("full_window", self->full_window_size),
               evt_tag_int("dynamic_win", current_dynamic_win),
               evt_tag_int("static_window", self->options->init_window_size),
-              evt_tag_int("balanced_window", self->dynamic_window.ctr->balanced_window),
+              evt_tag_int("balanced_window", self->dynamic_window.pool->balanced_window),
               evt_tag_int("avg_free", dynamic_window_stat_get_avg(&self->dynamic_window.stat)));
 
   if (have_to_increase)
