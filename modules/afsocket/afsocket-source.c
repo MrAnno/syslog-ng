@@ -552,8 +552,8 @@ _dynamic_window_set_balanced_window(AFSocketSourceDriver *self)
   if (new_balanced_win == 0)
     {
       msg_info("Cannot allocate more dynamic window for new clients. From now, only static window is allocated."
-               "The reason of dynamic-window-pool exhaustion is that the number of clients is smaller than the"
-               " dynamic-window-size.",
+               "The reason of dynamic-window-pool exhaustion is that the number of clients is larger than the"
+               " dynamic-window-size",
                evt_tag_long("total_dynamic_window_size", self->dynamic_window_size),
                evt_tag_int("max_connections", self->max_connections),
                evt_tag_int("active_connections", self->num_connections),
