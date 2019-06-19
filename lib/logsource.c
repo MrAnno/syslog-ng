@@ -48,24 +48,16 @@ static inline guint32
 _take_reclaimed_window(LogSource *self, guint32 window_size_increment)
 {
   gssize old = atomic_gssize_sub(&self->window_size_to_be_reclaimed, window_size_increment);
-  gsize reclaimed_dec = window_size_increment;
+  gboolean need_to_reclaim = (old > 0);
 
-  if (old > 0)
-    {
-      if (old - window_size_increment >= 0)
-        {
-          window_size_increment = 0; // all the acks goes back to the common window pool
-        }
-      else
-        {
-          reclaimed_dec = window_size_increment - old;
-          window_size_increment -= old;
-        }
+  if (!need_to_reclaim)
+    return window_size_increment;
 
-      atomic_gssize_add(&self->pending_reclaimed, reclaimed_dec);
-    }
+  guint32 remaining_window_size_increment = MAX(window_size_increment - old, 0);
+  guint32 pending_increment = window_size_increment - remaining_window_size_increment;
+  atomic_gssize_add(&self->pending_reclaimed, pending_increment);
 
-  return window_size_increment;
+  return remaining_window_size_increment;
 }
 
 static inline void
