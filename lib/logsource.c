@@ -301,17 +301,19 @@ _dec_balanced(LogSource *self, gsize dec)
 static gboolean
 _reclaim_window_instead_of_rebalance(LogSource *self)
 {
-  gboolean reclaim_in_progress = FALSE;
   //check pending_reclaimed
   gssize total_reclaim = (gssize)atomic_gssize_set_and_get(&self->pending_reclaimed, 0);
+  gssize to_be_reclaimed = (gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed);
+  gboolean reclaim_in_progress = (to_be_reclaimed > 0);
 
   if (total_reclaim > 0)
     {
       self->full_window_size -= total_reclaim;
       stats_counter_sub(self->stat_full_window, total_reclaim);
       dynamic_window_release(&self->dynamic_window, total_reclaim);
-      gssize to_be_reclaimed = (gssize)atomic_gssize_get(&self->window_size_to_be_reclaimed);
-      reclaim_in_progress = to_be_reclaimed > 0;
+    }
+  else
+    {
       //to avoid underflow, we need to set a value <= 0
       if (to_be_reclaimed < 0)
         atomic_gssize_set(&self->window_size_to_be_reclaimed, 0);
