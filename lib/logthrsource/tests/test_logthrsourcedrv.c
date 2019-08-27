@@ -33,6 +33,8 @@
 #include "logsource.h"
 #include "cr_template.h"
 
+gboolean use_blocking_post;
+
 typedef struct _TestThreadedSourceDriver
 {
   LogThreadedSourceDriver super;
@@ -71,6 +73,65 @@ _get_source(TestThreadedSourceDriver *self)
   return (LogSource *) self->super.worker;
 }
 
+static void
+_run_using_blocking_posts(LogThreadedSourceWorker *self)
+{
+
+  TestThreadedSourceDriver *drv = (TestThreadedSourceDriver *) self->owner;
+
+
+  for (gint i = 0; i < drv->num_of_messages_to_generate; ++i)
+    {
+      LogMessage *msg = create_sample_message();
+      log_threaded_source_blocking_post(self, msg);
+    }
+}
+
+static void
+_run_simple(LogThreadedSourceWorker *s)
+{
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s->owner;
+
+  for (gint i = 0; i < self->num_of_messages_to_generate; ++i)
+    {
+      LogMessage *msg = create_sample_message();
+      log_threaded_source_post(self->super.worker, msg);
+
+      if (!log_threaded_source_free_to_send(self->super.worker))
+        {
+          self->suspended = TRUE;
+          break;
+        }
+    }
+}
+
+static void
+_request_exit(LogThreadedSourceWorker *s)
+{
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s->owner;
+  self->exit_requested = TRUE;
+}
+
+static LogThreadedSourceWorker *
+_construct_worker(LogThreadedSourceDriver *drv)
+{
+  GlobalConfig *cfg = log_pipe_get_config(&drv->super.super.super);
+
+  LogThreadedSourceWorker *self = g_new0(LogThreadedSourceWorker, 1);
+  log_threaded_source_worker_init_instance(self, cfg);
+
+  /* mock out the hard-coded DNS lookup calls inside log_source_queue() */
+  self->super.super.queue = _source_queue_mock;
+  self->request_exit = _request_exit;
+
+  if (use_blocking_post)
+    self->run = _run_using_blocking_posts;
+  else
+    self->run = _run_simple;
+
+  return self;
+}
+
 static TestThreadedSourceDriver *
 test_threaded_sd_new(GlobalConfig *cfg)
 {
@@ -80,9 +141,7 @@ test_threaded_sd_new(GlobalConfig *cfg)
 
   self->super.format_stats_instance = _format_stats_instance;
   self->super.super.super.super.generate_persist_name = _generate_persist_name;
-
-  /* mock out the hard-coded DNS lookup calls inside log_source_queue() */
-  _get_source(self)->super.queue = _source_queue_mock;
+  self->super.construct_worker = _construct_worker;
 
   return self;
 }
@@ -129,43 +188,6 @@ teardown(void)
 }
 
 static void
-_run_using_blocking_posts(LogThreadedSourceDriver *s)
-{
-  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
-
-  for (gint i = 0; i < self->num_of_messages_to_generate; ++i)
-    {
-      LogMessage *msg = create_sample_message();
-      log_threaded_source_blocking_post(&self->super, msg);
-    }
-}
-
-static void
-_run_simple(LogThreadedSourceDriver *s)
-{
-  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
-
-  for (gint i = 0; i < self->num_of_messages_to_generate; ++i)
-    {
-      LogMessage *msg = create_sample_message();
-      log_threaded_source_post(&self->super, msg);
-
-      if (!log_threaded_source_free_to_send(&self->super))
-        {
-          self->suspended = TRUE;
-          break;
-        }
-    }
-}
-
-static void
-_request_exit(LogThreadedSourceDriver *s)
-{
-  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s;
-  self->exit_requested = TRUE;
-}
-
-static void
 _do_not_ack_messages(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options)
 {
   log_msg_unref(msg);
@@ -179,8 +201,7 @@ Test(logthrsourcedrv, test_threaded_source_blocking_post)
 
   s->num_of_messages_to_generate = 10;
 
-  s->super.worker->run = _run_using_blocking_posts;
-  s->super.worker->request_exit = _request_exit;
+  use_blocking_post = TRUE;
 
   start_test_threaded_source(s);
   request_exit_and_wait_for_stop(s);
@@ -200,8 +221,7 @@ Test(logthrsourcedrv, test_threaded_source_suspend)
   s->super.worker_options.super.init_window_size = 5;
   s->super.super.super.super.queue = _do_not_ack_messages;
 
-  s->super.worker->run = _run_simple;
-  s->super.worker->request_exit = _request_exit;
+  use_blocking_post = FALSE;
 
   start_test_threaded_source(s);
   request_exit_and_wait_for_stop(s);
