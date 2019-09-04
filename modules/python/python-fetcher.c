@@ -107,7 +107,7 @@ _py_invoke_fetch(PythonFetcher *self, LogMessage **msg)
   PythonSourceDriver *owner = (PythonSourceDriver *) self->super.super.owner;
 
   PyObject *ret = _py_invoke_function(self->py.fetch_method, NULL, python_sd_get_class(owner),
-                  python_sd_get_driver_id(owner));
+                                      python_sd_get_driver_id(owner));
 
   if (!ret || !PyTuple_Check(ret) || PyTuple_Size(ret) > 2)
     goto error;
