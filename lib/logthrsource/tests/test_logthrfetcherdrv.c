@@ -24,7 +24,7 @@
 
 #include <criterion/criterion.h>
 
-#include "logthrsource/logthrfetcherdrv.h"
+#include "logthrsource/logthrfetcher.h"
 #include "apphook.h"
 #include "mainloop.h"
 #include "mainloop-worker.h"
@@ -33,19 +33,38 @@
 #include "logsource.h"
 #include "cr_template.h"
 
-typedef struct _TestThreadedFetcherDriver
+typedef struct
 {
-  LogThreadedFetcherDriver super;
+  gint time_reopen;
+  gint no_data_delay;
+  gboolean (*connect)(LogThreadedFetcher *self);
+  LogThreadedFetchResult (*fetch)(LogThreadedFetcher *self);
+} Parameters;
+
+Parameters parameters;
+
+typedef struct
+{
+  LogThreadedSourceDriver super;
+
   gint num_of_messages_to_generate;
   gint num_of_connection_failures_to_generate;
   gint connect_counter;
   gboolean try_again_first_time;
   gboolean no_data_first_time;
 
+} TestThreadedSourceDriver;
+
+typedef struct _TestThreadedFetcher
+{
+  LogThreadedFetcher super;
+
   GMutex *lock;
   GCond *cond;
 
-} TestThreadedFetcherDriver;
+} TestThreadedFetcher;
+
+static LogThreadedFetchResult _fetch(LogThreadedFetcher *s);
 
 MainLoopOptions main_loop_options = {0};
 MainLoop *main_loop;
@@ -70,76 +89,84 @@ static void _source_queue_mock(LogPipe *s, LogMessage *msg, const LogPathOptions
   log_pipe_forward_msg(s, msg, path_options);
 }
 
-static LogSource *
-_get_source(TestThreadedFetcherDriver *self)
-{
-  return (LogSource *) self->super.super.worker;
-}
-
 static void
 test_threaded_fetcher_free(LogPipe *s)
 {
-  TestThreadedFetcherDriver *self = (TestThreadedFetcherDriver *) s;
+  TestThreadedFetcher *self = (TestThreadedFetcher *) s;
 
   g_cond_free(self->cond);
   g_mutex_free(self->lock);
 
-  log_threaded_fetcher_driver_free_method(s);
+  log_threaded_fetcher_free_method(s);
 }
 
-static TestThreadedFetcherDriver *
-test_threaded_fetcher_new(GlobalConfig *cfg)
+static LogThreadedSourceWorker *
+create_threaded_fetcher(LogThreadedSourceDriver *drv)
 {
-  TestThreadedFetcherDriver *self = g_new0(TestThreadedFetcherDriver, 1);
+  GlobalConfig *cfg = log_pipe_get_config(&drv->super.super.super);
+  TestThreadedFetcher *self = g_new0(TestThreadedFetcher, 1);
+  log_threaded_fetcher_init_instance(&self->super, cfg);
 
-  log_threaded_fetcher_driver_init_instance(&self->super, cfg);
+  /* mock out the hard-coded DNS lookup calls inside log_source_queue() */
+  self->super.super.super.super.queue = _source_queue_mock;
+  self->super.super.super.super.free_fn = test_threaded_fetcher_free;
+
+  self->super.time_reopen = parameters.time_reopen;
+  self->super.no_data_delay = parameters.no_data_delay;
+  if (parameters.fetch)
+    self->super.fetch = parameters.fetch;
+  if (parameters.connect)
+    self->super.connect = parameters.connect;
 
   self->lock = g_mutex_new();
   self->cond = g_cond_new();
 
-  self->super.super.format_stats_instance = _format_stats_instance;
-  self->super.super.super.super.super.generate_persist_name = _generate_persist_name;
-  self->super.super.super.super.super.free_fn = test_threaded_fetcher_free;
+  return &self->super.super;
+}
 
-  /* mock out the hard-coded DNS lookup calls inside log_source_queue() */
-  _get_source(self)->super.queue = _source_queue_mock;
+static TestThreadedSourceDriver *
+test_threaded_source_driver_new(GlobalConfig *cfg)
+{
+  TestThreadedSourceDriver *self = g_new0(TestThreadedSourceDriver, 1);
+
+  log_threaded_source_driver_init_instance(&self->super, cfg);
+
+  self->super.format_stats_instance = _format_stats_instance;
+  self->super.super.super.super.generate_persist_name = _generate_persist_name;
+  self->super.construct_worker = create_threaded_fetcher;
 
   return self;
 }
 
-static TestThreadedFetcherDriver *
-create_threaded_fetcher(void)
-{
-  return test_threaded_fetcher_new(main_loop_get_current_config(main_loop));
-}
-
 static void
-start_test_threaded_fetcher(TestThreadedFetcherDriver *s)
+start_test_threaded_source_driver(TestThreadedSourceDriver *s)
 {
-  cr_assert(log_pipe_init(&s->super.super.super.super.super));
+  cr_assert(log_pipe_init(&s->super.super.super.super));
   app_config_changed();
 }
 
 static void
-wait_for_messages(TestThreadedFetcherDriver *s)
+wait_for_messages(TestThreadedSourceDriver *s)
 {
-  g_mutex_lock(s->lock);
+  TestThreadedFetcher *self = (TestThreadedFetcher *)s->super.worker;
+
+  g_mutex_lock(self->lock);
   while (s->num_of_messages_to_generate > 0)
-    g_cond_wait(s->cond, s->lock);
-  g_mutex_unlock(s->lock);
+    g_cond_wait(self->cond, self->lock);
+  g_mutex_unlock(self->lock);
 }
 
 static void
-stop_test_threaded_fetcher(TestThreadedFetcherDriver *s)
+stop_test_threaded_source_driver(TestThreadedSourceDriver *s)
 {
   main_loop_sync_worker_startup_and_teardown();
 }
 
 static void
-destroy_test_threaded_fetcher(TestThreadedFetcherDriver *s)
+destroy_test_threaded_source_driver(TestThreadedSourceDriver *s)
 {
-  cr_assert(log_pipe_deinit(&s->super.super.super.super.super));
-  log_pipe_unref(&s->super.super.super.super.super);
+  cr_assert(log_pipe_deinit(&s->super.super.super.super));
+  log_pipe_unref(&s->super.super.super.super);
 }
 
 static void
@@ -158,12 +185,14 @@ teardown(void)
 }
 
 static LogThreadedFetchResult
-_fetch(LogThreadedFetcherDriver *s)
+_fetch(LogThreadedFetcher *s)
 {
-  TestThreadedFetcherDriver *self = (TestThreadedFetcherDriver *) s;
+  TestThreadedFetcher *self = (TestThreadedFetcher *) s;
+  TestThreadedSourceDriver *drv = (TestThreadedSourceDriver *)s->super.owner;
 
-  if (self->num_of_connection_failures_to_generate
-      && self->connect_counter <= self->num_of_connection_failures_to_generate)
+
+  if (drv->num_of_connection_failures_to_generate
+      && drv->connect_counter <= drv->num_of_connection_failures_to_generate)
     {
       return (LogThreadedFetchResult)
       {
@@ -172,7 +201,7 @@ _fetch(LogThreadedFetcherDriver *s)
     }
 
   g_mutex_lock(self->lock);
-  if (self->num_of_messages_to_generate <= 0)
+  if (drv->num_of_messages_to_generate <= 0)
     {
       g_cond_signal(self->cond);
       g_mutex_unlock(self->lock);
@@ -184,7 +213,7 @@ _fetch(LogThreadedFetcherDriver *s)
 
   LogMessage *msg = create_sample_message();
 
-  self->num_of_messages_to_generate--;
+  drv->num_of_messages_to_generate--;
   g_mutex_unlock(self->lock);
 
   return (LogThreadedFetchResult)
@@ -195,9 +224,9 @@ _fetch(LogThreadedFetcherDriver *s)
 }
 
 static gboolean
-_connect_fail_first_time(LogThreadedFetcherDriver *s)
+_connect_fail_first_time(LogThreadedFetcher *s)
 {
-  TestThreadedFetcherDriver *self = (TestThreadedFetcherDriver *) s;
+  TestThreadedSourceDriver *self = (TestThreadedSourceDriver *) s->super.owner;
 
   self->connect_counter++;
   if (self->connect_counter == 1)
@@ -210,50 +239,55 @@ TestSuite(logthrfetcherdrv, .init = setup, .fini = teardown, .timeout = 10);
 
 Test(logthrfetcherdrv, test_simple_fetch)
 {
-  TestThreadedFetcherDriver *s = create_threaded_fetcher();
+  TestThreadedSourceDriver *s = test_threaded_source_driver_new(main_loop_get_current_config(main_loop));
 
   s->num_of_messages_to_generate = 10;
-  s->super.fetch = _fetch;
+  parameters.fetch = _fetch;
+  parameters.connect = _connect_fail_first_time;
 
-  start_test_threaded_fetcher(s);
+  start_test_threaded_source_driver(s);
   wait_for_messages(s);
-  stop_test_threaded_fetcher(s);
+  stop_test_threaded_source_driver(s);
 
-  StatsCounterItem *recvd_messages = _get_source(s)->recvd_messages;
+  TestThreadedFetcher *fetcher = (TestThreadedFetcher *)s->super.worker;
+  StatsCounterItem *recvd_messages = fetcher->super.super.super.recvd_messages;
   cr_assert(stats_counter_get(recvd_messages) == 10);
 
-  destroy_test_threaded_fetcher(s);
+  destroy_test_threaded_source_driver(s);
 }
 
 Test(logthrfetcherdrv, test_reconnect)
 {
-  TestThreadedFetcherDriver *s = create_threaded_fetcher();
+  TestThreadedSourceDriver *s = test_threaded_source_driver_new(main_loop_get_current_config(main_loop));
 
   s->num_of_messages_to_generate = 10;
   s->num_of_connection_failures_to_generate = 5;
-  s->super.time_reopen = 0; /* immediate */
-  s->super.connect = _connect_fail_first_time;
-  s->super.fetch = _fetch;
 
-  start_test_threaded_fetcher(s);
+  parameters.time_reopen = 0; /* immediate */
+  parameters.connect = _connect_fail_first_time;
+  parameters.fetch = _fetch;
+
+  start_test_threaded_source_driver(s);
   wait_for_messages(s);
-  stop_test_threaded_fetcher(s);
+  stop_test_threaded_source_driver(s);
 
-  StatsCounterItem *recvd_messages = _get_source(s)->recvd_messages;
+  TestThreadedFetcher *fetcher = (TestThreadedFetcher *)s->super.worker;
+  StatsCounterItem *recvd_messages = fetcher->super.super.super.recvd_messages;
   cr_assert(stats_counter_get(recvd_messages) == 10);
   cr_assert_geq(s->connect_counter, 6);
 
-  destroy_test_threaded_fetcher(s);
+  destroy_test_threaded_source_driver(s);
 }
 
 static LogThreadedFetchResult
-_fetch_for_try_again_test(LogThreadedFetcherDriver *s)
+_fetch_for_try_again_test(LogThreadedFetcher *s)
 {
-  TestThreadedFetcherDriver *self = (TestThreadedFetcherDriver *) s;
+  TestThreadedSourceDriver *driver = (TestThreadedSourceDriver *) s->super.owner;
+  TestThreadedFetcher *self = (TestThreadedFetcher *) s;
 
-  if (self->try_again_first_time)
+  if (driver->try_again_first_time)
     {
-      self->try_again_first_time = FALSE;
+      driver->try_again_first_time = FALSE;
       return (LogThreadedFetchResult)
       {
         THREADED_FETCH_TRY_AGAIN, NULL
@@ -261,7 +295,7 @@ _fetch_for_try_again_test(LogThreadedFetcherDriver *s)
     }
 
   g_mutex_lock(self->lock);
-  if (self->num_of_messages_to_generate <= 0)
+  if (driver->num_of_messages_to_generate <= 0)
     {
       g_cond_signal(self->cond);
       g_mutex_unlock(self->lock);
@@ -273,7 +307,7 @@ _fetch_for_try_again_test(LogThreadedFetcherDriver *s)
 
   LogMessage *msg = create_sample_message();
 
-  self->num_of_messages_to_generate--;
+  driver->num_of_messages_to_generate--;
   g_mutex_unlock(self->lock);
 
   return (LogThreadedFetchResult)
@@ -285,19 +319,19 @@ _fetch_for_try_again_test(LogThreadedFetcherDriver *s)
 
 Test(logthrfetcherdrv, test_try_again)
 {
-  TestThreadedFetcherDriver *s = create_threaded_fetcher();
+  TestThreadedSourceDriver *s = test_threaded_source_driver_new(main_loop_get_current_config(main_loop));
   s->try_again_first_time = TRUE;
 
   s->num_of_messages_to_generate = 1;
-  s->super.time_reopen = 10;
-  s->super.fetch = _fetch_for_try_again_test;
+  parameters.time_reopen = 10;
+  parameters.fetch = _fetch_for_try_again_test;
 
   struct timespec start = {0};
   cr_assert(!clock_gettime(CLOCK_MONOTONIC, &start));
 
-  start_test_threaded_fetcher(s);
+  start_test_threaded_source_driver(s);
   wait_for_messages(s);
-  stop_test_threaded_fetcher(s);
+  stop_test_threaded_source_driver(s);
 
   struct timespec stop = {0};
   cr_assert(!clock_gettime(CLOCK_MONOTONIC, &stop));
@@ -305,17 +339,18 @@ Test(logthrfetcherdrv, test_try_again)
   // Should not pass time_reopen in case of try_again
   cr_assert(!stop.tv_sec - start.tv_sec < 2);
 
-  destroy_test_threaded_fetcher(s);
+  destroy_test_threaded_source_driver(s);
 }
 
 static LogThreadedFetchResult
-_fetch_for_no_data(LogThreadedFetcherDriver *s)
+_fetch_for_no_data(LogThreadedFetcher *s)
 {
-  TestThreadedFetcherDriver *self = (TestThreadedFetcherDriver *) s;
+  TestThreadedSourceDriver *driver = (TestThreadedSourceDriver *) s->super.owner;
+  TestThreadedFetcher *self = (TestThreadedFetcher *) s;
 
-  if (self->no_data_first_time)
+  if (driver->no_data_first_time)
     {
-      self->no_data_first_time = FALSE;
+      driver->no_data_first_time = FALSE;
       return (LogThreadedFetchResult)
       {
         THREADED_FETCH_NO_DATA, NULL
@@ -323,7 +358,7 @@ _fetch_for_no_data(LogThreadedFetcherDriver *s)
     }
 
   g_mutex_lock(self->lock);
-  if (self->num_of_messages_to_generate <= 0)
+  if (driver->num_of_messages_to_generate <= 0)
     {
       g_cond_signal(self->cond);
       g_mutex_unlock(self->lock);
@@ -335,7 +370,7 @@ _fetch_for_no_data(LogThreadedFetcherDriver *s)
 
   LogMessage *msg = create_sample_message();
 
-  self->num_of_messages_to_generate--;
+  driver->num_of_messages_to_generate--;
   g_mutex_unlock(self->lock);
 
   return (LogThreadedFetchResult)
@@ -347,24 +382,25 @@ _fetch_for_no_data(LogThreadedFetcherDriver *s)
 
 Test(logthrfetcherdrv, test_no_data)
 {
-  TestThreadedFetcherDriver *s = create_threaded_fetcher();
+  TestThreadedSourceDriver *s = test_threaded_source_driver_new(main_loop_get_current_config(main_loop));
   s->no_data_first_time = TRUE;
 
   s->num_of_messages_to_generate = 1;
-  s->super.no_data_delay = 1;
-  s->super.fetch = _fetch_for_no_data;
+  parameters.time_reopen = 0;
+  parameters.no_data_delay = 1;
+  parameters.fetch = _fetch_for_no_data;
 
   struct timespec start = {0};
   cr_assert(!clock_gettime(CLOCK_MONOTONIC, &start));
 
-  start_test_threaded_fetcher(s);
+  start_test_threaded_source_driver(s);
   wait_for_messages(s);
-  stop_test_threaded_fetcher(s);
+  stop_test_threaded_source_driver(s);
 
   struct timespec stop = {0};
   cr_assert(!clock_gettime(CLOCK_MONOTONIC, &stop));
 
   cr_assert(stop.tv_sec - start.tv_sec >= 1);
 
-  destroy_test_threaded_fetcher(s);
+  destroy_test_threaded_source_driver(s);
 }
