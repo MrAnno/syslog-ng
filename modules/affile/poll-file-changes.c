@@ -132,7 +132,7 @@ poll_file_changes_check_file(gpointer s)
                         evt_tag_int("size", followed_st.st_size),
                         evt_tag_str("follow_filename", self->follow_filename));
               /* file was moved and we are at EOF, follow the new file */
-              poll_file_changes_on_file_moved(self);
+              poll_file_changes_on_file_moved(self); // ad766c317c9ded8cebfa0c0377a1707ec9f1fd2a
               log_pipe_notify(self->control, NC_FILE_MOVED, self);
               /* we may be freed by the time the notification above returns */
               return;

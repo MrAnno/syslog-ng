@@ -82,6 +82,11 @@ poll_multiline_file_changes_on_file_moved(PollFileChanges *s)
   PollMultilineFileChanges *self = (PollMultilineFileChanges *) s;
 
   poll_multiline_file_changes_stop_timer(self);
+
+  msg_debug("Multi-line file moved, processing partial message",
+            evt_tag_str("filename", self->super.follow_filename));
+
+  _flush_partial_message(self);
 }
 
 static void
@@ -134,16 +139,17 @@ poll_multiline_file_changes_new(gint fd, const gchar *follow_filename, gint foll
 
   self->timeout = multi_line_timeout;
 
-  if (!self->timeout)
-    return &self->super.super;
-
   self->file_reader = reader;
-  self->super.on_read = poll_multiline_file_changes_on_read;
-  self->super.on_eof = poll_multiline_file_changes_on_eof;
   self->super.on_file_moved = poll_multiline_file_changes_on_file_moved;
 
-  self->super.super.update_watches = poll_multiline_file_changes_update_watches;
-  self->super.super.stop_watches = poll_multiline_file_changes_stop_watches;
+  if (self->timeout)
+    {
+      self->super.on_read = poll_multiline_file_changes_on_read;
+      self->super.on_eof = poll_multiline_file_changes_on_eof;
+
+      self->super.super.update_watches = poll_multiline_file_changes_update_watches;
+      self->super.super.stop_watches = poll_multiline_file_changes_stop_watches;
+    }
 
   IV_TIMER_INIT(&self->multi_line_timer);
   self->multi_line_timer.cookie = self;
