@@ -208,7 +208,7 @@ matrix:
           }
       script:
         - set -e
-        - make --keep-going check -j $(sysctl -n hw.physicalcpu) ||
+        - make V=1 --keep-going check -j $(sysctl -n hw.physicalcpu) ||
           {
             S=$?;
             echo "Output of first test invocation:";
