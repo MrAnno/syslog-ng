@@ -390,6 +390,12 @@ active_thread_func(gpointer user_data)
   g_free((gpointer)message);
   close_ssl_connection(ssl);
   shutdown(sock_fd, SHUT_RDWR);
+
+  /* what the hell ? */
+  struct timespec ts = {1, 0};
+  nanosleep(&ts, NULL);
+  /* *** */
+
   close(sock_fd);
 
   g_free(thread_context);
