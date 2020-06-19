@@ -102,6 +102,7 @@ extern CfgParser main_parser;
 void report_syntax_error(CfgLexer *lexer, MAIN_LTYPE *yylloc, const char *what, const char *msg,
                          gboolean in_main_grammar);
 
-CFG_PARSER_DECLARE_LEXER_BINDING(main_, MAIN_, gpointer *)
+int main_lex(MAIN_STYPE *yylval, MAIN_LTYPE *yylloc, CfgLexer *lexer);
+void main_error(MAIN_LTYPE *yylloc, CfgLexer *lexer, gpointer *instance, gpointer arg, const char *msg);
 
 #endif
