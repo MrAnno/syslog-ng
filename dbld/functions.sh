@@ -150,13 +150,4 @@ function validate_container() {
 	validate_man_binary
 }
 
-function capture_artifacts()
-{
-	if [ "$MODE" = "release" ]; then
-		for artifact in "$*"; do
-			cp ${artifact} /dbld/release/${VERSION}
-		done
-	fi
-}
-
 VERSION=$(get_version)

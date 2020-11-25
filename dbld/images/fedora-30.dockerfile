@@ -1,4 +1,4 @@
-FROM fedora:32
+FROM fedora:30
 LABEL maintainer="Andras Mitzki <andras.mitzki@balabit.com>, Laszlo Szemere <laszlo.szemere@balabit.com>, Balazs Scheidler <balazs.scheidler@oneidentity.com>"
 
 ARG OS_PLATFORM

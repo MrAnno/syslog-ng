@@ -85,11 +85,6 @@ function install_gradle {
     ldconfig
 }
 
-function install_pip2 {
-    download_target "https://bootstrap.pypa.io/get-pip.py" get-pip.py
-    python2 get-pip.py
-}
-
 function download_target() {
     target=$1
     output=$2
@@ -173,33 +168,20 @@ function install_yum_packages {
 
 function install_pip_packages {
     case "${OS_PLATFORM}" in
-        fedora-32)
-            python_executables="python"
+        centos-6)
+            pip install --upgrade pip==9.0.3
             ;;
-        ubuntu-focal|tarball)
-            python_executables="python3"
+        centos-7)
+            python -m pip install --upgrade pip==9.0.3
             ;;
-        devshell|kira)
-            python_executables="python2 python3"
+        ubuntu-focal)
+            pip3 install --upgrade pip
             ;;
         *)
-            python_executables="python2"
+            python -m pip install --upgrade pip
             ;;
     esac
-    for python_executable in ${python_executables}; do
-        case "${OS_PLATFORM}" in
-            centos-6)
-                pip install --upgrade pip==9.0.3
-                pip install --upgrade setuptools
-                filter_packages_by_platform $DBLD_DIR/pip_packages.manifest | xargs pip install --ignore-installed -U
-                ;;
-            *)
-                $python_executable -m pip install --upgrade pip
-                $python_executable -m pip install --upgrade setuptools
-                filter_packages_by_platform $DBLD_DIR/pip_packages.manifest | xargs $python_executable -m pip install --ignore-installed -U
-                ;;
-        esac
-    done
+    filter_packages_by_platform $DBLD_DIR/pip_packages.manifest | xargs pip install --ignore-installed -U
 }
 
 function install_lsb_release {

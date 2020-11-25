@@ -1,5 +1,6 @@
 # pip packages for successful run unit tests
-ply                     [centos, fedora, debian, ubuntu, devshell, tarball]
+nose                    [centos, fedora, debian, ubuntu]
+ply                     [centos, fedora, debian, ubuntu]
 
 # pip packages for kira tests
 # 0.17: Last version that suppports python2
@@ -7,10 +8,9 @@ hy==0.17                [devshell, kira]
 requests                [kira]
 
 # pip packages for python functional tests
-pathlib2                [centos, fedora, debian, ubuntu, devshell]
-psutil                  [centos, fedora, debian, ubuntu, devshell]
-pytest                  [centos, fedora, debian, ubuntu, devshell]
-virtualenv              [devshell]
+pathlib2                [centos, fedora, debian, ubuntu]
+psutil                  [centos, fedora, debian, ubuntu]
+pytest                  [centos, fedora, debian, ubuntu]
 # pytest 4.6.9 has requirement six>=1.10.0, but ubuntu-trusty installs six 1.5.2 which is incompatible
 six>=1.10.0             [ubuntu-trusty]
 

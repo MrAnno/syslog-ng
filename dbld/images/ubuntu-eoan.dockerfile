@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:19.10
 LABEL maintainer="Laszlo Budai <laszlo.budai@outlook.com>, Andras Mitzki <andras.mitzki@balabit.com>, Laszlo Szemere <laszlo.szemere@balabit.com>, Balazs Scheidler <balazs.scheidler@oneidentity.com>"
 
 ARG OS_PLATFORM
@@ -15,6 +15,7 @@ COPY images/entrypoint.sh /
 COPY . /dbld/
 
 RUN /dbld/builddeps install_dbld_dependencies
+RUN /dbld/builddeps add_obs_repo Ubuntu_19.10
 RUN /dbld/builddeps install_apt_packages
 RUN /dbld/builddeps install_debian_build_deps
 RUN /dbld/builddeps install_pip_packages
