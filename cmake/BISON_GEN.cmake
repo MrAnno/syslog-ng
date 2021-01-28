@@ -23,15 +23,9 @@
 
 macro(BISON_GEN)
   cmake_parse_arguments(BISON_GEN "" "NAME;INPUT;OUTPUT" "COMPILE_FLAGS" ${ARGN})
-  if (APPLE)
-    find_program(SED_EXECUTABLE "gsed")
-  else()
-    find_program(SED_EXECUTABLE "sed")
-  endif()
 
   bison_target(${BISON_GEN_NAME} ${BISON_GEN_INPUT} ${BISON_GEN_OUTPUT}.c_tmp COMPILE_FLAGS ${BISON_GEN_COMPILE_FLAGS})
   add_custom_command(OUTPUT ${BISON_GEN_OUTPUT}.c ${BISON_GEN_OUTPUT}.h
-                     COMMAND ${SED_EXECUTABLE} -e '1i\#define SYSLOG_NG_BISON_MAJOR ${BISON_MAJOR}\\n\#define SYSLOG_NG_BISON_MINOR ${BISON_MINOR}\\n' ${BISON_GEN_OUTPUT}.c_tmp > ${BISON_GEN_OUTPUT}.c
                      COMMAND ${CMAKE_COMMAND} -E copy ${BISON_GEN_OUTPUT}.h_tmp ${BISON_GEN_OUTPUT}.h
                      DEPENDS ${BISON_GEN_OUTPUT}.c_tmp ${BISON_GEN_OUTPUT}.h_tmp
                     )
