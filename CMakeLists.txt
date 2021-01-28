@@ -176,7 +176,7 @@ set(WITH_GETTEXT "" CACHE STRING "Set the prefix where gettext is installed (e.g
 
 set(CMAKE_C_STANDARD 99)
 
-find_package(BISON 3.4.2 REQUIRED)
+find_package(BISON 3.7.5 REQUIRED)
 
 string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\..*$" _dummy "${BISON_VERSION}")
 set(BISON_MAJOR "${CMAKE_MATCH_1}")
