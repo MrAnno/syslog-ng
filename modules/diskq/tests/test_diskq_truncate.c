@@ -477,6 +477,7 @@ Test(diskq_truncate, test_non_reliable_diskq_restart_with_truncation_disabled)
 {
   const gint qout_size = 128;
   const gint just_under_max_size_message_number = 8239 + qout_size; // measured for disk_buf_size TEST_DISKQ_SIZE
+  const gint some_messages_to_let_write_head_wrap = 500;
 
   GString *filename = g_string_new("test_dq_non_reliable_restart.rqf");
 
@@ -486,18 +487,28 @@ Test(diskq_truncate, test_non_reliable_diskq_restart_with_truncation_disabled)
 
   QDisk *qdisk = ((LogQueueDisk *)q)->qdisk;
 
+  // 1. feed to full
   feed_some_messages(q, just_under_max_size_message_number);
+  gint unprocessed_messages_in_buffer = just_under_max_size_message_number;
+
+  // 2. process some messages, so write_head can wrap
+  send_some_messages(q, some_messages_to_let_write_head_wrap);
+  log_queue_ack_backlog(q, some_messages_to_let_write_head_wrap);
+  unprocessed_messages_in_buffer -= some_messages_to_let_write_head_wrap;
+
+  // 3. feed additional messages, so write_head wraps
+  feed_some_messages(q, 300);
+  unprocessed_messages_in_buffer += 300;
+  cr_assert(qdisk_get_writer_head(qdisk) < qdisk_get_reader_head(qdisk), "write_head should have wrapped");
 
   // Restart
   _save_diskqueue(q);
   q = _get_non_reliable_diskqueue(filename->str, &options);
   qdisk = ((LogQueueDisk *)q)->qdisk;
 
-  send_some_messages(q, just_under_max_size_message_number);
-
-  cr_assert_eq(log_queue_get_length(q), 0, "Not all messages have been queued!");
-  cr_assert(qdisk_get_writer_head(qdisk) == qdisk_get_reader_head(qdisk), "read_head should be at write_head's position");
-
+  // 4. send and ack all messages
+  send_some_messages(q, unprocessed_messages_in_buffer);
+  cr_assert(qdisk_get_length(qdisk) == 0, "qdisk len should be 0");
   _assert_diskq_actual_file_size_with_stored(q);
 
   unlink(filename->str);
