@@ -39,21 +39,15 @@ _start(LogQueueDisk *s, const gchar *filename)
 static gboolean
 _skip_message(LogQueueDisk *self)
 {
-  GString *serialized;
-  SerializeArchive *sa;
-
   if (!qdisk_started(self->qdisk))
     return FALSE;
 
-  serialized = g_string_sized_new(64);
+  GString *serialized = g_string_sized_new(64);
   if (!qdisk_pop_head(self->qdisk, serialized))
     {
       g_string_free(serialized, TRUE);
       return FALSE;
     }
-
-  sa = serialize_string_archive_new(serialized);
-  serialize_archive_free(sa);
 
   g_string_free(serialized, TRUE);
   return TRUE;
