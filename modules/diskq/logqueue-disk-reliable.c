@@ -26,6 +26,7 @@
 #include "logpipe.h"
 #include "logqueue-disk-reliable.h"
 #include "messages.h"
+#include "scratch-buffers.h"
 
 /*pessimistic default for reliable disk queue 10000 x 16 kbyte*/
 #define PESSIMISTIC_MEM_BUF_SIZE 10000 * 16 *1024
@@ -39,17 +40,19 @@ _start(LogQueueDisk *s, const gchar *filename)
 static gboolean
 _skip_message(LogQueueDisk *self)
 {
+  ScratchBuffersMarker marker;
+
   if (!qdisk_started(self->qdisk))
     return FALSE;
 
-  GString *serialized = g_string_sized_new(64);
-  if (!qdisk_pop_head(self->qdisk, serialized))
+  GString *skip_serialized = scratch_buffers_alloc_and_mark(&marker);
+  if (!qdisk_pop_head(self->qdisk, skip_serialized))
     {
-      g_string_free(serialized, TRUE);
+      scratch_buffers_reclaim_marked(marker);
       return FALSE;
     }
 
-  g_string_free(serialized, TRUE);
+  scratch_buffers_reclaim_marked(marker);
   return TRUE;
 }
 
