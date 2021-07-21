@@ -40,20 +40,10 @@ _start(LogQueueDisk *s, const gchar *filename)
 static gboolean
 _skip_message(LogQueueDisk *self)
 {
-  ScratchBuffersMarker marker;
-
   if (!qdisk_started(self->qdisk))
     return FALSE;
 
-  GString *skip_serialized = scratch_buffers_alloc_and_mark(&marker);
-  if (!qdisk_pop_head(self->qdisk, skip_serialized))
-    {
-      scratch_buffers_reclaim_marked(marker);
-      return FALSE;
-    }
-
-  scratch_buffers_reclaim_marked(marker);
-  return TRUE;
+  return qdisk_remove_head(self->qdisk);
 }
 
 static void
