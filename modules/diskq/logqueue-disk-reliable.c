@@ -304,27 +304,25 @@ _push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *path_options)
 
   scratch_buffers_reclaim_marked(marker);
 
-  /* check the remaining space: if it is less than the mem_buf_size, the message cannot be acked */
-  if (qdisk_get_empty_space(self->super.qdisk) < qdisk_get_memory_size(self->super.qdisk))
+  if (qdisk_get_empty_space(self->super.qdisk) >= qdisk_get_memory_size(self->super.qdisk))
     {
-      /* we have reached the reserved buffer size, keep the msg in memory
-       * the message is written but into the overflow area
-       */
-      gint64 *temppos = g_malloc(sizeof(gint64));
-      *temppos = last_wpos;
-      g_queue_push_tail(self->qreliable, temppos);
-      g_queue_push_tail(self->qreliable, msg);
-      g_queue_push_tail(self->qreliable, LOG_PATH_OPTIONS_TO_POINTER(path_options));
-      log_msg_ref(msg);
-
-      log_queue_memory_usage_add(s, log_msg_get_size(msg));
-      local_options.ack_needed = FALSE;
+      log_msg_ack(msg, &local_options, AT_PROCESSED);
+      log_msg_unref(msg);
+      goto queued;
     }
 
+  /* the remaining space is less than the mem_buf_size, the message cannot be acked */
+  gint64 *temppos = g_malloc(sizeof(gint64));
+  *temppos = last_wpos;
+  g_queue_push_tail(self->qreliable, temppos);
+  g_queue_push_tail(self->qreliable, msg);
+  g_queue_push_tail(self->qreliable, LOG_PATH_OPTIONS_TO_POINTER(path_options));
+
+  log_queue_memory_usage_add(s, log_msg_get_size(msg));
+
+queued:
   log_queue_push_notify(s);
   log_queue_queued_messages_inc(s);
-  log_msg_ack(msg, &local_options, AT_PROCESSED);
-  log_msg_unref(msg);
 
   g_static_mutex_unlock(&s->lock);
 }
