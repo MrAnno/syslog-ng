@@ -146,6 +146,27 @@ _move_messages_from_disk_to_qout(LogQueueDiskNonReliable *self)
   while (_could_move_into_qout(self));
 }
 
+static void
+_move_messages_from_qoverflow_to_qout(LogQueueDiskNonReliable *self)
+{
+  /* the entire overflow queue must be emptied in one step (under the same lock)
+   * in order to retain FIFO ordering. qout_size is intentionally disregarded
+   * for this reason. */
+
+  while (self->qoverflow->length > 0 && qdisk_get_length(self->super.qdisk) == 0)
+    {
+      LogPathOptions path_options;
+      LogMessage *msg = g_queue_pop_head(self->qoverflow);
+      POINTER_TO_LOG_PATH_OPTIONS(g_queue_pop_head(self->qoverflow), &path_options);
+
+      /* NOTE: we always generate flow-control disabled entries into qout */
+      g_queue_push_tail(self->qout, msg);
+      g_queue_push_tail(self->qout, LOG_PATH_OPTIONS_FOR_BACKLOG);
+
+      log_msg_ack(msg, &path_options, AT_PROCESSED);
+    }
+}
+
 static inline void
 _maybe_move_messages_among_queue_segments(LogQueueDiskNonReliable *self)
 {
@@ -154,6 +175,9 @@ _maybe_move_messages_among_queue_segments(LogQueueDiskNonReliable *self)
 
   if (self->qout->length == 0 && self->qout_size > 0)
     _move_messages_from_disk_to_qout(self);
+
+  if (qdisk_get_length(self->super.qdisk) == 0)
+    _move_messages_from_qoverflow_to_qout(self);
 }
 
 static void
@@ -261,7 +285,7 @@ _pop_head(LogQueue *s, LogPathOptions *path_options)
       goto success;
     }
 
-  if (self->qoverflow->length > 0 && qdisk_is_read_only(self->super.qdisk))
+  if (self->qoverflow->length > 0)
     msg = _pop_head_qoverflow(self, path_options);
 
   if (!msg)
@@ -297,7 +321,7 @@ _is_msg_serialization_needed_hint(LogQueueDiskNonReliable *self)
 
   gboolean msg_serialization_needed = FALSE;
 
-  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0)
+  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0 && self->qoverflow->length == 0)
     goto exit;
 
   if (self->qoverflow->length != 0)
@@ -383,7 +407,8 @@ _push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *path_options)
 
   g_static_mutex_lock(&s->lock);
 
-  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0)
+  /* we push messages into queue segments in the following order: qoverflow, disk, qout */
+  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0 && self->qoverflow->length == 0)
     {
       _push_tail_qout(self, msg, path_options);
       goto queued;
