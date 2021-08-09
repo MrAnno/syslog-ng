@@ -311,6 +311,12 @@ _push_head(LogQueue *s, LogMessage *msg, const LogPathOptions *path_options)
   g_assert_not_reached();
 }
 
+static inline gboolean
+_can_push_to_qout(LogQueueDiskNonReliable *self)
+{
+  return HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0 && self->qoverflow->length == 0;
+}
+
 /* _is_msg_serialization_needed_hint() must be called without holding the queue's lock.
  * This can only be used _as a hint_ for performance considerations, because as soon as the lock
  * is released, there will be no guarantee that the result of this function remain correct. */
@@ -321,7 +327,7 @@ _is_msg_serialization_needed_hint(LogQueueDiskNonReliable *self)
 
   gboolean msg_serialization_needed = FALSE;
 
-  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0 && self->qoverflow->length == 0)
+  if (_can_push_to_qout(self))
     goto exit;
 
   if (self->qoverflow->length != 0)
@@ -408,7 +414,7 @@ _push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *path_options)
   g_static_mutex_lock(&s->lock);
 
   /* we push messages into queue segments in the following order: qoverflow, disk, qout */
-  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0 && self->qoverflow->length == 0)
+  if (_can_push_to_qout(self))
     {
       _push_tail_qout(self, msg, path_options);
       goto queued;
