@@ -113,11 +113,6 @@ _get_next_message(LogQueueDiskNonReliable *self, LogPathOptions *path_options)
           path_options->ack_needed = FALSE;
         }
     }
-  else if (self->qoverflow->length > 0)
-    {
-      result = g_queue_pop_head(self->qoverflow);
-      POINTER_TO_LOG_PATH_OPTIONS(g_queue_pop_head(self->qoverflow), path_options);
-    }
   return result;
 }
 
@@ -139,14 +134,6 @@ _add_message_to_qout(LogQueueDiskNonReliable *self, LogMessage *msg, LogPathOpti
   log_msg_ack(msg, path_options, AT_PROCESSED);
 }
 
-static inline gboolean
-_has_movable_message(LogQueueDiskNonReliable *self)
-{
-  return self->qoverflow->length > 0
-         && ((HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length(self->super.qdisk) == 0)
-             || qdisk_is_space_avail(self->super.qdisk, 4096));
-}
-
 static gboolean
 _serialize_and_write_message_to_disk(LogQueueDiskNonReliable *self, LogMessage *msg)
 {
@@ -165,71 +152,31 @@ _serialize_and_write_message_to_disk(LogQueueDiskNonReliable *self, LogMessage *
 }
 
 static void
-_move_messages_from_overflow(LogQueueDiskNonReliable *self)
+_move_messages_from_disk_to_qout(LogQueueDiskNonReliable *self)
 {
   LogMessage *msg;
-  LogPathOptions path_options;
-  /* move away as much entries from the overflow area as possible */
-  while (_has_movable_message(self))
-    {
-      msg = g_queue_pop_head(self->qoverflow);
-      POINTER_TO_LOG_PATH_OPTIONS(g_queue_pop_head(self->qoverflow), &path_options);
+  LogPathOptions path_options = LOG_PATH_OPTIONS_INIT;
 
-      if (qdisk_get_length(self->super.qdisk) == 0 && HAS_SPACE_IN_QUEUE(self->qout))
+  do
+    {
+      msg = _get_next_message(self, &path_options);
+
+      if (msg)
         {
-          /* we can skip qdisk, go straight to qout */
-          g_queue_push_tail(self->qout, msg);
-          g_queue_push_tail(self->qout, LOG_PATH_OPTIONS_FOR_BACKLOG);
-          log_msg_ref(msg);
+          _add_message_to_qout(self, msg, &path_options);
         }
-      else
-        {
-          if (_serialize_and_write_message_to_disk(self, msg))
-            {
-              log_queue_memory_usage_sub(&self->super.super, log_msg_get_size(msg));
-            }
-          else
-            {
-              /* oops, although there seemed to be some free space available,
-               * we failed saving this message, (it might have needed more
-               * than 4096 bytes than we ensured), push back and break
-               */
-              g_queue_push_head(self->qoverflow, LOG_PATH_OPTIONS_TO_POINTER(&path_options));
-              g_queue_push_head(self->qoverflow, msg);
-              log_msg_ref(msg);
-              break;
-            }
-        }
-      log_msg_ack(msg, &path_options, AT_PROCESSED);
-      log_msg_unref(msg);
     }
+  while (msg && _could_move_into_qout(self));
 }
 
 static inline void
 _maybe_move_messages_among_queue_segments(LogQueueDiskNonReliable *self)
 {
-  LogMessage *msg;
-  LogPathOptions path_options = LOG_PATH_OPTIONS_INIT;
-
   if (qdisk_is_read_only(self->super.qdisk))
     return;
 
-  /* stupid message mover between queues */
-
   if (self->qout->length == 0 && self->qout_size > 0)
-    {
-      do
-        {
-          msg = _get_next_message(self, &path_options);
-
-          if (msg)
-            {
-              _add_message_to_qout(self, msg, &path_options);
-            }
-        }
-      while (msg && _could_move_into_qout(self));
-    }
-  _move_messages_from_overflow(self);
+    _move_messages_from_disk_to_qout(self);
 }
 
 static void
