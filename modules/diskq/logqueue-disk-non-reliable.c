@@ -180,6 +180,7 @@ _maybe_move_messages_among_queue_segments(LogQueueDiskNonReliable *self)
     _move_messages_from_qoverflow_to_qout(self);
 }
 
+/* runs only in the output thread */
 static void
 _ack_backlog(LogQueue *s, gint num_msg_to_ack)
 {
@@ -188,20 +189,15 @@ _ack_backlog(LogQueue *s, gint num_msg_to_ack)
   LogPathOptions path_options = LOG_PATH_OPTIONS_INIT;
   guint i;
 
-  g_static_mutex_lock(&s->lock);
-
   for (i = 0; i < num_msg_to_ack; i++)
     {
       if (self->qbacklog->length < ITEM_NUMBER_PER_MESSAGE)
-        goto exit;
+        return;
       msg = g_queue_pop_head(self->qbacklog);
       POINTER_TO_LOG_PATH_OPTIONS(g_queue_pop_head(self->qbacklog), &path_options);
       log_msg_ack(msg, &path_options, AT_PROCESSED);
       log_msg_unref(msg);
     }
-
-exit:
-  g_static_mutex_unlock(&s->lock);
 }
 
 static void
@@ -255,6 +251,7 @@ _pop_head_qoverflow(LogQueueDiskNonReliable *self, LogPathOptions *path_options)
   return msg;
 }
 
+/* runs only in the output thread */
 static inline void
 _push_tail_qbacklog(LogQueueDiskNonReliable *self, LogMessage *msg, LogPathOptions *path_options)
 {
@@ -295,13 +292,15 @@ _pop_head(LogQueue *s, LogPathOptions *path_options)
     }
 
 success:
+  _maybe_move_messages_among_queue_segments(self);
+
+  g_static_mutex_unlock(&s->lock);
+
   if (s->use_backlog)
     _push_tail_qbacklog(self, msg, path_options);
 
-  _maybe_move_messages_among_queue_segments(self);
   log_queue_queued_messages_dec(s);
 
-  g_static_mutex_unlock(&s->lock);
   return msg;
 }
 
