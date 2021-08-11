@@ -113,11 +113,6 @@ _get_next_message(LogQueueDiskNonReliable *self, LogPathOptions *path_options)
           path_options->ack_needed = FALSE;
         }
     }
-  else if (self->qoverflow->length > 0)
-    {
-      result = g_queue_pop_head (self->qoverflow);
-      POINTER_TO_LOG_PATH_OPTIONS (g_queue_pop_head (self->qoverflow), path_options);
-    }
   return result;
 }
 
@@ -170,36 +165,17 @@ _move_messages_from_overflow(LogQueueDiskNonReliable *self)
   LogMessage *msg;
   LogPathOptions path_options;
   /* move away as much entries from the overflow area as possible */
-  while (_has_movable_message(self))
+  while (self->qoverflow->length > 0 && qdisk_get_length (self->super.qdisk) == 0)
     {
       msg = g_queue_pop_head (self->qoverflow);
       POINTER_TO_LOG_PATH_OPTIONS (g_queue_pop_head (self->qoverflow), &path_options);
 
-      if (qdisk_get_length (self->super.qdisk) == 0 && HAS_SPACE_IN_QUEUE(self->qout))
-        {
+
           /* we can skip qdisk, go straight to qout */
           g_queue_push_tail (self->qout, msg);
           g_queue_push_tail (self->qout, LOG_PATH_OPTIONS_FOR_BACKLOG);
           log_msg_ref (msg);
-        }
-      else
-        {
-          if (_serialize_and_write_message_to_disk(self, msg))
-            {
-              log_queue_memory_usage_sub(&self->super.super, log_msg_get_size(msg));
-            }
-          else
-            {
-              /* oops, although there seemed to be some free space available,
-               * we failed saving this message, (it might have needed more
-               * than 4096 bytes than we ensured), push back and break
-               */
-              g_queue_push_head (self->qoverflow, LOG_PATH_OPTIONS_TO_POINTER (&path_options));
-              g_queue_push_head (self->qoverflow, msg);
-              log_msg_ref (msg);
-              break;
-            }
-        }
+
       log_msg_ack (msg, &path_options, AT_PROCESSED);
       log_msg_unref (msg);
     }
@@ -423,7 +399,7 @@ _push_tail(LogQueue *s, LogMessage *msg, const LogPathOptions *path_options)
 
   LogPathOptions local_options = *path_options;
 
-  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length (self->super.qdisk) == 0)
+  if (HAS_SPACE_IN_QUEUE(self->qout) && qdisk_get_length (self->super.qdisk) == 0 && self->qoverflow->length == 0)
     {
       /* simple push never generates flow-control enabled entries to qout, they only get there
        * when rewinding the backlog */
