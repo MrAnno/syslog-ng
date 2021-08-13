@@ -53,4 +53,6 @@ void stats_aggregator_free(StatsAggregator *self);
 
 void stats_aggregator_item_init_instance(StatsAggregator *self, StatsClusterKey *sc_key);
 
+StatsAggregator *stats_aggregat_maximum_new(gint level, StatsClusterKey *sc_key);
+
 #endif /* STATS_AGGREGATOR_H */
