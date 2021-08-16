@@ -20,6 +20,7 @@ set(STATS_SOURCES
     stats/stats-aggregator.c
     stats/stats-average.c
     stats/stats-maximum.c
+    stats/stats-change-per-second.c
     stats/stats-csv.c
     stats/stats-log.c
     stats/stats-registry.c

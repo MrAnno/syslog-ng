@@ -23,6 +23,7 @@ stats_sources = \
 	lib/stats/stats-aggregator.c	\
 	lib/stats/stats-average.c		\
 	lib/stats/stats-maximum.c		\
+	lib/stats/stats-change-per-second.c \
 	lib/stats/stats-csv.c			\
 	lib/stats/stats-log.c			\
 	lib/stats/stats-registry.c		\
