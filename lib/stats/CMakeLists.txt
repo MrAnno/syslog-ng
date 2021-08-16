@@ -18,6 +18,7 @@ set(STATS_SOURCES
     stats/stats-control.c
     stats/stats-cluster.c
     stats/stats-aggregator.c
+    stats/stats-average.c
     stats/stats-maximum.c
     stats/stats-csv.c
     stats/stats-log.c
