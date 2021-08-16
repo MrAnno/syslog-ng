@@ -30,6 +30,9 @@
 
 typedef struct _StatsAggregator StatsAggregator;
 
+#define HOUR_IN_SEC 3600 /* 60*60 */
+#define DAY_IN_SEC 86400 /* 60*60*24 */
+
 struct _StatsAggregator
 {
   void (*insert_data)(StatsAggregator *self, gsize value);
@@ -56,5 +59,7 @@ void stats_aggregator_item_init_instance(StatsAggregator *self, StatsClusterKey 
 StatsAggregator *stats_aggregat_maximum_new(gint level, StatsClusterKey *sc_key);
 
 StatsAggregator *stats_aggregat_average_new(gint level, StatsClusterKey *sc_key);
+
+StatsAggregator *stats_aggregat_cps_new(gint level, StatsClusterKey *sc_key, StatsCounterItem *counter);
 
 #endif /* STATS_AGGREGATOR_H */
