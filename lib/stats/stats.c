@@ -26,6 +26,7 @@
 #include "stats/stats-log.h"
 #include "stats/stats-query.h"
 #include "stats/stats-registry.h"
+#include "stats/stats-aggregator-register.h"
 #include "stats/stats.h"
 #include "timeutils/cache.h"
 #include "timeutils/misc.h"
@@ -239,6 +240,7 @@ stats_init(void)
 {
   stats_cluster_init();
   stats_registry_init();
+  stats_aggregator_registry_init();
   stats_query_init();
 }
 
@@ -247,6 +249,7 @@ stats_destroy(void)
 {
   stats_query_deinit();
   stats_registry_deinit();
+  stats_aggregator_registry_deinit();
   stats_cluster_deinit();
 }
 

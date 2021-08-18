@@ -26,6 +26,7 @@
 #include "stats/stats-csv.h"
 #include "stats/stats-counter.h"
 #include "stats/stats-registry.h"
+#include "stats/stats-aggregator-register.h"
 #include "stats/stats-query-commands.h"
 #include "control/control-commands.h"
 #include "control/control-server.h"
@@ -58,6 +59,9 @@ _reset_counters(void)
   stats_lock();
   stats_foreach_counter(_reset_counter_if_needed, NULL);
   stats_unlock();
+  stats_aggregator_lock();
+  stats_aggregator_registry_reset();
+  stats_aggregator_unlock();
 }
 
 static GString *

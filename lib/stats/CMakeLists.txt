@@ -8,6 +8,7 @@ set(STATS_HEADERS
     stats/stats-csv.h
     stats/stats-log.h
     stats/stats-registry.h
+    stats/stats-aggregator-register.h
     stats/stats-query.h
     stats/stats-query-commands.h
     stats/stats-cluster-logpipe.h
@@ -25,6 +26,7 @@ set(STATS_SOURCES
     stats/stats-csv.c
     stats/stats-log.c
     stats/stats-registry.c
+    stats/stats-aggregator-register.c
     stats/stats-query.c
     stats/stats-query-commands.c
     stats/stats-cluster-logpipe.c
