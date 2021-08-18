@@ -25,7 +25,11 @@
 #include "stats/stats-registry.h"
 #include "stats/stats-query.h"
 #include "cfg.h"
+#include "iv.h"
+#include "timeutils/cache.h"
+#include "mainloop.h"
 
+#define FREQUENCY_OF_UPDATE 60
 
 typedef struct _StatsClusterContainer
 {
@@ -36,7 +40,56 @@ static StatsAggregatorClusterContainer stats_cluster_container;
 
 static GStaticMutex stats_aggregator_mutex = G_STATIC_MUTEX_INIT;
 static gboolean stats_aggregator_locked;
+static struct iv_timer update_timer;
 
+static void
+_update_func (gpointer _key, gpointer _value, gpointer _user_data)
+{
+  StatsAggregator *self = (StatsAggregator *) _value;
+  stats_aggregator_aggregate(self);
+}
+
+static void
+_start_timer(void)
+{
+  main_loop_assert_main_thread();
+  iv_validate_now();
+  update_timer.expires = iv_now;
+  update_timer.expires.tv_sec += FREQUENCY_OF_UPDATE;
+
+  iv_timer_register(&update_timer);
+}
+
+static void
+_update(void *cookie)
+{
+  g_hash_table_foreach(stats_cluster_container.clusters, _update_func, NULL);
+
+  if(g_hash_table_size(stats_cluster_container.clusters) > 0 && !iv_timer_registered(&update_timer))
+    _start_timer();
+}
+
+static void
+_init_timer(void)
+{
+  IV_TIMER_INIT(&update_timer);
+  update_timer.cookie = NULL;
+  update_timer.handler = _update;
+}
+
+static void
+_stop_timer(void)
+{
+  main_loop_assert_main_thread();
+  if (iv_timer_registered(&update_timer))
+    iv_timer_unregister(&update_timer);
+}
+
+static void
+_deinit_timer(void)
+{
+  _stop_timer();
+}
 
 void
 stats_aggregator_lock(void)
@@ -73,12 +126,16 @@ stats_aggregator_registry_deinit(void)
   g_hash_table_destroy(stats_cluster_container.clusters);
   stats_cluster_container.clusters = NULL;
   g_static_mutex_free(&stats_aggregator_mutex);
+  _deinit_timer();
 }
 
 static void
 _insert_to_table(StatsAggregator *value)
 {
   g_hash_table_insert(stats_cluster_container.clusters, &value->key, value);
+
+  if (!iv_timer_registered(&update_timer))
+    _start_timer();
 }
 
 static gboolean
