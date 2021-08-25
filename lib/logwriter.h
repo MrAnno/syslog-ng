@@ -94,4 +94,6 @@ void log_writer_options_destroy(LogWriterOptions *options);
 void log_writer_options_set_mark_mode(LogWriterOptions *options, const gchar *mark_mode);
 gint log_writer_options_lookup_flag(const gchar *flag);
 
+void log_writer_insert_msg_length(LogWriter *self, gsize msg_len);
+
 #endif
