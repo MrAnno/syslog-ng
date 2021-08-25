@@ -75,6 +75,7 @@ _regist_counter( StatsAggregatedMaximum *self, gint level, StatsClusterKey *sc_k
 StatsAggregator *
 stats_aggregat_maximum_new(gint level, StatsClusterKey *sc_key)
 {
+  level = 0;
   StatsAggregatedMaximum *self = g_new0(StatsAggregatedMaximum, 1);
   stats_aggregator_item_init_instance(&self->super, sc_key);
   _set_virtual_function(self);

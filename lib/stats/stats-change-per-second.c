@@ -159,6 +159,7 @@ _init_CPS_logics(StatsAggregatedCPS *self, gint level, StatsClusterKey *sc_key_o
 StatsAggregator *
 stats_aggregat_cps_new(gint level, StatsClusterKey *sc_key, StatsCounterItem *counter)
 {
+  level = 0;
   StatsAggregatedCPS *self = g_new0(StatsAggregatedCPS, 1);
   stats_aggregator_item_init_instance(&self->super, sc_key);
   _set_virtual_function(self);
