@@ -26,6 +26,8 @@
 #define LOGREADER_H_INCLUDED
 
 #include "logsource.h"
+#include "stats/stats-aggregator.h"
+#include "stats/stats-aggregator-registry.h"
 #include "logproto/logproto-server.h"
 #include "poll-events.h"
 #include "mainloop-io-worker.h"
@@ -62,6 +64,9 @@ struct _LogReader
   PollEvents *poll_events;
   GSockAddr *peer_addr;
   GSockAddr *local_addr;
+  StatsAggregator *max_message_size;
+  StatsAggregator *average_messages_size;
+  StatsAggregator *CPS;
 
   /* NOTE: these used to be LogReaderWatch members, which were merged into
    * LogReader with the multi-thread refactorization */
@@ -101,5 +106,8 @@ void log_reader_options_init(LogReaderOptions *options, GlobalConfig *cfg, const
 void log_reader_options_destroy(LogReaderOptions *options);
 void log_reader_options_set_tags(LogReaderOptions *options, GList *tags);
 gboolean log_reader_options_process_flag(LogReaderOptions *options, const gchar *flag);
+
+
+void log_reader_insert_msg_length_stats(LogReader *self, gsize len);
 
 #endif

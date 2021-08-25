@@ -23,6 +23,7 @@
  */
 
 #include "logreader.h"
+#include "stats/stats-cluster-single.h"
 #include "mainloop-call.h"
 #include "ack-tracker/ack_tracker.h"
 #include "ack-tracker/ack_tracker_factory.h"
@@ -447,6 +448,7 @@ log_reader_handle_line(LogReader *self, const guchar *line, gint length, LogTran
   m = log_msg_new((gchar *) line, length,
                   &self->options->parse_options);
 
+  log_reader_insert_msg_length_stats(self, length);
   log_msg_set_saddr(m, aux->peer_addr ? : self->peer_addr);
   log_msg_set_daddr(m, aux->local_addr ? : self->local_addr);
   m->proto = aux->proto;
@@ -563,6 +565,46 @@ log_reader_io_handle_in(gpointer s)
     }
 }
 
+void
+log_reader_insert_msg_length_stats(LogReader *self, gsize len)
+{
+  stats_aggregator_insert_data(self->max_message_size, len);
+  stats_aggregator_insert_data(self->average_messages_size, len);
+}
+
+static void
+_register_aggregated_stats(LogReader *self)
+{
+  stats_aggregator_lock();
+  StatsClusterKey sc_key;
+
+  stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,
+                                         self->super.stats_instance, "maximum_message_size");
+  stats_register_aggregator_maximum(self->super.options->stats_level, &sc_key, &self->max_message_size);
+
+  stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,
+                                         self->super.stats_instance, "average_message_size");
+  stats_register_aggregator_average(self->super.options->stats_level, &sc_key, &self->average_messages_size);
+
+  stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,
+                                         self->super.stats_instance, "EPS");
+  stats_register_aggregator_cps(self->super.options->stats_level, &sc_key, self->super.recvd_messages, &self->CPS);
+
+  stats_aggregator_unlock();
+}
+
+static void
+_unregister_aggregated_stats(LogReader *self)
+{
+  stats_aggregator_lock();
+
+  stats_unregister_aggregator_maximum(self->max_message_size);
+  stats_unregister_aggregator_average(self->average_messages_size);
+  stats_unregister_aggregator_cps(self->CPS);
+
+  stats_aggregator_unlock();
+}
+
 /*****************************************************************************
  * LogReader->LogPipe interface implementation
  *****************************************************************************/
@@ -592,6 +634,8 @@ log_reader_init(LogPipe *s)
 
   log_reader_start_watches(self);
 
+  _register_aggregated_stats(self);
+
   return TRUE;
 }
 
@@ -608,6 +652,7 @@ log_reader_deinit(LogPipe *s)
 
   log_reader_stop_watches(self);
 
+  _unregister_aggregated_stats(self);
   if (!log_source_deinit(s))
     return FALSE;
 
