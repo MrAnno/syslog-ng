@@ -122,7 +122,6 @@ _regist_counter(StatsAggregatedAverageItem *self, gint level, StatsClusterKey *s
 StatsAggregator *
 stats_aggregat_average_new(gint level, StatsClusterKey *sc_key)
 {
-  level = 0;
   StatsAggregatedAverageItem *self = g_new0(StatsAggregatedAverageItem, 1);
   stats_aggregator_item_init_instance(&self->super, sc_key);
   _set_virtual_function(self);
