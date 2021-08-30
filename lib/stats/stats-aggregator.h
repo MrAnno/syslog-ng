@@ -36,9 +36,15 @@ struct _StatsAggregator
   void (*aggregate)(StatsAggregator *self);
   void (*reset)(StatsAggregator *self);
   void (*free)(StatsAggregator *self);
+  gboolean (*is_orphaned)(StatsAggregator *self);
+  gboolean (*maybe_orphaned)(StatsAggregator *self);
+
+  void (*registry)(StatsAggregator *self);
+  void (*unregistry)(StatsAggregator *self);
 
   gssize use_count;
   StatsClusterKey key;
+  gint stats_level;
 };
 
 /* public */
@@ -48,10 +54,11 @@ void stats_aggregator_reset(StatsAggregator *self);
 
 /* stats-internals */
 gboolean stats_aggregator_is_orphaned(StatsAggregator *self);
+gboolean stats_aggregator_maybe_orphaned(StatsAggregator *self);
 void stats_aggregator_track_counter(StatsAggregator *self);
 void stats_aggregator_untrack_counter(StatsAggregator *self);
 void stats_aggregator_free(StatsAggregator *self);
-void stats_aggregator_init_instance(StatsAggregator *self, StatsClusterKey *sc_key);
+void stats_aggregator_init_instance(StatsAggregator *self, StatsClusterKey *sc_key, gint stats_level);
 
 StatsAggregator *stats_aggregator_maximum_new(gint level, StatsClusterKey *sc_key);
 

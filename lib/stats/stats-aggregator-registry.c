@@ -34,6 +34,11 @@
 typedef struct _StatsClusterContainer
 {
   GHashTable *clusters;
+  /* timer is holding 1 track for every stats
+   * and if can be set the stats to orphane
+   * then untrack the item
+   * BUT still be in the table!
+   */
   struct iv_timer update_timer;
 } StatsAggregatorClusterContainer;
 
@@ -47,6 +52,11 @@ _update_func (gpointer _key, gpointer _value, gpointer _user_data)
 {
   StatsAggregator *self = (StatsAggregator *) _value;
   stats_aggregator_aggregate(self);
+
+  if (stats_aggregator_maybe_orphaned(self) && !stats_aggregator_is_orphaned(self))
+    {
+      stats_aggregator_untrack_counter(self);
+    }
 }
 
 static void
@@ -124,6 +134,7 @@ stats_aggregator_registry_init(void)
 void
 stats_aggregator_registry_deinit(void)
 {
+  stats_aggregator_remove_stats(FALSE);
   g_hash_table_destroy(stats_cluster_container.clusters);
   stats_cluster_container.clusters = NULL;
   g_static_mutex_free(&stats_aggregator_mutex);
@@ -145,32 +156,16 @@ _is_in_table(StatsClusterKey *sc_key)
   return g_hash_table_lookup(stats_cluster_container.clusters, sc_key) != NULL;
 }
 
-static void
-_remove_from_table(StatsClusterKey *sc_key)
-{
-  g_hash_table_remove(stats_cluster_container.clusters, sc_key);
-}
-
 static StatsAggregator *
 _get_from_table(StatsClusterKey *sc_key)
 {
   return g_hash_table_lookup(stats_cluster_container.clusters, sc_key);
 }
 
-static void
-_unregister(StatsAggregator *s)
+static inline void
+_using_timer(StatsAggregator *s)
 {
-  if(s == NULL)
-    return;
-
-  stats_aggregator_untrack_counter(s);
-
-  if (stats_aggregator_is_orphaned(s) && _is_in_table(&s->key))
-    {
-      _update_func(NULL, s, NULL);
-      _remove_from_table(&s->key);
-      stats_aggregator_free(s);
-    }
+  stats_aggregator_track_counter(s);
 }
 
 void
@@ -195,7 +190,7 @@ void
 stats_unregister_aggregator_maximum(StatsAggregator *s)
 {
   g_assert(stats_aggregator_locked);
-  _unregister(s);
+  stats_aggregator_untrack_counter(s);
 }
 
 void
@@ -220,7 +215,7 @@ void
 stats_unregister_aggregator_average(StatsAggregator *s)
 {
   g_assert(stats_aggregator_locked);
-  _unregister(s);
+  stats_aggregator_untrack_counter(s);
 }
 
 void
@@ -238,6 +233,11 @@ stats_register_aggregator_cps(gint level, StatsClusterKey *sc_key, StatsCounterI
       *s = _get_from_table(sc_key);
     }
 
+  if (stats_aggregator_is_orphaned(*s))
+    {
+      _using_timer(*s);
+    }
+
   stats_aggregator_track_counter(*s);
 }
 
@@ -245,7 +245,7 @@ void
 stats_unregister_aggregator_cps(StatsAggregator *s)
 {
   g_assert(stats_aggregator_locked);
-  _unregister(s);
+  stats_aggregator_untrack_counter(s);
 }
 
 static void
@@ -259,4 +259,40 @@ void
 stats_aggregator_registry_reset(void)
 {
   g_hash_table_foreach(stats_cluster_container.clusters, _reset_func, NULL);
+}
+
+static void
+_remove_from_table(StatsClusterKey *sc_key)
+{
+  g_hash_table_remove(stats_cluster_container.clusters, sc_key);
+}
+
+static void
+_free_aggregator(StatsAggregator *self)
+{
+  _remove_from_table(&self->key);
+  stats_aggregator_free(self);
+}
+
+static void
+_remove_orphaned_helper(gpointer _key, gpointer _value, gpointer _user_data)
+{
+  StatsAggregator *self = (StatsAggregator *) _value;
+  gboolean only_orphaned = *((gboolean *)_user_data);
+
+  if (only_orphaned)
+    {
+      if (stats_aggregator_is_orphaned(self))
+        _free_aggregator(self);
+    }
+  else
+    {
+      _free_aggregator(self);
+    }
+}
+
+void
+stats_aggregator_remove_stats(gboolean only_orphaned)
+{
+  g_hash_table_foreach(stats_cluster_container.clusters, _remove_orphaned_helper, &only_orphaned);
 }

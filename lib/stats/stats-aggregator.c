@@ -26,23 +26,44 @@
 gboolean
 stats_aggregator_is_orphaned(StatsAggregator *self)
 {
-  if (self)
-    return self->use_count <= 0;
+  if (self && self->is_orphaned)
+    return self->is_orphaned(self);
+
   return TRUE;
+}
+
+gboolean
+stats_aggregator_maybe_orphaned(StatsAggregator *self)
+{
+  if (self && self->maybe_orphaned)
+    return self->maybe_orphaned(self);
+
+  return stats_aggregator_is_orphaned(self);
 }
 
 void
 stats_aggregator_track_counter(StatsAggregator *self)
 {
-  if (self)
-    ++self->use_count;
+  if (!self)
+    return;
+
+  ++self->use_count;
+
+  if (self->use_count == 0 && self->registry)
+    self->registry(self);
 }
 
 void
 stats_aggregator_untrack_counter(StatsAggregator *self)
 {
-  if (self)
+  if (!self)
+    return;
+
+  if (self->use_count > 0)
     --self->use_count;
+
+  if (stats_aggregator_is_orphaned(self) && self->unregistry)
+    self->unregistry(self);
 }
 
 
@@ -76,9 +97,23 @@ stats_aggregator_free(StatsAggregator *self)
   g_free(self);
 }
 
+static gboolean
+_is_orphaned(StatsAggregator *self)
+{
+  return self->use_count == 0;
+}
+
+static void
+_set_virtual_functions(StatsAggregator *self)
+{
+  self->is_orphaned = _is_orphaned;
+}
+
 void
-stats_aggregator_init_instance(StatsAggregator *self, StatsClusterKey *sc_key)
+stats_aggregator_init_instance(StatsAggregator *self, StatsClusterKey *sc_key, gint stats_level)
 {
   self->use_count = 0;
+  self->stats_level = stats_level;
   stats_cluster_key_clone(&self->key, sc_key);
+  _set_virtual_functions(self);
 }

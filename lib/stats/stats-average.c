@@ -69,10 +69,11 @@ _unregister_counter(StatsAggregatedAverage *self)
 }
 
 static void
-_free(StatsAggregator *s)
+_regist_counter(StatsAggregatedAverage *self)
 {
-  StatsAggregatedAverage *self = (StatsAggregatedAverage *)s;
-  _unregister_counter(self);
+  stats_lock();
+  stats_register_counter(self->super.stats_level, &self->super.key, SC_TYPE_SINGLE_VALUE, &self->output_counter);
+  stats_unlock();
 }
 
 static void
@@ -93,28 +94,35 @@ _reset(StatsAggregator *s)
 }
 
 static void
-_set_virtual_function(StatsAggregatedAverage *self )
+_registry(StatsAggregator *s)
 {
-  self->super.insert_data = _insert_data;
-  self->super.free = _free;
-  self->super.reset = _reset;
+  StatsAggregatedAverage *self = (StatsAggregatedAverage *)s;
+  _regist_counter(self);
 }
 
 static void
-_regist_counter(StatsAggregatedAverage *self, gint level, StatsClusterKey *sc_key)
+_unregistry(StatsAggregator *s)
 {
-  stats_lock();
-  stats_register_counter(level, &self->super.key, SC_TYPE_SINGLE_VALUE, &self->output_counter);
-  stats_unlock();
+  StatsAggregatedAverage *self = (StatsAggregatedAverage *)s;
+  _unregister_counter(self);
 }
+
+static void
+_set_virtual_function(StatsAggregatedAverage *self )
+{
+  self->super.insert_data = _insert_data;
+  self->super.reset = _reset;
+  self->super.registry = _registry;
+  self->super.unregistry = _unregistry;
+}
+
 
 StatsAggregator *
 stats_aggregator_average_new(gint level, StatsClusterKey *sc_key)
 {
   StatsAggregatedAverage *self = g_new0(StatsAggregatedAverage, 1);
-  stats_aggregator_init_instance(&self->super, sc_key);
+  stats_aggregator_init_instance(&self->super, sc_key, level);
   _set_virtual_function(self);
-  _regist_counter(self, level, sc_key);
 
   return &self->super;
 }

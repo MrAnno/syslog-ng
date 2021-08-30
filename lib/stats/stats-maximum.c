@@ -43,10 +43,11 @@ _unregister_counter(StatsAggregatedMaximum *self)
 }
 
 static void
-_free(StatsAggregator *s)
+_regist_counter(StatsAggregatedMaximum *self)
 {
-  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
-  _unregister_counter(self);
+  stats_lock();
+  stats_register_counter(self->super.stats_level, &self->super.key, SC_TYPE_SINGLE_VALUE, &self->output_counter);
+  stats_unlock();
 }
 
 static void
@@ -58,27 +59,33 @@ _insert_data(StatsAggregator *s, gsize value)
 }
 
 static void
-_set_virtual_function(StatsAggregatedMaximum *self )
+_registry(StatsAggregator *s)
 {
-  self->super.insert_data = _insert_data;
-  self->super.free = _free;
+  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
+  _regist_counter(self);
 }
 
 static void
-_regist_counter(StatsAggregatedMaximum *self, gint level, StatsClusterKey *sc_key)
+_unregistry(StatsAggregator *s)
 {
-  stats_lock();
-  stats_register_counter(level, &self->super.key, SC_TYPE_SINGLE_VALUE, &self->output_counter);
-  stats_unlock();
+  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
+  _unregister_counter(self);
+}
+
+static void
+_set_virtual_function(StatsAggregatedMaximum *self)
+{
+  self->super.insert_data = _insert_data;
+  self->super.registry = _registry;
+  self->super.unregistry = _unregistry;
 }
 
 StatsAggregator *
 stats_aggregator_maximum_new(gint level, StatsClusterKey *sc_key)
 {
   StatsAggregatedMaximum *self = g_new0(StatsAggregatedMaximum, 1);
-  stats_aggregator_init_instance(&self->super, sc_key);
+  stats_aggregator_init_instance(&self->super, sc_key, level);
   _set_virtual_function(self);
-  _regist_counter(self, level, sc_key);
 
   return &self->super;
 }

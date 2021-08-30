@@ -36,6 +36,8 @@ void stats_aggregator_unlock(void);
 void stats_aggregator_registry_init(void);
 void stats_aggregator_registry_deinit(void);
 
+void stats_aggregator_remove_stats(gboolean only_orphaned);
+
 void stats_register_aggregator_maximum(gint level, StatsClusterKey *sc_key, StatsAggregator **s);
 void stats_unregister_aggregator_maximum(StatsAggregator *s);
 
