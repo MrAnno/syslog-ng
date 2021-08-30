@@ -579,11 +579,11 @@ _register_aggregated_stats(LogReader *self)
   StatsClusterKey sc_key;
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,
-                                         self->super.stats_instance, "maximum_message_size");
+                                         self->super.stats_instance, "msg_size_max");
   stats_register_aggregator_maximum(self->super.options->stats_level, &sc_key, &self->max_message_size);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,
-                                         self->super.stats_instance, "average_message_size");
+                                         self->super.stats_instance, "msg_size_avg");
   stats_register_aggregator_average(self->super.options->stats_level, &sc_key, &self->average_messages_size);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.options->stats_source | SCS_SOURCE, self->super.stats_id,

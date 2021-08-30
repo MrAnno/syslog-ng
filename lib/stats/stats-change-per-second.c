@@ -236,17 +236,17 @@ _regist_CPSs(StatsAggregatorCPS *self)
   stats_lock();
   StatsClusterKey sc_key;
 
-  self->hour.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_since_last_hour", NULL);
+  self->hour.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_last_1h", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->hour.name);
   _regist_CPS(&self->hour, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, HOUR_IN_SEC);
 
-  self->day.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_since_last_day", NULL);
+  self->day.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_last_24h", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->day.name);
   _regist_CPS(&self->day, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, DAY_IN_SEC);
 
-  self->start.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_since_begin", NULL);
+  self->start.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_since_start", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->start.name);
   _regist_CPS(&self->start, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, -1);

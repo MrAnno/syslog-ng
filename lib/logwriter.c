@@ -1412,11 +1412,11 @@ _register_aggregated_stats(LogWriter *self)
   StatsClusterKey sc_key;
 
   stats_cluster_single_key_set_with_name(&sc_key, self->options->stats_source | SCS_DESTINATION, self->stats_id,
-                                         self->stats_instance, "maximum_message_size");
+                                         self->stats_instance, "msg_size_max");
   stats_register_aggregator_maximum(self->options->stats_level, &sc_key, &self->max_message_size);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->options->stats_source | SCS_DESTINATION, self->stats_id,
-                                         self->stats_instance, "average_message_size");
+                                         self->stats_instance, "msg_size_avg");
   stats_register_aggregator_average(self->options->stats_level, &sc_key, &self->average_messages_size);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->options->stats_source | SCS_DESTINATION, self->stats_id,
