@@ -21,7 +21,7 @@
  *
  */
 
-#include "stats/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator.h"
 #include "stats/stats-registry.h"
 #include "stats/stats-cluster-single.h"
 

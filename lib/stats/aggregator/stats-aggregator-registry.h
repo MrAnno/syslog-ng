@@ -24,7 +24,7 @@
 #ifndef STATS_AGGREGATOR_REGISTRY_H
 #define STATS_AGGREGATOR_REGISTRY_H
 
-#include "stats/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator.h"
 #include "stats/stats-registry.h"
 #include "syslog-ng.h"
 

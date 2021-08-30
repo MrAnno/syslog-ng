@@ -21,7 +21,7 @@
  *
  */
 
-#include "stats/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator.h"
 #include "timeutils/cache.h"
 #include "stats/stats-registry.h"
 #include "stats/stats-cluster-single.h"
@@ -328,4 +328,3 @@ stats_aggregator_cps_new(gint level, StatsClusterKey *sc_key, StatsCounterItem *
 
   return &self->super;
 }
-

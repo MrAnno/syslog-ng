@@ -26,7 +26,7 @@
 #include "stats/stats-csv.h"
 #include "stats/stats-counter.h"
 #include "stats/stats-registry.h"
-#include "stats/stats-aggregator-registry.h"
+#include "stats/aggregator/stats-aggregator-registry.h"
 #include "stats/stats-query-commands.h"
 #include "control/control-commands.h"
 #include "control/control-server.h"

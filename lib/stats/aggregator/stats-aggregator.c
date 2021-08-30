@@ -21,7 +21,7 @@
  *
  */
 
-#include "stats/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator.h"
 
 gboolean
 stats_aggregator_is_orphaned(StatsAggregator *self)

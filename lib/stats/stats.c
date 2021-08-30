@@ -26,7 +26,7 @@
 #include "stats/stats-log.h"
 #include "stats/stats-query.h"
 #include "stats/stats-registry.h"
-#include "stats/stats-aggregator-registry.h"
+#include "stats/aggregator/stats-aggregator-registry.h"
 #include "stats/stats.h"
 #include "timeutils/cache.h"
 #include "timeutils/misc.h"

@@ -1,3 +1,5 @@
+add_subdirectory(aggregator)
+
 set(STATS_HEADERS
     stats/stats.h
     stats/stats-control.h
@@ -12,6 +14,7 @@ set(STATS_HEADERS
     stats/stats-query-commands.h
     stats/stats-cluster-logpipe.h
     stats/stats-cluster-single.h
+    ${STATS_AGGREGATOR_HEADERS}
     PARENT_SCOPE)
 
 set(STATS_SOURCES
@@ -30,6 +33,7 @@ set(STATS_SOURCES
     stats/stats-query-commands.c
     stats/stats-cluster-logpipe.c
     stats/stats-cluster-single.c
+    ${STATS_AGGREGATOR_SOURCES}
     PARENT_SCOPE)
 
 add_test_subdirectory(tests)

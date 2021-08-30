@@ -26,7 +26,7 @@
 
 #include "stats/stats-counter.h"
 #include "syslog-ng.h"
-#include "stats-cluster.h"
+#include "stats/stats-cluster.h"
 
 typedef struct _StatsAggregator StatsAggregator;
 

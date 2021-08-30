@@ -28,7 +28,7 @@
 #include "syslog-ng.h"
 #include "driver.h"
 #include "stats/stats-registry.h"
-#include "stats/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator.h"
 #include "logqueue.h"
 #include "mainloop-worker.h"
 #include "seqnum.h"

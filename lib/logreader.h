@@ -26,8 +26,8 @@
 #define LOGREADER_H_INCLUDED
 
 #include "logsource.h"
-#include "stats/stats-aggregator.h"
-#include "stats/stats-aggregator-registry.h"
+#include "stats/aggregator/stats-aggregator.h"
+#include "stats/aggregator/stats-aggregator-registry.h"
 #include "logproto/logproto-server.h"
 #include "poll-events.h"
 #include "mainloop-io-worker.h"

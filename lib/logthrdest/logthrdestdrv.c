@@ -24,7 +24,7 @@
 
 #include "stats/stats-cluster-logpipe.h"
 #include "stats/stats-cluster-single.h"
-#include "stats/stats-aggregator-registry.h"
+#include "stats/aggregator/stats-aggregator-registry.h"
 #include "logthrdestdrv.h"
 #include "seqnum.h"
 #include "scratch-buffers.h"
