@@ -39,8 +39,8 @@ struct _StatsAggregator
   gboolean (*is_orphaned)(StatsAggregator *self);
   gboolean (*maybe_orphaned)(StatsAggregator *self);
 
-  void (*registry)(StatsAggregator *self);
-  void (*unregistry)(StatsAggregator *self);
+  void (*register_aggr)(StatsAggregator *self);
+  void (*unregister_aggr)(StatsAggregator *self);
 
   gssize use_count;
   StatsClusterKey key;

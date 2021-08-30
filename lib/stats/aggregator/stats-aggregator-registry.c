@@ -35,11 +35,6 @@ static void stats_aggregator_remove_stats(void);
 typedef struct _StatsClusterContainer
 {
   GHashTable *clusters;
-  /* timer is holding 1 track for every stats
-   * and if can be set the stats to orphane
-   * then untrack the item
-   * BUT still be in the table!
-   */
   struct iv_timer update_timer;
 } StatsAggregatorClusterContainer;
 

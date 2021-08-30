@@ -49,8 +49,8 @@ stats_aggregator_track_counter(StatsAggregator *self)
 
   ++self->use_count;
 
-  if (self->use_count == 1 && self->registry)
-    self->registry(self);
+  if (self->use_count == 1 && self->register_aggr)
+    self->register_aggr(self);
 }
 
 void
@@ -62,8 +62,8 @@ stats_aggregator_untrack_counter(StatsAggregator *self)
   if (self->use_count > 0)
     --self->use_count;
 
-  if (stats_aggregator_is_orphaned(self) && self->unregistry)
-    self->unregistry(self);
+  if (stats_aggregator_is_orphaned(self) && self->unregister_aggr)
+    self->unregister_aggr(self);
 }
 
 

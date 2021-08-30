@@ -29,10 +29,10 @@ typedef struct
 {
   StatsAggregator super;
   StatsCounterItem *output_counter;
-} StatsAggregatedMaximum;
+} StatsAggregatorMaximum;
 
 static void
-_unregister_counter(StatsAggregatedMaximum *self)
+_unregister_counter(StatsAggregatorMaximum *self)
 {
   if(self->output_counter)
     {
@@ -43,7 +43,7 @@ _unregister_counter(StatsAggregatedMaximum *self)
 }
 
 static void
-_regist_counter(StatsAggregatedMaximum *self)
+_register_counter(StatsAggregatorMaximum *self)
 {
   stats_lock();
   stats_register_counter(self->super.stats_level, &self->super.key, SC_TYPE_SINGLE_VALUE, &self->output_counter);
@@ -53,7 +53,7 @@ _regist_counter(StatsAggregatedMaximum *self)
 static void
 _insert_data(StatsAggregator *s, gsize value)
 {
-  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
+  StatsAggregatorMaximum *self = (StatsAggregatorMaximum *)s;
   gsize current_max = 0;
 
   do
@@ -68,31 +68,31 @@ _insert_data(StatsAggregator *s, gsize value)
 }
 
 static void
-_registry(StatsAggregator *s)
+_register(StatsAggregator *s)
 {
-  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
-  _regist_counter(self);
+  StatsAggregatorMaximum *self = (StatsAggregatorMaximum *)s;
+  _register_counter(self);
 }
 
 static void
-_unregistry(StatsAggregator *s)
+_unregister(StatsAggregator *s)
 {
-  StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
+  StatsAggregatorMaximum *self = (StatsAggregatorMaximum *)s;
   _unregister_counter(self);
 }
 
 static void
-_set_virtual_function(StatsAggregatedMaximum *self)
+_set_virtual_function(StatsAggregatorMaximum *self)
 {
   self->super.insert_data = _insert_data;
-  self->super.registry = _registry;
-  self->super.unregistry = _unregistry;
+  self->super.register_aggr = _register;
+  self->super.unregister_aggr = _unregister;
 }
 
 StatsAggregator *
 stats_aggregator_maximum_new(gint level, StatsClusterKey *sc_key)
 {
-  StatsAggregatedMaximum *self = g_new0(StatsAggregatedMaximum, 1);
+  StatsAggregatorMaximum *self = g_new0(StatsAggregatorMaximum, 1);
   stats_aggregator_init_instance(&self->super, sc_key, level);
   _set_virtual_function(self);
 

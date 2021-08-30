@@ -139,11 +139,11 @@ _calc_sum(StatsAggregatorCPS *self, CPSLogic *logic, time_t *now)
 static void
 _calc_average(StatsAggregatorCPS *self, CPSLogic *logic, time_t *now)
 {
-  gsize elipsed_time = (gsize)_calc_sec_between_time(&self->init_time, now);
-  gsize to_divede = (_is_less_then_duration(self, logic, now)) ? elipsed_time : logic->duration;
-  if (to_divede <= 0) to_divede = 1;
+  gsize elapsed_time = (gsize)_calc_sec_between_time(&self->init_time, now);
+  gsize to_divide = (_is_less_then_duration(self, logic, now)) ? elapsed_time : logic->duration;
+  if (to_divide <= 0) to_divide = 1;
 
-  _set_average(logic, (_get_sum(logic) / to_divede));
+  _set_average(logic, (_get_sum(logic) / to_divide));
 }
 
 static void
@@ -193,37 +193,37 @@ _reset(StatsAggregator *s)
 }
 
 static void
-_unregist_CPS(CPSLogic *self, StatsClusterKey *sc_key, gint type)
+_unregister_CPS(CPSLogic *self, StatsClusterKey *sc_key, gint type)
 {
   stats_unregister_counter(sc_key, type, &self->output_counter);
 }
 
 static void
-_unregist_CPSs(StatsAggregatorCPS *self)
+_unregister_CPSs(StatsAggregatorCPS *self)
 {
   stats_lock();
   StatsClusterKey sc_key;
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->hour.name);
-  _unregist_CPS(&self->hour, &sc_key, SC_TYPE_SINGLE_VALUE);
+  _unregister_CPS(&self->hour, &sc_key, SC_TYPE_SINGLE_VALUE);
   g_free(self->hour.name);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->day.name);
-  _unregist_CPS(&self->day, &sc_key, SC_TYPE_SINGLE_VALUE);
+  _unregister_CPS(&self->day, &sc_key, SC_TYPE_SINGLE_VALUE);
   g_free(self->day.name);
 
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->start.name);
-  _unregist_CPS(&self->start, &sc_key, SC_TYPE_SINGLE_VALUE);
+  _unregister_CPS(&self->start, &sc_key, SC_TYPE_SINGLE_VALUE);
   g_free(self->start.name);
 
   stats_unlock();
 }
 
 static void
-_regist_CPS(CPSLogic *self, StatsClusterKey *sc_key, gint level, gint type, gssize duration)
+_register_CPS(CPSLogic *self, StatsClusterKey *sc_key, gint level, gint type, gssize duration)
 {
   _set_CPS_logic_values(self, duration);
   if(!self->output_counter)
@@ -231,7 +231,7 @@ _regist_CPS(CPSLogic *self, StatsClusterKey *sc_key, gint level, gint type, gssi
 }
 
 static void
-_regist_CPSs(StatsAggregatorCPS *self)
+_register_CPSs(StatsAggregatorCPS *self)
 {
   stats_lock();
   StatsClusterKey sc_key;
@@ -239,17 +239,17 @@ _regist_CPSs(StatsAggregatorCPS *self)
   self->hour.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_last_1h", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->hour.name);
-  _regist_CPS(&self->hour, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, HOUR_IN_SEC);
+  _register_CPS(&self->hour, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, HOUR_IN_SEC);
 
   self->day.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_last_24h", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->day.name);
-  _regist_CPS(&self->day, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, DAY_IN_SEC);
+  _register_CPS(&self->day, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, DAY_IN_SEC);
 
   self->start.name = g_strconcat(self->super.key.counter_group_init.counter.name, "_since_start", NULL);
   stats_cluster_single_key_set_with_name(&sc_key, self->super.key.component, self->super.key.id, self->super.key.instance,
                                          self->start.name);
-  _regist_CPS(&self->start, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, -1);
+  _register_CPS(&self->start, &sc_key, self->super.stats_level, SC_TYPE_SINGLE_VALUE, -1);
 
   stats_unlock();
 }
@@ -275,18 +275,18 @@ _is_orphaned(StatsAggregator *s)
 }
 
 static void
-_registry(StatsAggregator *s)
+_register(StatsAggregator *s)
 {
   StatsAggregatorCPS *self = (StatsAggregatorCPS *)s;
-  _regist_CPSs(self);
+  _register_CPSs(self);
   // track input counter
 }
 
 static void
-_unregistry(StatsAggregator *s)
+_unregister(StatsAggregator *s)
 {
   StatsAggregatorCPS *self = (StatsAggregatorCPS *)s;
-  _unregist_CPSs(self);
+  _unregister_CPSs(self);
   // untrack input counter
 }
 
@@ -313,8 +313,8 @@ _set_virtual_function(StatsAggregatorCPS *self )
   self->super.free = _free;
   self->super.is_orphaned = _is_orphaned;
   self->super.maybe_orphaned = _maybe_orphaned;
-  self->super.registry = _registry;
-  self->super.unregistry = _unregistry;
+  self->super.register_aggr = _register;
+  self->super.unregister_aggr = _unregister;
 }
 
 
