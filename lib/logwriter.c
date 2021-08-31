@@ -1180,15 +1180,13 @@ log_writer_write_message(LogWriter *self, LogMessage *msg, LogPathOptions *path_
                 evt_tag_printf("message", "%s", self->line_buffer->str));
     }
 
+  gsize msg_len = 0;
   if (self->line_buffer->len)
     {
-      gsize msg_len = self->line_buffer->len;
+      msg_len = self->line_buffer->len;
       LogProtoStatus status = log_proto_client_post(self->proto, msg, (guchar *)self->line_buffer->str,
                                                     self->line_buffer->len,
                                                     &consumed);
-
-      if (status == LPS_PARTIAL || status == LPS_SUCCESS)
-        log_writer_insert_msg_length_stats(self, msg_len);
 
       self->partial_write = (status == LPS_PARTIAL);
 
@@ -1227,6 +1225,7 @@ log_writer_write_message(LogWriter *self, LogMessage *msg, LogPathOptions *path_
       log_msg_unref(msg);
       msg_set_context(NULL);
       log_msg_refcache_stop();
+      log_writer_insert_msg_length_stats(self, msg_len);
 
       return TRUE;
     }
