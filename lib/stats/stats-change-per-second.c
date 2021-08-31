@@ -291,10 +291,26 @@ _unregistry(StatsAggregator *s)
 }
 
 static void
+_free(StatsAggregator *s)
+{
+  StatsAggregatorCPS *self = (StatsAggregatorCPS *)s;
+  if (self->hour.name)
+    g_free(self->hour.name);
+
+  if (self->day.name)
+    g_free(self->day.name);
+
+  if (self->start.name)
+    g_free(self->start.name);
+}
+
+
+static void
 _set_virtual_function(StatsAggregatorCPS *self )
 {
   self->super.aggregate = _aggregate;
   self->super.reset = _reset;
+  self->super.free = _free;
   self->super.is_orphaned = _is_orphaned;
   self->super.maybe_orphaned = _maybe_orphaned;
   self->super.registry = _registry;
