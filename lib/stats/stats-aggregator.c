@@ -49,7 +49,7 @@ stats_aggregator_track_counter(StatsAggregator *self)
 
   ++self->use_count;
 
-  if (self->use_count == 0 && self->registry)
+  if (self->use_count == 1 && self->registry)
     self->registry(self);
 }
 

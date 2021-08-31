@@ -31,6 +31,7 @@
 
 #define FREQUENCY_OF_UPDATE 60
 
+static void stats_aggregator_remove_stats(void);
 typedef struct _StatsClusterContainer
 {
   GHashTable *clusters;
@@ -134,7 +135,7 @@ stats_aggregator_registry_init(void)
 void
 stats_aggregator_registry_deinit(void)
 {
-  stats_aggregator_remove_stats(FALSE);
+  stats_aggregator_remove_stats();
   g_hash_table_destroy(stats_cluster_container.clusters);
   stats_cluster_container.clusters = NULL;
   g_static_mutex_free(&stats_aggregator_mutex);
@@ -262,37 +263,40 @@ stats_aggregator_registry_reset(void)
 }
 
 static void
-_remove_from_table(StatsClusterKey *sc_key)
-{
-  g_hash_table_remove(stats_cluster_container.clusters, sc_key);
-}
-
-static void
 _free_aggregator(StatsAggregator *self)
 {
-  _remove_from_table(&self->key);
   stats_aggregator_free(self);
 }
 
-static void
+static gboolean
 _remove_orphaned_helper(gpointer _key, gpointer _value, gpointer _user_data)
 {
   StatsAggregator *self = (StatsAggregator *) _value;
-  gboolean only_orphaned = *((gboolean *)_user_data);
-
-  if (only_orphaned)
-    {
-      if (stats_aggregator_is_orphaned(self))
-        _free_aggregator(self);
-    }
-  else
+  if (stats_aggregator_is_orphaned(self))
     {
       _free_aggregator(self);
+      return TRUE;
     }
+  return FALSE;
 }
 
 void
-stats_aggregator_remove_stats(gboolean only_orphaned)
+stats_aggregator_remove_orphaned_stats(void)
 {
-  g_hash_table_foreach(stats_cluster_container.clusters, _remove_orphaned_helper, &only_orphaned);
+  g_hash_table_foreach_remove(stats_cluster_container.clusters, _remove_orphaned_helper, NULL);
+}
+
+static gboolean
+_remove_helper(gpointer _key, gpointer _value, gpointer _user_data)
+{
+  StatsAggregator *self = (StatsAggregator *) _value;
+
+  _free_aggregator(self);
+  return TRUE;
+}
+
+static void
+stats_aggregator_remove_stats(void)
+{
+  g_hash_table_foreach_remove(stats_cluster_container.clusters, _remove_helper, NULL);
 }
