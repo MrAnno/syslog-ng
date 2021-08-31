@@ -54,8 +54,17 @@ static void
 _insert_data(StatsAggregator *s, gsize value)
 {
   StatsAggregatedMaximum *self = (StatsAggregatedMaximum *)s;
-  if (stats_counter_get(self->output_counter) < value)
-    stats_counter_set(self->output_counter, value);
+  gsize current_max = 0;
+
+  do
+    {
+      current_max = stats_counter_get(self->output_counter);
+
+      if (current_max >= value)
+        break;
+
+    }
+  while(!atomic_gssize_compare_and_exchange(&self->output_counter->value, current_max, value));
 }
 
 static void
