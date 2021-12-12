@@ -22,17 +22,18 @@
  *
  */
 
-#include "cr_template.h"
+#include <criterion/criterion.h>
+#include "libtest/cr_template.h"
+#include "libtest/stopwatch.h"
+#include "libtest/msg_parse_lib.h"
+
 #include "timeutils/misc.h"
-#include "stopwatch.h"
 #include "logmsg/logmsg.h"
 #include "gsockaddr.h"
 #include "cfg.h"
 
-#include <criterion/criterion.h>
 #include <string.h>
 
-#include "msg_parse_lib.h"
 
 static MsgFormatOptions parse_options;
 
