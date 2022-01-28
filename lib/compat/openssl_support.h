@@ -65,6 +65,8 @@ BIGNUM *BN_get_rfc3526_prime_2048(BIGNUM *bn);
 void openssl_ctx_setup_session_tickets(SSL_CTX *ctx);
 
 void openssl_ctx_setup_ecdh(SSL_CTX *ctx);
+long openssl_ctx_setup_dh(SSL_CTX *ctx);
+long openssl_ctx_load_dh_from_file(SSL_CTX *ctx, const char *dhparam_file);
 
 void openssl_init(void);
 void openssl_crypto_init_threading(void);
