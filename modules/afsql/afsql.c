@@ -36,7 +36,7 @@
 
 #include <string.h>
 #include <errno.h>
-#include <openssl/md5.h>
+#include <openssl/sha.h>
 
 static gboolean dbi_initialized = FALSE;
 static const char *s_oracle = "oracle";
@@ -388,11 +388,11 @@ afsql_dd_create_index(AFSqlDestDriver *self, const gchar *table, const gchar *co
       if ((strlen(table) + strlen(column)) > 25)
         {
 
-          guchar hash[MD5_DIGEST_LENGTH];
+          guchar hash[SHA_DIGEST_LENGTH];
           gchar hash_str[31];
           gchar *cat = g_strjoin("_", table, column, NULL);
 
-          MD5((guchar *)cat, strlen(cat), hash);
+          SHA1((guchar *)cat, strlen(cat), hash);
           g_free(cat);
 
           format_hex_string(hash, sizeof(hash), hash_str, sizeof(hash_str));
