@@ -32,6 +32,10 @@
 #include <openssl/evp.h>
 #include <openssl/sha.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/params.h>
+#endif
+
 #include "messages.h"
 
 #include "slog.h"
@@ -354,7 +358,7 @@ void sLogEntry(guint64 numberOfLogEntries, GString *text, unsigned char *mainKey
           memcpy(bigBuf, inputBigMac, AES_BLOCKSIZE);
 
           gsize outlen;
-          cmac(MACKey, bigBuf, AES_BLOCKSIZE+IV_LENGTH+AES_BLOCKSIZE+ct_length, outputBigMac, &outlen );
+          cmac(MACKey, bigBuf, AES_BLOCKSIZE+IV_LENGTH+AES_BLOCKSIZE+ct_length, outputBigMac, &outlen);
         }
       else   // First aggregated MAC
         {
@@ -418,17 +422,36 @@ gchar *convertToBase64(unsigned char *input, gsize len)
  * If Parameter 5 == 0, there was an error.
  *
  */
-void cmac(unsigned char *key, const void *input, gsize length, unsigned char *out, gsize *outlen)
+void cmac(unsigned char *key, const void *input, gsize length, unsigned char *out, /*gsize out_size,*/ gsize *outlen)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  EVP_MAC *mac = EVP_MAC_fetch(NULL, "CMAC", NULL);
+  OSSL_PARAM params[] =
+  {
+    OSSL_PARAM_utf8_string("cipher", "aes-256-cbc", 0),
+    OSSL_PARAM_END,
+  };
+
+  EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(mac);
+
+  EVP_MAC_init(ctx, key, KEY_LENGTH, params);
+  EVP_MAC_update(ctx, input, length);
+  size_t out_len;
+  EVP_MAC_final(ctx, out, &out_len, /*out_size*/ 99999);
+
+  EVP_MAC_CTX_free(ctx);
+  EVP_MAC_free(mac);
+#else
   CMAC_CTX *ctx = CMAC_CTX_new();
 
   CMAC_Init(ctx, key, KEY_LENGTH, EVP_aes_256_cbc(), NULL);
   CMAC_Update(ctx, input, length);
 
-  size_t outsize;
-  CMAC_Final(ctx, out, &outsize);
-  *outlen = outsize;
+  size_t out_len;
+  CMAC_Final(ctx, out, &out_len);
+  *outlen = out_len;
   CMAC_CTX_free(ctx);
+#endif
 }
 
 
@@ -1957,4 +1980,3 @@ gboolean validFileNameArg(const gchar *option_name, const gchar *value, gpointer
 
   return isValid;
 }
-
