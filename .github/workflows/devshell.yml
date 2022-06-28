@@ -41,8 +41,6 @@ jobs:
             --prefix=${SYSLOG_NG_INSTALL_DIR}
             --enable-debug
             --enable-all-modules
-            --disable-java
-            --disable-java-modules
             --with-python=3
             `[ $CC = clang ] && echo '--enable-force-gnu99' || true`
           "
@@ -165,8 +163,6 @@ jobs:
             --enable-linux-caps
             --enable-manpages
             --enable-all-modules
-            --disable-java
-            --disable-java-modules
             --with-python=3
           "
 
