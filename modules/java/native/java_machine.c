@@ -192,6 +192,9 @@ _setup_jvm_options_array(JavaVMSingleton *self, const gchar *jvm_options_str)
                                                 g_strdup_printf("-Djava.system.class.loader=org.syslog_ng.SyslogNgClassLoader"));
 
   jvm_options_array = _jvm_options_array_append(jvm_options_array,
+                                                g_strdup_printf("-Xshare:off"));
+
+  jvm_options_array = _jvm_options_array_append(jvm_options_array,
                                                 g_strdup_printf("-Djava.class.path=%s",
                                                     self->class_path->str));
 
