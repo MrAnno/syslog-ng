@@ -24,6 +24,7 @@
  */
 #include "python-value-pairs.h"
 #include "python-helpers.h"
+#include "python-types.h"
 #include "messages.h"
 
 /** Value pairs **/
@@ -31,18 +32,9 @@
 static void
 add_long_to_dict(PyObject *dict, const gchar *name, long num)
 {
-
-  PyObject *pyobject_to_add = PyLong_FromLong(num);
+  PyObject *pyobject_to_add = py_long_from_long(num);
   if (!pyobject_to_add)
-    {
-      gchar buf[256];
-      _py_format_exception_text(buf, sizeof(buf));
-
-      msg_error("Error while constructing python object",
-                evt_tag_str("exception", buf));
-      _py_finish_exception_handling();
-      return;
-    }
+    return;
 
   PyDict_SetItemString(dict, name, pyobject_to_add);
   Py_DECREF(pyobject_to_add);
