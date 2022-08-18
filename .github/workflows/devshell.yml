@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-18.04
     container:
       image: ghcr.io/syslog-ng/dbld-devshell:latest
-      options: --privileged --ulimit core=-1
 
     strategy:
       matrix:
