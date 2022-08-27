@@ -22,18 +22,23 @@
  */
 
 #include "file-rotation.h"
+#include "modules/affile/file-signals.h"
 #include "driver.h"
 
-struct _FileRotationPlugin
+static void
+_slot_file_rotation(FileRotationPlugin *self, FileFlushSignalData *data)
 {
-  LogDriverPlugin super;
-  gsize size;
-};
+  msg_trace("File rotation signal received", evt_tag_str("filename", data->filename));
+}
 
 static gboolean
 file_rotation_attach_to_driver(LogDriverPlugin *s, LogDriver *driver)
 {
+  SignalSlotConnector *ssc = driver->super.signal_slot_connector;
+
   msg_debug("File rotation plugin has been attached", evt_tag_str("to", driver->id));
+
+  CONNECT(ssc, signal_file_flush, _slot_file_rotation, s);
 
   return TRUE;
 }
@@ -41,9 +46,15 @@ file_rotation_attach_to_driver(LogDriverPlugin *s, LogDriver *driver)
 static void
 file_rotation_free(LogDriverPlugin *s)
 {
-  FileRotationPlugin *self = (FileRotationPlugin *) s;
-
+  msg_debug("FileRotationPlugin::free");
+  FileRotationPlugin *self = (FileRotationPlugin *)s;
+  g_free(self->filename);
   log_driver_plugin_free_method(s);
+}
+void
+file_rotation_set_interval(FileRotationPlugin *self, gchar *interval)
+{
+  self->interval = interval;
 }
 
 void

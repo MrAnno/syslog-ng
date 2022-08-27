@@ -23,7 +23,7 @@
 
 #include "logproto-file-writer.h"
 #include "messages.h"
-
+#include "file-signals.h"
 #include <string.h>
 #include <errno.h>
 #include <sys/uio.h>
@@ -32,6 +32,7 @@
 typedef struct _LogProtoFileWriter
 {
   LogProtoClient super;
+  SignalSlotConnector *signal_slot_connector;
   guchar *partial;
   gsize partial_len, partial_pos;
   gint partial_messages;
@@ -134,6 +135,10 @@ log_proto_file_writer_flush(LogProtoClient *s)
   self->buf_count = 0;
   self->sum_len = 0;
 
+  FileFlushSignalData signal_data = {};
+
+  EMIT(self->signal_slot_connector, signal_file_flush, &signal_data);
+
   return LPS_SUCCESS;
 
 write_error:
@@ -147,7 +152,6 @@ write_error:
     }
 
   return LPS_SUCCESS;
-
 }
 
 /*
@@ -218,7 +222,8 @@ log_proto_file_writer_prepare(LogProtoClient *s, gint *fd, GIOCondition *cond, g
 }
 
 LogProtoClient *
-log_proto_file_writer_new(LogTransport *transport, const LogProtoClientOptions *options, gint flush_lines, gint fsync_)
+log_proto_file_writer_new(LogTransport *transport, const LogProtoClientOptions *options, gint flush_lines, gint fsync_,
+                          SignalSlotConnector *connector)
 {
   if (flush_lines == 0)
     /* the flush-lines option has not been specified, use a default value */
@@ -233,7 +238,11 @@ log_proto_file_writer_new(LogTransport *transport, const LogProtoClientOptions *
   LogProtoFileWriter *self = (LogProtoFileWriter *)g_malloc0(sizeof(LogProtoFileWriter) + sizeof(
       struct iovec)*flush_lines);
 
+
+
   log_proto_client_init(&self->super, transport, options);
+
+  self->signal_slot_connector = connector;
   self->fd = transport->fd;
   self->buf_size = flush_lines;
   self->fsync = fsync_;
