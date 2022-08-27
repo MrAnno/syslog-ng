@@ -25,11 +25,39 @@
 #define FILE_ROTATION_H_INCLUDED
 
 #include "syslog-ng.h"
+#include "driver.h"
+#include "signal-slot-connector/signal-slot-connector.h"
 
 typedef struct _FileRotationPlugin FileRotationPlugin;
+typedef struct _FileRotationResponseData FileRotationResponseData;
+
+typedef enum
+{
+  FILE_ROTATION_SUCCESS,
+  FILE_ROTATION_FAILURE,
+} FileRotationResult;
+
+struct _FileRotationPlugin
+{
+  LogDriverPlugin super;
+  SignalSlotConnector *ssc;
+  gchar *interval;
+  gsize size;
+  gchar *filename;
+};
+
+struct _FileRotationResponseData
+{
+  FileRotationResult result;
+  GString *filename;
+  gint64 last_rotation;
+  gint64 last_size_check;
+  gint64 last_interval_check;
+};
 
 FileRotationPlugin *file_rotation_new(void);
 
 void file_rotation_set_size(FileRotationPlugin *self, gsize size);
+void file_rotation_set_interval(FileRotationPlugin *self, gchar *interval);
 
 #endif
