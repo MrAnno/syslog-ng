@@ -391,6 +391,13 @@ transport_mapper_network_apply_transport(TransportMapper *s, GlobalConfig *cfg)
       self->super.sock_proto = IPPROTO_TCP;
       self->require_tls = TRUE;
     }
+  else if (strcasecmp(transport, "binary-test-tls") == 0)
+    {
+      self->super.logproto = "binary-test";
+      self->super.sock_type = SOCK_STREAM;
+      self->super.sock_proto = IPPROTO_TCP;
+      self->require_tls = TRUE;
+    }
   else
     {
       self->super.logproto = self->super.transport;
