@@ -23,6 +23,7 @@
  */
 
 #include "logreader.h"
+#include "syslog-ng.h"
 #include "stats/stats-cluster-single.h"
 #include "mainloop-call.h"
 #include "ack-tracker/ack_tracker.h"
@@ -30,6 +31,7 @@
 
 static void log_reader_io_handle_in(gpointer s);
 static gboolean log_reader_fetch_log(LogReader *self);
+static gint log_reader_fetch_structured_log(LogReader *self);
 static void log_reader_update_watches(LogReader *self);
 
 /*****************************************************************************
@@ -358,7 +360,10 @@ log_reader_work_perform(void *s, GIOCondition cond)
 {
   LogReader *self = (LogReader *) s;
 
-  self->notify_code = log_reader_fetch_log(self);
+  if (G_UNLIKELY(log_proto_server_is_structured(self->proto)))
+    self->notify_code = log_reader_fetch_structured_log(self);
+  else
+    self->notify_code = log_reader_fetch_log(self);
 }
 
 static void
@@ -472,6 +477,28 @@ log_reader_handle_line(LogReader *self, const guchar *line, gint length, LogTran
   return log_source_free_to_send(&self->super);
 }
 
+static gboolean
+log_reader_handle_message(LogReader *self, LogMessage *msg, LogTransportAuxData *aux)
+{
+  msg_debug("Incoming log entry",
+            evt_tag_str("line", log_msg_get_value(msg, LM_V_MESSAGE, NULL)));
+
+  if (aux)
+    {
+      log_msg_set_saddr(msg, aux->peer_addr ? : self->peer_addr);
+      log_msg_set_daddr(msg, aux->local_addr ? : self->local_addr);
+      msg->proto = aux->proto;
+    }
+
+  log_msg_refcache_start_producer(msg);
+
+  log_transport_aux_data_foreach(aux, _add_aux_nvpair, msg);
+
+  log_source_post(&self->super, msg);
+  log_msg_refcache_stop();
+  return log_source_free_to_send(&self->super);
+}
+
 /* returns: notify_code (NC_XXXX) or 0 for success */
 static gint
 log_reader_fetch_log(LogReader *self)
@@ -543,6 +570,58 @@ log_reader_fetch_log(LogReader *self)
               break;
             }
         }
+    }
+  log_transport_aux_data_destroy(aux);
+
+  if (msg_count == self->options->fetch_limit)
+    self->immediate_check = TRUE;
+  return 0;
+}
+
+static gint
+log_reader_fetch_structured_log(LogReader *self)
+{
+  gint msg_count = 0;
+  LogTransportAuxData aux_storage, *aux = &aux_storage;
+
+  if ((self->options->flags & LR_IGNORE_AUX_DATA))
+    aux = NULL;
+
+  log_transport_aux_data_init(aux);
+  if (log_proto_server_handshake_in_progress(self->proto))
+    {
+      return log_reader_process_handshake(self);
+    }
+
+  while (msg_count < self->options->fetch_limit && !main_loop_worker_job_quit())
+    {
+      LogMessage *msg = NULL;
+
+      log_transport_aux_data_reinit(aux);
+      Bookmark *bookmark = ack_tracker_request_bookmark(self->super.ack_tracker);
+      LogProtoStatus status = log_proto_server_fetch_structured(self->proto, &msg, aux, bookmark);
+      switch (status)
+        {
+        case LPS_EOF:
+          log_transport_aux_data_destroy(aux);
+          return NC_CLOSE;
+        case LPS_ERROR:
+          log_transport_aux_data_destroy(aux);
+          return NC_READ_ERROR;
+        case LPS_SUCCESS:
+          break;
+        case LPS_AGAIN:
+          break;
+        default:
+          g_assert_not_reached();
+          break;
+        }
+
+      if (!msg)
+        break;
+
+      if (!log_reader_handle_message(self, msg, aux))
+        break;
     }
   log_transport_aux_data_destroy(aux);
 
