@@ -28,6 +28,7 @@
 #include "logproto-indented-multiline-server.h"
 #include "logproto-framed-client.h"
 #include "logproto-framed-server.h"
+#include "logproto-binary-test-server.h"
 #include "plugin.h"
 #include "plugin-types.h"
 
@@ -44,6 +45,7 @@ DEFINE_LOG_PROTO_SERVER(log_proto_proxied_text_tls_passthrough, .use_multitransp
 DEFINE_LOG_PROTO_SERVER(log_proto_indented_multiline);
 DEFINE_LOG_PROTO_CLIENT(log_proto_framed);
 DEFINE_LOG_PROTO_SERVER(log_proto_framed);
+DEFINE_LOG_PROTO_SERVER(log_proto_binary_test);
 
 static Plugin framed_server_plugins[] =
 {
@@ -58,6 +60,7 @@ static Plugin framed_server_plugins[] =
   LOG_PROTO_SERVER_PLUGIN(log_proto_indented_multiline, "indented-multiline"),
   LOG_PROTO_CLIENT_PLUGIN(log_proto_framed, "framed"),
   LOG_PROTO_SERVER_PLUGIN(log_proto_framed, "framed"),
+  LOG_PROTO_SERVER_PLUGIN(log_proto_binary_test, "binary-test"),
 };
 
 void

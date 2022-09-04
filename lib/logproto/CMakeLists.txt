@@ -14,6 +14,7 @@ set(LOGPROTO_HEADERS
     logproto/logproto-text-client.h
     logproto/logproto-text-server.h
     logproto/logproto-proxied-text-server.h
+    logproto/logproto-binary-test-server.h
     PARENT_SCOPE)
 
 set(LOGPROTO_SOURCES
@@ -31,6 +32,7 @@ set(LOGPROTO_SOURCES
     logproto/logproto-text-client.c
     logproto/logproto-text-server.c
     logproto/logproto-proxied-text-server.c
+    logproto/logproto-binary-test-server.c
     PARENT_SCOPE)
 
 add_test_subdirectory(tests)
