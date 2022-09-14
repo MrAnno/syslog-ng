@@ -34,7 +34,7 @@ struct _FileFlushSignalData
   gchar *filename;
   gchar *persist_name;
   gsize size;
-  gboolean *reopen;
+  FileReopener *reopener;
   gchar *last_rotation_time;
 };
 
