@@ -580,7 +580,6 @@ case "$ostype" in
 		;;
 	Darwin)
 		MODULE_LDFLAGS="-avoid-version -dylib"
-		LDFLAGS="$LDFLAGS -Wl,-flat_namespace"
 		CFLAGS="$CFLAGS -D__APPLE_USE_RFC_3542"
     ;;
 	OSF1)
