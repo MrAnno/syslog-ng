@@ -86,6 +86,7 @@ void snmpdest_dd_set_enc_algorithm(LogDriver *d, const gchar *enc_algo);
 void snmpdest_dd_set_enc_password(LogDriver *d, const gchar *epwd);
 void snmpdest_dd_set_transport(LogDriver *d, const gchar *transport);
 void snmpdest_dd_set_time_zone(LogDriver *s, const gchar *tzz);
+const gchar *snmpdest_dd_get_time_zone(LogDriver *s);
 
 gboolean snmpdest_check_required_params(LogDriver *, gchar *err_msg);
 gchar *snmpdest_dd_get_version(LogDriver *);

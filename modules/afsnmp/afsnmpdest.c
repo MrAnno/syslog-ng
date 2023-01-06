@@ -318,6 +318,14 @@ void snmpdest_dd_set_time_zone(LogDriver *s, const gchar *tzz)
 
   g_free(self->template_options.time_zone[0]);
   self->template_options.time_zone[0] = g_strdup(tzz);
+  printf("----%p\n", self->template_options.time_zone[0]);
+}
+
+const gchar *snmpdest_dd_get_time_zone(LogDriver *s)
+{
+  SNMPDestDriver *self = (SNMPDestDriver *) s;
+
+  return self->template_options.time_zone[0];
 }
 
 int snmp_input(int operation, netsnmp_session *session, int reqid, netsnmp_pdu *pdu, void *magic)

@@ -44,6 +44,9 @@ Test(test_snmp_dest, set_time_zonee)
   SNMPDestDriver *snmp = (SNMPDestDriver *) driver;
 
   snmpdest_dd_set_time_zone(driver, "time_zone");
+  printf("%p\n", snmp->template_options.time_zone[0]);
+  printf("----%p\n", snmpdest_dd_get_time_zone(driver));
+  cr_assert_str_eq(snmpdest_dd_get_time_zone(driver), "time_zone");
   cr_assert_str_eq(snmp->template_options.time_zone[0], "time_zone");
 
 
