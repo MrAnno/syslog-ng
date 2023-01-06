@@ -312,12 +312,12 @@ void snmpdest_dd_set_transport(LogDriver *d, const gchar *transport)
   self->transport = g_strdup(transport);
 }
 
-void snmpdest_dd_set_time_zone(LogDriver *s, const gchar *time_zone)
+void snmpdest_dd_set_time_zone(LogDriver *s, const gchar *tzz)
 {
   SNMPDestDriver *self = (SNMPDestDriver *) s;
 
-  g_free(self->template_options.time_zone[LTZ_LOCAL]);
-  self->template_options.time_zone[LTZ_LOCAL] = g_strdup(time_zone);
+  g_free(self->template_options.time_zone[0]);
+  self->template_options.time_zone[0] = g_strdup(tzz);
 }
 
 int snmp_input(int operation, netsnmp_session *session, int reqid, netsnmp_pdu *pdu, void *magic)
@@ -713,7 +713,7 @@ snmpdest_worker_thread_init(LogThreadedDestDriver *d)
       g_string_append_printf(self->host_port, "%s:%d", self->host, self->port);
     }
 
-  gchar *tz = self->template_options.time_zone[LTZ_LOCAL];
+  gchar *tz = self->template_options.time_zone[0];
   gchar *time_zone = cfg->template_options.time_zone[LTZ_SEND];
 
   /* inherit the global set_time_zone if the local one hasn't been set */
@@ -742,12 +742,12 @@ snmpdest_dd_new(GlobalConfig *cfg)
   self->super.format_stats_instance = snmpdest_dd_format_stats_instance;
   self->super.stats_source = stats_register_type("snmp");
 
-  if (snmp_dest_counter == 0)
-    {
-      /* initialize the SNMP only once */
-      init_snmp(s_snmp_name);
-      SOCK_STARTUP;
-    }
+  // if (snmp_dest_counter == 0)
+  //   {
+  //     /* initialize the SNMP only once */
+  //     init_snmp(s_snmp_name);
+  //     SOCK_STARTUP;
+  //   }
   ++snmp_dest_counter;
 
   /* default values */
@@ -760,7 +760,7 @@ snmpdest_dd_new(GlobalConfig *cfg)
 
   log_template_options_defaults(&self->template_options);
 
-  return (LogDriver *)self;
+  return &self->super.super.super;
 }
 
 gboolean snmpdest_check_required_params(LogDriver *d, gchar *err_msg)
