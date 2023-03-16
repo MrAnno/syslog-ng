@@ -62,7 +62,7 @@ _transport_mapper_inet_apply_transport_method(_TransportMapper *s, GlobalConfig 
 static LogTransport *
 _construct_multitransport_with_tls_factory(_TransportMapperInet *self, gint fd)
 {
-  TransportFactory *default_factory = transport_factory_tls_new(self->tls_context, self->tls_verifier);
+  TransportFactory *default_factory = transport_factory_tls_new(self->tls_context, self->tls_verifier, 0);
   return multitransport_new(default_factory, fd);
 }
 
@@ -94,7 +94,7 @@ _construct_multitransport_with_plain_and_tls_factories(_TransportMapperInet *sel
 {
   LogTransport *transport = _construct_multitransport_with_plain_tcp_factory(self, fd);
 
-  TransportFactory *tls_factory = transport_factory_tls_new(self->tls_context, self->tls_verifier);
+  TransportFactory *tls_factory = transport_factory_tls_new(self->tls_context, self->tls_verifier, 0);
   multitransport_add_factory((MultiTransport *)transport, tls_factory);
 
   return transport;
@@ -323,6 +323,6 @@ _transport_mapper_network_new(void)
   _TransportMapperInet *self = _transport_mapper_inet_new_instance("tcp");
 
   self->super.apply_transport = _transport_mapper_network_apply_transport;
-  self->super.stats_source = SCS_NETWORK;
+  self->super.stats_source = stats_register_type("network");;
   return &self->super;
 }

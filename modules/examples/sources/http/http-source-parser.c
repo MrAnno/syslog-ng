@@ -38,7 +38,7 @@ static CfgLexerKeyword http_source_keywords[] =
 
 CfgParser http_source_parser =
 {
-#if ENABLE_DEBUG
+#if SYSLOG_NG_ENABLE_DEBUG
   .debug_flag = &http_source_debug,
 #endif
   .name = "http_source",
@@ -47,5 +47,4 @@ CfgParser http_source_parser =
   .cleanup = (void (*)(gpointer)) log_pipe_unref,
 };
 
-CFG_PARSER_IMPLEMENT_LEXER_BINDING(http_source_, LogDriver **)
-
+CFG_PARSER_IMPLEMENT_LEXER_BINDING(http_source_, HTTP_SOURCE_, LogDriver **)

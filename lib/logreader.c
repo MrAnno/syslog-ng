@@ -484,15 +484,15 @@ log_reader_handle_message(LogReader *self, LogMessage *msg, LogTransportAuxData 
 
   if (aux)
     {
-      log_msg_set_saddr(m, aux->peer_addr ? : self->peer_addr);
-      log_msg_set_daddr(m, aux->local_addr ? : self->local_addr);
-      m->proto = aux->proto;
+      log_msg_set_saddr(msg, aux->peer_addr ? : self->peer_addr);
+      log_msg_set_daddr(msg, aux->local_addr ? : self->local_addr);
+      msg->proto = aux->proto;
     }
-  log_msg_refcache_start_producer(m);
+  log_msg_refcache_start_producer(msg);
 
-  log_transport_aux_data_foreach(aux, _add_aux_nvpair, m);
+  log_transport_aux_data_foreach(aux, _add_aux_nvpair, msg);
 
-  log_source_post(&self->super, m);
+  log_source_post(&self->super, msg);
   log_msg_refcache_stop();
   return log_source_free_to_send(&self->super);
 }
@@ -602,16 +602,16 @@ log_reader_fetch_structured_log(LogReader *self)
       LogProtoStatus status;
       LogMessage *msg = NULL;
 
-      log_transport_aux_data_reinit(&aux);
+      log_transport_aux_data_reinit(aux);
       bookmark = ack_tracker_request_bookmark(self->super.ack_tracker);
-      status = log_proto_server_fetch_structured(self->proto, &msg, &aux, bookmark);
+      status = log_proto_server_fetch_structured(self->proto, &msg, aux, bookmark);
       switch (status)
         {
         case LPS_EOF:
-          g_sockaddr_unref(aux.peer_addr);
+          log_transport_aux_data_destroy(aux);
           return NC_CLOSE;
         case LPS_ERROR:
-          g_sockaddr_unref(aux.peer_addr);
+          log_transport_aux_data_destroy(aux);
           return NC_READ_ERROR;
         case LPS_SUCCESS:
           break;
@@ -627,10 +627,10 @@ log_reader_fetch_structured_log(LogReader *self)
 
       msg_count++;
 
-      if (!log_reader_handle_message(self, msg, &aux))
+      if (!log_reader_handle_message(self, msg, aux))
         break;
     }
-  log_transport_aux_data_destroy(&aux);
+  log_transport_aux_data_destroy(aux);
 
   if (msg_count == self->options->fetch_limit)
     self->immediate_check = TRUE;

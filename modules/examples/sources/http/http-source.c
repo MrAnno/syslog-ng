@@ -27,6 +27,7 @@
 #include "http/source/transport-mapper-inet.h"
 #include "http/source/socket-options-inet.h"
 #include "logmsg/logmsg.h"
+#include "msg-format.h"
 
 #include <string.h>
 #include <strings.h>
@@ -39,7 +40,7 @@ GQueue *
 _extract_single_message(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
-  MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
+  MsgFormatOptions *parse_options = &self->super.reader_options.parse_options;
 
   const GByteArray *body = http_message_get_body(&http_request->super);
   if (!body || !body->data)
@@ -48,7 +49,9 @@ _extract_single_message(HTTPRequest *http_request, HTTPSourceConnection *connect
   GQueue *messages = g_queue_new();
 
   const gchar *message = (const gchar *) body->data;
-  LogMessage *msg = log_msg_new(message, body->len, connection->peer_addr, parse_option);
+  LogMessage *msg = msg_format_construct_message(parse_options, (guchar *) message, body->len);
+  msg_format_parse_into(parse_options, msg, (guchar *) message, body->len);
+
   g_queue_push_tail(messages, msg);
 
   return messages;
@@ -58,7 +61,7 @@ GQueue *
 _extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connection)
 {
   EHTTPSourceDriver *self = (EHTTPSourceDriver *) connection->owner;
-  MsgFormatOptions *parse_option = &self->super.reader_options.parse_options;
+  MsgFormatOptions *parse_options = &self->super.reader_options.parse_options;
 
   http_request_null_terminate_body(http_request);
   const GByteArray *body = http_message_get_body(&http_request->super);
@@ -73,7 +76,8 @@ _extract_messages_text(HTTPRequest *http_request, HTTPSourceConnection *connecti
 
   while (line)
     {
-      LogMessage *msg = log_msg_new(line, strlen(line), connection->peer_addr, parse_option);
+      LogMessage *msg = msg_format_construct_message(parse_options, (guchar *) line, strlen(line));
+      msg_format_parse_into(parse_options, msg, (guchar *) line, strlen(line));
       g_queue_push_tail(messages, msg);
 
       line = strtok_r(NULL, "\n", &state);
@@ -113,7 +117,8 @@ _extract_from_json(struct json_object *obj, GSockAddr *saddr, MsgFormatOptions *
       struct json_object *message_obj = json_object_array_get_idx(messages_obj, i);
       const gchar *message = json_object_get_string(message_obj);
 
-      LogMessage *msg = log_msg_new(message, strlen(message), saddr, parse_options);
+      LogMessage *msg = msg_format_construct_message(parse_options, (guchar *) message, strlen(message));
+      msg_format_parse_into(parse_options, msg, (guchar *) message, strlen(message));
       g_queue_push_tail(messages, msg);
     }
 

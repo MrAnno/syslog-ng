@@ -2,7 +2,7 @@
 #define HTTP_TRANSPORT_MAPPER_INET_H_INCLUDED
 
 #include "http/source/transport-mapper.h"
-#include "tlscontext.h"
+#include "transport/tls-context.h"
 
 typedef struct _TTransportMapperInet
 {

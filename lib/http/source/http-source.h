@@ -30,7 +30,7 @@
 #include "http/http-message.h"
 #include "driver.h"
 #include "logreader.h"
-#include "tlscontext.h"
+#include "transport/tls-context.h"
 #include "gsocket.h"
 
 #include <iv.h>

@@ -21,21 +21,21 @@
  *
  */
 
-%code top {
+%code requires {
+
 #include "http-source-parser.h"
 
 }
 
-
 %code {
 
+#include "cfg-grammar-internal.h"
 #include "syslog-ng.h"
 #include "cfg-parser.h"
 #include "http-source.h"
 #include "messages.h"
 #include "syslog-names.h"
 #include "plugin.h"
-#include "cfg-grammar.h"
 #include "service-management.h"
 
 static void
@@ -51,20 +51,16 @@ http_grammar_set_source_driver(HTTPSourceDriver *sd)
 
 }
 
-%name-prefix "http_source_"
-
-/* this parameter is needed in order to instruct bison to use a complete
- * argument list for yylex/yyerror */
-
+%define api.prefix {http_source_}
 %lex-param {CfgLexer *lexer}
 %parse-param {CfgLexer *lexer}
 %parse-param {LogDriver **instance}
 %parse-param {gpointer arg}
 
+/* INCLUDE_DECLS */
+
 %token KW_HTTP
 %token KW_MODE
-
-/* INCLUDE_DECLS */
 
 %%
 
@@ -77,7 +73,7 @@ start
     }
     '(' source_http_options ')'
     {
-      if (yychar != YYEMPTY)
+      if (yychar != HTTP_SOURCE_EMPTY)
         cfg_lexer_unput_token(lexer, &yylval);
       YYACCEPT;
     }
