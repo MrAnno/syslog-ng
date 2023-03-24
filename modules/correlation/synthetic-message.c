@@ -112,7 +112,7 @@ synthetic_message_add_value_template_string(SyntheticMessage *self, GlobalConfig
 
   value_template = log_template_new(cfg, NULL);
 
-  if (!cfg_is_typing_feature_enabled(cfg))
+  if (cfg_is_config_version_older(cfg, VERSION_VALUE_4_0))
     {
       if (strchr(value, '(') != NULL)
         {
