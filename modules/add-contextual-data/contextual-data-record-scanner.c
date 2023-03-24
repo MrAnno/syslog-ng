@@ -114,7 +114,7 @@ _fetch_value(ContextualDataRecordScanner *self, ContextualDataRecord *record)
       log_template_compile_literal_string(record->value, value_template);
       success = TRUE;
     }
-  else if (!cfg_is_typing_feature_enabled(self->cfg))
+  else if (cfg_is_config_version_older(self->cfg, VERSION_VALUE_4_0))
     {
       if (strchr(value_template, '(') != NULL)
         {
