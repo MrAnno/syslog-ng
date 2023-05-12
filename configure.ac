@@ -303,6 +303,10 @@ AC_ARG_WITH(libpaho-mqtt,
              AC_HELP_STRING([--with-libpaho-mqtt=DIR],
                             [use libpaho-mqtt library from (prefix) directory DIR]),,)
 
+AC_ARG_ENABLE(otel,
+              [  --enable-otel           Enable OpenTelemetry support (default: auto)]
+              ,,enable_otel="auto")
+
 AC_ARG_ENABLE(cpp,
               [  --enable-cpp           Enable C++ support (default: auto)]
               ,,enable_cpp="auto")
@@ -397,7 +401,7 @@ if test "x$enable_all_modules" != "xauto"; then
 
    MODULES="spoof_source sun_streams sql pacct mongodb json amqp stomp \
             redis systemd geoip2 riemann ipv6 smtp native python python_modules java java_modules \
-            http afsnmp kafka mqtt"
+            http afsnmp kafka mqtt otel"
    for mod in ${MODULES}; do
        modstate=$(eval echo \$enable_${mod})
        if test "x$modstate" = "xauto"; then
@@ -1409,6 +1413,25 @@ if test "x$enable_mqtt" = "xyes" || test "x$enable_mqtt" = "xauto"; then
 fi
 
 dnl ***************************************************************************
+dnl OpenTelemetry headers/libraries
+dnl ***************************************************************************
+
+# C++
+if ! test "x$enable_otel" = "xno"; then
+    if test "x$enable_cpp" = "xno"; then
+        if test "x$enable_otel" = "xyes"; then
+            AC_MSG_ERROR(C++ support is mandatory when the OpenTelemetry module is enabled.)
+        else
+            enable_otel=no
+        fi
+    fi
+fi
+
+if ! test "x$enable_otel" = "xno"; then
+    enable_otel=yes
+fi
+
+dnl ***************************************************************************
 dnl libcurl headers/libraries
 dnl ***************************************************************************
 if test "x$enable_http" != "xno" && test "x$with_libcurl" != "xno"; then
@@ -2048,6 +2071,7 @@ AM_CONDITIONAL(ENABLE_MONGODB, [test "$enable_mongodb" = "yes"])
 AM_CONDITIONAL(ENABLE_SMTP, [test "$enable_smtp" = "yes"])
 AM_CONDITIONAL(ENABLE_MQTT, [test "$enable_mqtt" = "yes"])
 AM_CONDITIONAL(ENABLE_CPP, [test "$enable_cpp" = "yes"])
+AM_CONDITIONAL(ENABLE_OTEL, [test "$enable_otel" = "yes"])
 AM_CONDITIONAL(ENABLE_HTTP, [test "$enable_http" = "yes"])
 AM_CONDITIONAL(ENABLE_AMQP, [test "$enable_amqp" = "yes"])
 AM_CONDITIONAL(ENABLE_STOMP, [test "$enable_stomp" = "yes"])
@@ -2207,6 +2231,7 @@ echo "  HTTP support (module)       : ${enable_http:=no}"
 echo "  AMQP destination (module)   : ${enable_amqp:=no}"
 echo "  STOMP destination (module)  : ${enable_stomp:=no}"
 echo "  MQTT (module)               : ${enable_mqtt:=no}"
+echo "  OpenTelemetry (module)      : ${enable_otel:=no}"
 echo "  GEOIP2 support (module)     : ${enable_geoip2:=no}"
 echo "  Redis support (module)      : ${enable_redis:=no}"
 echo "  Kafka support (module)      : ${enable_kafka:=no}"
