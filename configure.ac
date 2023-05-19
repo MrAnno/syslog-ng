@@ -60,6 +60,8 @@ JAVA_MIN_VERSION="1.8"
 GRADLE_MIN_VERSION="3.4"
 HIREDIS_MIN_VERSION="0.11.0"
 CRITERION_MIN_VERSION="2.2.1"
+PROTOBUF_MIN_VERSION="3.12.0"
+GRPCPP_MIN_VERSION="1.16.1"
 
 dnl ***************************************************************************
 dnl Initial setup
@@ -306,6 +308,14 @@ AC_ARG_WITH(libpaho-mqtt,
 AC_ARG_ENABLE(otel,
               [  --enable-otel           Enable OpenTelemetry support (default: auto)]
               ,,enable_otel="auto")
+
+AC_ARG_WITH(protoc,
+            AC_HELP_STRING([--with-protoc=PATH],
+                           [use protoc binary at PATH]),,)
+
+AC_ARG_WITH(protoc_gen_grpc_cpp_plugin,
+            AC_HELP_STRING([--with-protoc-gen-grpc-cpp-plugin=PATH],
+                           [use protoc-gen-grpc-cpp plugin at PATH]),,)
 
 AC_ARG_ENABLE(cpp,
               [  --enable-cpp           Enable C++ support (default: auto)]
@@ -1421,6 +1431,77 @@ if ! test "x$enable_otel" = "xno"; then
     if test "x$enable_cpp" = "xno"; then
         if test "x$enable_otel" = "xyes"; then
             AC_MSG_ERROR(C++ support is mandatory when the OpenTelemetry module is enabled.)
+        else
+            enable_otel=no
+        fi
+    fi
+fi
+
+# ProtoBuf libraries
+if ! test "x$enable_otel" = "xno"; then
+    PKG_CHECK_MODULES(PROTOBUF, protobuf >= $PROTOBUF_MIN_VERSION, protobuf_found="yes", protobuf_found="no")
+    if test "$protobuf_found" = "no"; then
+        if test "x$enable_otel" = "xyes"; then
+            AC_MSG_ERROR(ProtoBuf libraries not found.)
+        else
+            enable_otel=no
+        fi
+    fi
+fi
+
+# ProtoC compiler
+if ! test "x$enable_otel" = "xno"; then
+    if ! test "x$with_protoc" = "x"; then
+        PROTOC=$with_protoc
+    else
+        AC_PATH_PROG([PROTOC], [protoc])
+        if test "x$PROTOC" = "x"; then
+            if test "x$enable_otel" = "xyes"; then
+                AC_MSG_ERROR(ProtoBuf compiler "protoc" not found.)
+            else
+                enable_otel=no
+            fi
+        else
+            PROTOC_VERSION=`${PROTOC} --version | cut -f2 -d' '`
+            PROTOC_VERSION_MAJOR=`echo $PROTOC_VERSION | cut -f1 -d'.'`
+            PROTOC_VERSION_MINOR=`echo $PROTOC_VERSION | cut -f2 -d'.'`
+            PROTOC_VERSION_PATCH=`echo $PROTOC_VERSION | cut -f3 -d'.'`
+        fi
+    fi
+fi
+
+# GRPC CPP plugin for ProtoC compiler
+if ! test "x$enable_otel" = "xno"; then
+    if ! test "x$with_protoc_gen_grpc_cpp_plugin" = "x"; then
+        PROTOC_GEN_GRPC_CPP_PLUGIN=$with_protoc_gen_grpc_cpp_plugin
+    else
+        AC_PATH_PROG([PROTOC_GEN_GRPC_CPP_PLUGIN], [grpc_cpp_plugin])
+        if test "x$PROTOC_GEN_GRPC_CPP_PLUGIN" = "x"; then
+            if test "x$enable_otel" = "xyes"; then
+                AC_MSG_ERROR(GRPC CPP plugin for ProtoC compiler not found.)
+            else
+                enable_otel=no
+            fi
+        fi
+    fi
+
+    if ! test "x$PROTOC_GEN_GRPC_CPP_PLUGIN" = "x"; then
+        PROTOC_GEN_GRPC_CPP_PLUGIN_FLAGS='--plugin=protoc-gen-grpc-cpp="${PROTOC_GEN_GRPC_CPP_PLUGIN}"'
+
+        if test ${PROTOC_VERSION_MAJOR} -eq 3 -a ${PROTOC_VERSION_MINOR} -lt 15; then
+            PROTOC_GEN_GRPC_CPP_PLUGIN_FLAGS="${PROTOC_GEN_GRPC_CPP_PLUGIN_FLAGS} --experimental_allow_proto3_optional"
+        fi
+
+        AC_SUBST(PROTOC_GEN_GRPC_CPP_PLUGIN_FLAGS)
+    fi
+fi
+
+# GRPC++ libraries
+if ! test "x$enable_otel" = "xno"; then
+    PKG_CHECK_MODULES(GRPCPP, grpc++ >= $GRPCPP_MIN_VERSION, grpcpp_found="yes", grpcpp_found="no")
+    if test "$grpcpp_found" = "no"; then
+        if test "x$enable_otel" = "xyes"; then
+            AC_MSG_ERROR(GRPC++ libraries not found.)
         else
             enable_otel=no
         fi
