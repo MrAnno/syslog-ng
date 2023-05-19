@@ -60,6 +60,8 @@ JAVA_MIN_VERSION="1.8"
 GRADLE_MIN_VERSION="3.4"
 HIREDIS_MIN_VERSION="0.11.0"
 CRITERION_MIN_VERSION="2.2.1"
+PROTOBUF_MIN_VERSION="3.12.4"
+GRPCPP_MIN_VERSION="1.30.2"
 
 dnl ***************************************************************************
 dnl Initial setup
@@ -1413,6 +1415,46 @@ if ! test "x$enable_otel" = "xno"; then
     if test "x$enable_cpp" = "xno"; then
         if test "x$enable_otel" = "xyes"; then
             AC_MSG_ERROR(C++ support is mandatory when the OpenTelemetry module is enabled.)
+        else
+            enable_otel=no
+        fi
+    fi
+fi
+
+# ProtoC compiler
+if ! test "x$enable_otel" = "xno"; then
+    if ! test "x$with_protoc" = "x"; then
+        PROTOC=$with_protoc
+    else
+        AC_CHECK_PROG([PROTOC], [protoc], [protoc])
+        if test "x$PROTOC" = "x"; then
+            if test "x$enable_otel" = "xyes"; then
+                AC_MSG_ERROR(ProtoBuf compiler "protoc" not found.)
+            else
+                enable_otel=no
+            fi
+        fi
+    fi
+fi
+
+# ProtoBuf libraries
+if ! test "x$enable_otel" = "xno"; then
+    PKG_CHECK_MODULES(PROTOBUF, protobuf >= $PROTOBUF_MIN_VERSION, protobuf_found="yes", protobuf_found="no")
+    if test "$protobuf_found" = "no"; then
+        if test "x$enable_otel" = "xyes"; then
+            AC_MSG_ERROR(ProtoBuf libraries not found.)
+        else
+            enable_otel=no
+        fi
+    fi
+fi
+
+# GRPC++ libraries
+if ! test "x$enable_otel" = "xno"; then
+    PKG_CHECK_MODULES(GRPCPP, grpc++ >= $GRPCPP_MIN_VERSION, grpcpp_found="yes", grpcpp_found="no")
+    if test "$grpcpp_found" = "no"; then
+        if test "x$enable_otel" = "xyes"; then
+            AC_MSG_ERROR(GRPC++ libraries not found.)
         else
             enable_otel=no
         fi
