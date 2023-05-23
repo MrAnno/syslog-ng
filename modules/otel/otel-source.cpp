@@ -63,7 +63,8 @@ OtelSourceDriverCpp::format_stats_instance()
     g_snprintf(persist_name, sizeof(persist_name), "opentelemetry,%s",
                super->super.super.super.super.persist_name);
   else
-    g_snprintf(persist_name, sizeof(persist_name), "opentelemetry");
+    g_snprintf(persist_name, sizeof(persist_name), "opentelemetry,%lu",
+               port);
 
   return persist_name;
 }
@@ -78,6 +79,14 @@ gboolean
 OtelSourceDriverCpp::deinit()
 {
   return log_threaded_source_driver_deinit_method(&super->super.super.super.super);
+}
+
+/* Config setters */
+
+void
+otel_sd_set_port(LogDriver *s, guint64 port)
+{
+  get_OtelSourceDriverCpp(s)->port = port;
 }
 
 /* C Wrappers */
