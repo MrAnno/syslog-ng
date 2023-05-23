@@ -41,7 +41,9 @@ modules_otel_libotel_cpp_la_SOURCES = \
   $(OTEL_PROTO_BUILT_SOURCES) \
   modules/otel/otel-source.h \
   modules/otel/otel-source.hpp \
-  modules/otel/otel-source.cpp
+  modules/otel/otel-source.cpp \
+  modules/otel/otel-source-services.hpp \
+  modules/otel/otel-source-services.cpp
 
 modules_otel_libotel_cpp_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \

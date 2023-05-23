@@ -20,10 +20,13 @@
  *
  */
 
-#include <unistd.h>
+#include <string>
+
+#include <grpcpp/server_builder.h>
 
 #include "otel-source.h"
 #include "otel-source.hpp"
+#include "otel-source-services.hpp"
 
 #define get_OtelSourceDriverCpp(s) (((OtelSourceDriver *) s)->cpp)
 
@@ -37,21 +40,27 @@ OtelSourceDriverCpp::OtelSourceDriverCpp(OtelSourceDriver *s)
 void
 OtelSourceDriverCpp::run()
 {
-  while (!g_atomic_counter_get(&exit_requested))
-    {
-      LogMessage *msg = log_msg_new_empty();
-      log_msg_set_value(msg, LM_V_MESSAGE, "Hello from OpenTelemetry C++ source", -1);
+  std::string address = std::string("[::]:").append(std::to_string(port));
 
-      log_threaded_source_blocking_post(&super->super, msg);
+  grpc::ServerBuilder builder;
+  builder.AddListeningPort(address, grpc::InsecureServerCredentials());
 
-      usleep(1000000);
-    }
+  OtelSourceTraceService trace_service(*this);
+  OtelSourceLogsService logs_service(*this);
+  OtelSourceMetricsService metrics_service(*this);
+
+  builder.RegisterService(&trace_service);
+  builder.RegisterService(&logs_service);
+  builder.RegisterService(&metrics_service);
+
+  server = builder.BuildAndStart();
+  server->Wait();
 }
 
 void
 OtelSourceDriverCpp::request_exit()
 {
-  g_atomic_counter_set(&exit_requested, TRUE);
+  server->Shutdown();
 }
 
 const gchar *
