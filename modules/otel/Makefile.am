@@ -43,7 +43,8 @@ modules_otel_libotel_cpp_la_SOURCES = \
   modules/otel/otel-source.hpp \
   modules/otel/otel-source.cpp \
   modules/otel/otel-source-services.hpp \
-  modules/otel/otel-source-services.cpp
+  modules/otel/otel-source-services.cpp \
+  modules/otel/grpc-thread.cpp
 
 modules_otel_libotel_cpp_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
