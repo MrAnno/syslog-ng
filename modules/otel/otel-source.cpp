@@ -118,6 +118,13 @@ _format_stats_instance(LogThreadedSourceDriver *s)
   return get_OtelSourceDriverCpp(s)->format_stats_instance();
 }
 
+gboolean
+_pre_config_init(LogPipe *s)
+{
+  main_loop_worker_allocate_thread_space(24);
+  return TRUE;
+}
+
 static gboolean
 _init(LogPipe *s)
 {
@@ -148,6 +155,7 @@ otel_sd_new(GlobalConfig *cfg)
   s->super.super.super.super.init = _init;
   s->super.super.super.super.deinit = _deinit;
   s->super.super.super.super.free_fn = _free;
+  s->super.super.super.super.pre_config_init = _pre_config_init;
 
   s->super.format_stats_instance = _format_stats_instance;
   s->super.run = _run;

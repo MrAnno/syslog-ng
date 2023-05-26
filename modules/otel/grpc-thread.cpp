@@ -35,6 +35,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
+#include "compat/cpp-start.h"
+#include "mainloop-worker.h"
+#include "compat/cpp-end.h"
+
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
 namespace grpc_core {
@@ -161,6 +165,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     int pthread_create_err = pthread_create(
         &pthread_id_, &attr,
         [](void* v) -> void* {
+          /* TODO: do not hard-code: callback */
+          main_loop_worker_thread_start(MLW_THREADED_INPUT_WORKER);
+
           thd_arg arg = *static_cast<thd_arg*>(v);
           free(v);
           if (arg.name != nullptr) {
@@ -194,6 +201,11 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
           if (arg.tracked) {
             // Fork::DecThreadCount();
           }
+
+          /* TODO: call it periodically elsewhere */
+          main_loop_worker_run_gc();
+
+          main_loop_worker_thread_stop();
           return nullptr;
         },
         info);
