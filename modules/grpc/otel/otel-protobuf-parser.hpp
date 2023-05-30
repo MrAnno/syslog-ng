@@ -48,5 +48,6 @@ LogMessage *create_log_msg_with_metadata(const grpc::string &peer,
 
 void parse_LogRecord(LogMessage *msg, const LogRecord &log_record);
 void parse_Metric(LogMessage *msg, const Metric &metric);
+void parse_Span(LogMessage *msg, const Span &span);
 
 #endif
