@@ -67,6 +67,7 @@ OtelSourceLogsService::Export(grpc::ServerContext *context, const ExportLogsServ
             {
               LogMessage *msg = create_log_msg_with_metadata(context->peer(), resource, resource_logs_schema_url,
                                                              scope, scope_logs_schema_url);
+              parse_LogRecord(msg, log_record);
               log_msg_unref(msg);
             }
         }
