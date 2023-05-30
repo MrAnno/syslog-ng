@@ -47,5 +47,6 @@ LogMessage *create_log_msg_with_metadata(const grpc::string &peer,
                                          const InstrumentationScope &scope, const std::string &scope_schema_url);
 
 void parse_LogRecord(LogMessage *msg, const LogRecord &log_record);
+void parse_Metric(LogMessage *msg, const Metric &metric);
 
 #endif

@@ -94,6 +94,7 @@ OtelSourceMetricsService::Export(grpc::ServerContext *context, const ExportMetri
             {
               LogMessage *msg = create_log_msg_with_metadata(context->peer(), resource,
                                                              resource_logs_schema_url, scope, scope_logs_schema_url);
+              parse_Metric(msg, metric);
               log_msg_unref(msg);
             }
         }
