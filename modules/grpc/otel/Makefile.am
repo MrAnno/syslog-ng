@@ -105,3 +105,5 @@ EXTRA_DIST += \
   $(OTEL_PROTO_SRCDIR)
 
 .PHONY: modules/grpc/otel/ mod-otel
+
+include modules/grpc/otel/tests/Makefile.am
