@@ -10,7 +10,7 @@ jobs:
   general:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/syslog-ng/dbld-devshell:latest
+      image: alltilla/syslog-ng-devshell-with-grpc:latest
       options: --privileged --ulimit core=-1
 
     strategy:
@@ -153,7 +153,7 @@ jobs:
   distcheck:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/syslog-ng/dbld-devshell:latest
+      image: alltilla/syslog-ng-devshell-with-grpc:latest
       options: --security-opt seccomp=unconfined --ulimit core=-1
 
     steps:
@@ -198,7 +198,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/syslog-ng/dbld-devshell:latest
+      image: alltilla/syslog-ng-devshell-with-grpc:latest
 
     steps:
       - name: Checkout syslog-ng source
@@ -252,7 +252,7 @@ jobs:
   copyright-check:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/syslog-ng/dbld-devshell:latest
+      image: alltilla/syslog-ng-devshell-with-grpc:latest
       env:
         COPYRIGHTVERBOSITY: 1
 
@@ -276,7 +276,7 @@ jobs:
   commits-check:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/syslog-ng/dbld-devshell:latest
+      image: alltilla/syslog-ng-devshell-with-grpc:latest
 
     steps:
       - name: Checkout syslog-ng source

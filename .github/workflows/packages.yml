@@ -16,7 +16,9 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare docker image
-        run: ./dbld/rules cache-image-tarball
+        run: |
+          docker pull alltilla/syslog-ng-devshell-with-grpc:latest
+          docker tag alltilla/syslog-ng-devshell-with-grpc:latest ghcr.io/syslog-ng/dbld-devshell:latest
 
       - name: Create source tarball
         run: ./dbld/rules pkg-tarball
@@ -32,11 +34,4 @@ jobs:
     uses: ./.github/workflows/create-packages.yml
     with:
       source-tarball-artifact-name: source-tarball
-      dbld-image-mode: cache
-      distros: '[
-        "centos-7",
-        "debian-bullseye",
-        "debian-testing",
-        "fedora-37",
-        "ubuntu-jammy"
-      ]'
+      dbld-image-mode: build
