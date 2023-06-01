@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Attila Szakacs
+ * Copyright (c) 2023 László Várady
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -39,7 +40,7 @@ class OtelSourceTraceService final : public TraceService::Service
 public:
   OtelSourceTraceService(OtelSourceDriverCpp &driver_) : driver(driver_) {};
   grpc::Status Export(grpc::ServerContext *context, const ExportTraceServiceRequest *request,
-                      ExportTraceServiceResponse *response);
+                      ExportTraceServiceResponse *response) override;
 
 private:
   OtelSourceDriverCpp &driver;
@@ -50,7 +51,7 @@ class OtelSourceLogsService final : public LogsService::Service
 public:
   OtelSourceLogsService(OtelSourceDriverCpp &driver_) : driver(driver_) {};
   grpc::Status Export(grpc::ServerContext *context, const ExportLogsServiceRequest *request,
-                      ExportLogsServiceResponse *response);
+                      ExportLogsServiceResponse *response) override;
 
 private:
   OtelSourceDriverCpp &driver;
@@ -61,7 +62,7 @@ class OtelSourceMetricsService final : public MetricsService::Service
 public:
   OtelSourceMetricsService(OtelSourceDriverCpp &driver_) : driver(driver_) {};
   grpc::Status Export(grpc::ServerContext *context, const ExportMetricsServiceRequest *request,
-                      ExportMetricsServiceResponse *response);
+                      ExportMetricsServiceResponse *response) override;
 
 private:
   OtelSourceDriverCpp &driver;
