@@ -59,6 +59,7 @@ OtelSourceDriverCpp::run()
   builder.RegisterService(&metrics_service);
 
   server = builder.BuildAndStart();
+  msg_info("OpenTelemetry server accepting connections", evt_tag_int("port", port));
   server->Wait();
 }
 
