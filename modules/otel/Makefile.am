@@ -45,8 +45,8 @@ modules_otel_libotel_cpp_la_SOURCES = \
   modules/otel/otel-source.h \
   modules/otel/otel-source.hpp \
   modules/otel/otel-source.cpp \
+  modules/otel/otel-servicecall.hpp \
   modules/otel/otel-source-services.hpp \
-  modules/otel/otel-source-services.cpp \
   modules/otel/otel-protobuf-parser.hpp \
   modules/otel/otel-protobuf-parser.cpp
 
