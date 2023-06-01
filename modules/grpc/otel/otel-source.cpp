@@ -30,6 +30,10 @@
 #include "otel-source.hpp"
 #include "otel-source-services.hpp"
 
+#include "compat/cpp-start.h"
+#include "messages.h"
+#include "compat/cpp-end.h"
+
 #define get_OtelSourceDriverCpp(s) (((OtelSourceDriver *) s)->cpp)
 
 using namespace otel;
@@ -51,23 +55,36 @@ OtelSourceDriverCpp::run()
   grpc::ServerBuilder builder;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());
 
-  OtelSourceTraceService trace_service(*this);
-  OtelSourceLogsService logs_service(*this);
-  OtelSourceMetricsService metrics_service(*this);
+  TraceService::AsyncService trace_service;
+  LogsService::AsyncService logs_service;
+  MetricsService::AsyncService metrics_service;
 
   builder.RegisterService(&trace_service);
   builder.RegisterService(&logs_service);
   builder.RegisterService(&metrics_service);
 
+  cq = builder.AddCompletionQueue();
   server = builder.BuildAndStart();
+
   msg_info("OpenTelemetry server accepting connections", evt_tag_int("port", port));
-  server->Wait();
+
+  new OtelTraceServiceCall(*this, &trace_service, cq.get());
+  new OtelLogsServiceCall(*this, &logs_service, cq.get());
+  new OtelMetricsServiceCall(*this, &metrics_service, cq.get());
+
+  void *tag;
+  bool ok;
+  while (cq->Next(&tag, &ok))
+    {
+      static_cast<AsyncServiceCall *>(tag)->Proceed(ok);
+    }
 }
 
 void
 OtelSourceDriverCpp::request_exit()
 {
   server->Shutdown();
+  cq->Shutdown();
 }
 
 const gchar *

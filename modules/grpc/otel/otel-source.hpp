@@ -30,14 +30,12 @@
 #include "logthrsource/logthrsourcedrv.h"
 #include "compat/cpp-end.h"
 
+#include "otel-servicecall.hpp"
+
 typedef struct OtelSourceDriver_ OtelSourceDriver;
 
 namespace otel
 {
-
-class OtelSourceLogsService;
-class OtelSourceMetricsService;
-class OtelSourceTraceService;
 
 class OtelSourceDriverCpp
 {
@@ -53,9 +51,9 @@ public:
 private:
   bool post(LogMessage *msg);
 
-  friend class OtelSourceLogsService;
-  friend class OtelSourceMetricsService;
-  friend class OtelSourceTraceService;
+  friend OtelTraceServiceCall;
+  friend OtelLogsServiceCall;
+  friend OtelMetricsServiceCall;
 
 public:
   guint64 port = 4317;
@@ -63,6 +61,7 @@ public:
 private:
   OtelSourceDriver *super;
   std::unique_ptr<grpc::Server> server;
+  std::unique_ptr<grpc::ServerCompletionQueue> cq;
 };
 
 }
