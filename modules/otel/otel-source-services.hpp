@@ -30,10 +30,18 @@
 
 #include "otel-source.hpp"
 
-using namespace opentelemetry::proto;
-using namespace collector::trace::v1;
-using namespace collector::logs::v1;
-using namespace collector::metrics::v1;
+namespace otel
+{
+
+using opentelemetry::proto::collector::trace::v1::TraceService;
+using opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest;
+using opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse;
+using opentelemetry::proto::collector::logs::v1::LogsService;
+using opentelemetry::proto::collector::logs::v1::ExportLogsServiceRequest;
+using opentelemetry::proto::collector::logs::v1::ExportLogsServiceResponse;
+using opentelemetry::proto::collector::metrics::v1::MetricsService;
+using opentelemetry::proto::collector::metrics::v1::ExportMetricsServiceRequest;
+using opentelemetry::proto::collector::metrics::v1::ExportMetricsServiceResponse;
 
 class OtelSourceTraceService final : public TraceService::Service
 {
@@ -67,5 +75,7 @@ public:
 private:
   OtelSourceDriverCpp &driver;
 };
+
+}
 
 #endif
