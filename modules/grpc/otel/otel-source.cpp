@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Attila Szakacs
+ * Copyright (c) 2023 László Várady
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -29,6 +30,8 @@
 #include "otel-source-services.hpp"
 
 #define get_OtelSourceDriverCpp(s) (((OtelSourceDriver *) s)->cpp)
+
+using namespace otel;
 
 /* C++ Implementations */
 

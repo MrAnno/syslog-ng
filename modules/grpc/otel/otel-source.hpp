@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Attila Szakacs
+ * Copyright (c) 2023 László Várady
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -31,6 +32,10 @@
 
 typedef struct OtelSourceDriver_ OtelSourceDriver;
 
+namespace otel
+{
+
+
 class OtelSourceDriverCpp
 {
 public:
@@ -50,10 +55,12 @@ private:
   std::unique_ptr<grpc::Server> server;
 };
 
+}
+
 struct OtelSourceDriver_
 {
   LogThreadedSourceDriver super;
-  OtelSourceDriverCpp *cpp;
+  otel::OtelSourceDriverCpp *cpp;
 };
 
 #endif

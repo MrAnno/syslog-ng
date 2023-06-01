@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Attila Szakacs
+ * Copyright (c) 2023 László Várady
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -23,9 +24,13 @@
 #include "otel-source-services.hpp"
 #include "otel-protobuf-parser.hpp"
 
+using namespace opentelemetry::proto::collector::trace::v1;
+using namespace opentelemetry::proto::collector::logs::v1;
+using namespace opentelemetry::proto::collector::metrics::v1;
+
 grpc::Status
-OtelSourceTraceService::Export(grpc::ServerContext *context, const ExportTraceServiceRequest *request,
-                               ExportTraceServiceResponse *response)
+otel::OtelSourceTraceService::Export(grpc::ServerContext *context, const ExportTraceServiceRequest *request,
+                                     ExportTraceServiceResponse *response)
 {
   for (const ResourceSpans &resource_spans : request->resource_spans())
     {
@@ -51,8 +56,8 @@ OtelSourceTraceService::Export(grpc::ServerContext *context, const ExportTraceSe
 }
 
 grpc::Status
-OtelSourceLogsService::Export(grpc::ServerContext *context, const ExportLogsServiceRequest *request,
-                              ExportLogsServiceResponse *response)
+otel::OtelSourceLogsService::Export(grpc::ServerContext *context, const ExportLogsServiceRequest *request,
+                                    ExportLogsServiceResponse *response)
 {
   for (const ResourceLogs &resource_logs : request->resource_logs())
     {
@@ -78,8 +83,8 @@ OtelSourceLogsService::Export(grpc::ServerContext *context, const ExportLogsServ
 }
 
 grpc::Status
-OtelSourceMetricsService::Export(grpc::ServerContext *context, const ExportMetricsServiceRequest *request,
-                                 ExportMetricsServiceResponse *response)
+otel::OtelSourceMetricsService::Export(grpc::ServerContext *context, const ExportMetricsServiceRequest *request,
+                                       ExportMetricsServiceResponse *response)
 {
   for (const ResourceMetrics &resource_metrics : request->resource_metrics())
     {
