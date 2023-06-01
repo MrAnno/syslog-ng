@@ -35,6 +35,9 @@ typedef struct OtelSourceDriver_ OtelSourceDriver;
 namespace otel
 {
 
+class OtelSourceLogsService;
+class OtelSourceMetricsService;
+class OtelSourceTraceService;
 
 class OtelSourceDriverCpp
 {
@@ -46,6 +49,13 @@ public:
   const gchar *format_stats_instance();
   gboolean init();
   gboolean deinit();
+
+private:
+  bool post(LogMessage *msg);
+
+  friend class OtelSourceLogsService;
+  friend class OtelSourceMetricsService;
+  friend class OtelSourceTraceService;
 
 public:
   guint64 port = 4317;

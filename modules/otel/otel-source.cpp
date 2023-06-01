@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
 
 #include "otel-source.h"
@@ -94,6 +95,15 @@ gboolean
 OtelSourceDriverCpp::deinit()
 {
   return log_threaded_source_driver_deinit_method(&super->super.super.super.super);
+}
+
+bool OtelSourceDriverCpp::post(LogMessage *msg)
+{
+  if (!log_threaded_source_free_to_send(&super->super))
+    return false;
+
+  log_threaded_source_post(&super->super, msg);
+  return true;
 }
 
 /* Config setters */
