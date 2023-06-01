@@ -6,9 +6,11 @@ if ENABLE_OTEL
 OTEL_PROTO_PROTOC_FLAGS = $(PROTOC_GEN_GRPC_CPP_PLUGIN_FLAGS) --proto_path=$(OTEL_PROTO_SRCDIR) --cpp_out=$(OTEL_PROTO_BUILDDIR)
 
 modules/otel/proto/%.grpc.pb.cc modules/otel/proto/%.grpc.pb.h:
+	mkdir -p $(OTEL_PROTO_BUILDDIR)
 	$(PROTOC) $(OTEL_PROTO_PROTOC_FLAGS) --grpc-cpp_out=$(OTEL_PROTO_BUILDDIR) $*.proto
 
 modules/otel/proto/%.pb.cc modules/otel/proto/%.pb.h:
+	mkdir -p $(OTEL_PROTO_BUILDDIR)
 	$(PROTOC) $(OTEL_PROTO_PROTOC_FLAGS) $*.proto
 
 OTEL_PROTO_BUILT_SOURCES = \
