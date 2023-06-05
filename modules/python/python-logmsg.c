@@ -53,7 +53,7 @@ _get_value(PyLogMessage *self, const gchar *name, gboolean cast_to_bytes, gboole
   LogMessageValueType type;
   const gchar *value = log_msg_get_value_if_set_with_type(self->msg, handle, &value_len, &type);
 
-  if (!value)
+  if (!value || type == LM_VT_BYTES || type == LM_VT_PROTOBUF)
     return NULL;
 
   if (cast_to_bytes)
@@ -218,6 +218,9 @@ _collect_nvpair_names_from_logmsg(NVHandle handle, const gchar *name, const gcha
                                   LogMessageValueType type, gpointer user_data)
 {
   PyObject *list = (PyObject *)user_data;
+
+  if (type == LM_VT_BYTES || type == LM_VT_PROTOBUF)
+    return FALSE;
 
   PyObject *py_name = PyBytes_FromString(name);
   PyList_Append(list, py_name);

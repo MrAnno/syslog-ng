@@ -217,6 +217,15 @@ py_obj_from_log_msg_value(const gchar *value, gssize value_len, LogMessageValueT
         return py_datetime_from_msec(msec);
       goto type_cast_error;
     }
+
+    case LM_VT_BYTES:
+    case LM_VT_PROTOBUF:
+      g_assert_not_reached();
+    /*
+     * Dedicated python class is needed to differentiate LM_VT_STRING <-> bytes and LM_VT_BYTES <-> bytes.
+     * Until then we should not be converting, and we should mimic that the key does not exists.
+     */
+
     case LM_VT_STRING:
     default:
       return py_bytes_from_string(value, value_len);
