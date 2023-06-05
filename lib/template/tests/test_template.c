@@ -779,3 +779,29 @@ Test(template, test_log_template_with_escaping_produces_string_even_if_the_value
   log_msg_unref(msg);
   g_string_free(formatted_value, TRUE);
 }
+
+Test(template, test_bytes_and_protobuf_types_are_rendered)
+{
+  cfg_set_version_without_validation(configuration, VERSION_VALUE_4_0);
+
+  GString *formatted_value = g_string_sized_new(64);
+  LogMessage *msg = create_sample_message();
+  LogMessageValueType type;
+
+  LogTemplate *template = compile_template("$bytes");
+  log_template_format_value_and_type(template, msg, &DEFAULT_TEMPLATE_EVAL_OPTIONS, formatted_value, &type);
+  cr_assert_eq(formatted_value->len, 4);
+  cr_assert_eq(memcmp(formatted_value->str, "\0\1\2\3", 4), 0);
+  cr_assert_eq(type, LM_VT_BYTES);
+  log_template_unref(template);
+
+  template = compile_template("$protobuf");
+  log_template_format_value_and_type(template, msg, &DEFAULT_TEMPLATE_EVAL_OPTIONS, formatted_value, &type);
+  cr_assert_eq(formatted_value->len, 4);
+  cr_assert_eq(memcmp(formatted_value->str, "\4\5\6\7", 4), 0);
+  cr_assert_eq(type, LM_VT_PROTOBUF);
+  log_template_unref(template);
+
+  log_msg_unref(msg);
+  g_string_free(formatted_value, TRUE);
+}

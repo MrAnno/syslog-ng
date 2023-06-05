@@ -338,6 +338,9 @@ tf_json_append_with_type_hint(const gchar *name, LogMessageValueType type, json_
       tf_json_append_value(name, v, v_len, state, FALSE);
       return TRUE;
     }
+    case LM_VT_BYTES:
+    case LM_VT_PROTOBUF:
+      /* Optional base64 encoding could be done in the future. */
     case LM_VT_NULL:
     {
       tf_json_append_value(name, "null", -1, state, FALSE);

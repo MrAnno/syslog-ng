@@ -217,6 +217,12 @@ py_obj_from_log_msg_value(const gchar *value, gssize value_len, LogMessageValueT
         return py_datetime_from_msec(msec);
       goto type_cast_error;
     }
+
+    case LM_VT_BYTES:
+    case LM_VT_PROTOBUF:
+      /* Dedicated python class is needed to differentiate LM_VT_STRING <-> bytes and LM_VT_BYTES <-> bytes */
+      Py_RETURN_NONE;
+
     case LM_VT_STRING:
     default:
       return py_bytes_from_string(value, value_len);
