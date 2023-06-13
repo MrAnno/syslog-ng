@@ -70,6 +70,27 @@ public:
     this->table = t;
   }
 
+  const std::string& get_url()
+  {
+    return this->url;
+  }
+
+  const std::string& get_project()
+  {
+    return this->project;
+  }
+
+  const std::string& get_dataset()
+  {
+    return this->dataset;
+  }
+
+  const std::string& get_table()
+  {
+    return this->table;
+  }
+
+
 private:
   BigQueryDestDriver *super;
   LogTemplateOptions template_options;
@@ -80,7 +101,10 @@ private:
   std::string table;
 };
 
+
 }
 }
+
+syslog_ng::bigquery::DestinationDriver *bigquery_dd_get_cpp(BigQueryDestDriver *self);
 
 #endif

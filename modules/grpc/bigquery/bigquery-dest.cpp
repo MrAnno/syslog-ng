@@ -36,7 +36,7 @@ struct _BigQueryDestDriver
 };
 
 
-DestinationDriver::DestinationDriver(BigQueryDestDriver *s) : super(s)
+DestinationDriver::DestinationDriver(BigQueryDestDriver *s) : super(s), url("bigquerystorage.googleapis.com")
 {
   log_template_options_defaults(&this->template_options);
 }
@@ -89,6 +89,12 @@ DestinationDriver::format_stats_instance()
 
 
 /* C Wrappers */
+
+DestinationDriver *
+bigquery_dd_get_cpp(BigQueryDestDriver *self)
+{
+  return self->cpp;
+}
 
 static const gchar *
 _format_persist_name(const LogPipe *s)
