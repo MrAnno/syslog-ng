@@ -98,7 +98,7 @@ FILTERX_DEFINE_TYPE(datetime, FILTERX_TYPE_NAME(object),
                     .marshal = _marshal,
                    );
 
-const UnixTime
+UnixTime
 filterx_datetime_get_value(FilterXObject *s)
 {
   FilterXDateTime *self = (FilterXDateTime *) s;
