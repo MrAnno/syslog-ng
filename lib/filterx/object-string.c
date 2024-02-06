@@ -46,6 +46,22 @@ filterx_string_get_value(FilterXObject *s, gsize *length)
   return self->str;
 }
 
+const gchar *
+filterx_bytes_get_value(FilterXObject *s, gsize *length)
+{
+  FilterXString *self = (FilterXString *) s;
+
+  if (!filterx_object_is_type(s, &FILTERX_TYPE_NAME(bytes)))
+    return NULL;
+
+  if (length)
+    *length = self->str_len;
+  else
+    g_assert(self->str[self->str_len] == 0);
+  return self->str;
+}
+
+
 static gboolean
 _truthy(FilterXObject *s)
 {
