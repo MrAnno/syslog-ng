@@ -35,62 +35,70 @@ namespace otel {
 
 using opentelemetry::proto::logs::v1::LogRecord;
 
-struct ProtoReflectors {
-    const google::protobuf::Reflection *reflection;
-    const google::protobuf::Descriptor *descriptor;
-    const google::protobuf::FieldDescriptor *fieldDescriptor;
-    google::protobuf::FieldDescriptor::Type fieldType;
-    ProtoReflectors(const google::protobuf::Message &message, std::string fieldName) {
-        this->reflection = message.GetReflection();
-        this->descriptor = message.GetDescriptor();
-        if (!this->reflection || !this->descriptor) {
-            std::string error_msg = "unable to access reflector fields of protobuf message: " + message.GetTypeName();
-            throw std::invalid_argument(error_msg);
-        }
-        this->fieldDescriptor = this->descriptor->FindFieldByName(fieldName);
-        if (!this->fieldDescriptor) {
-            std::string error_msg = "unknown field name: " + fieldName;
-            throw std::invalid_argument(error_msg);
-        }
-        this->fieldType = this->fieldDescriptor->type();
-        if (this->fieldType >= google::protobuf::FieldDescriptor::MAX_TYPE ||
-        this->fieldType < 1) {
-            std::string error_msg = "unknown field type: " + fieldName + ", " +  std::to_string(this->fieldType);
-            throw std::invalid_argument(error_msg);
-        }
-    };
+struct ProtoReflectors
+{
+  const google::protobuf::Reflection *reflection;
+  const google::protobuf::Descriptor *descriptor;
+  const google::protobuf::FieldDescriptor *fieldDescriptor;
+  google::protobuf::FieldDescriptor::Type fieldType;
+  ProtoReflectors(const google::protobuf::Message &message, std::string fieldName)
+  {
+    this->reflection = message.GetReflection();
+    this->descriptor = message.GetDescriptor();
+    if (!this->reflection || !this->descriptor)
+      {
+        std::string error_msg = "unable to access reflector fields of protobuf message: " + message.GetTypeName();
+        throw std::invalid_argument(error_msg);
+      }
+    this->fieldDescriptor = this->descriptor->FindFieldByName(fieldName);
+    if (!this->fieldDescriptor)
+      {
+        std::string error_msg = "unknown field name: " + fieldName;
+        throw std::invalid_argument(error_msg);
+      }
+    this->fieldType = this->fieldDescriptor->type();
+    if (this->fieldType >= google::protobuf::FieldDescriptor::MAX_TYPE ||
+        this->fieldType < 1)
+      {
+        std::string error_msg = "unknown field type: " + fieldName + ", " +  std::to_string(this->fieldType);
+        throw std::invalid_argument(error_msg);
+      }
+  };
 };
 
 class ProtobufField
 {
-    public:
-        FilterXObject *Get(const google::protobuf::Message &message, std::string fieldName) {
-            try 
-            {
-                ProtoReflectors reflectors(message, fieldName);
-                return this->FilterXObjectGetter(message, reflectors);  
-            } 
-            catch(const std::exception &ex) 
-            {
-                msg_error("error TODO", evt_tag_str("message", ex.what()));
-                return nullptr;
-            }
-        };
-        bool Set(google::protobuf::Message *message, std::string fieldName, FilterXObject *object) {
-            try 
-            {
-                ProtoReflectors reflectors(*message, fieldName);
-                return this->FilterXObjectSetter(message, reflectors, object); 
-            } 
-            catch(const std::exception &ex) 
-            {
-                msg_error("error while TODO", evt_tag_str("message", ex.what()));
-                return false;
-            }
-        }
-    protected:
-        virtual FilterXObject *FilterXObjectGetter(const google::protobuf::Message &message, ProtoReflectors reflectors) = 0;
-        virtual bool FilterXObjectSetter(google::protobuf::Message *message, ProtoReflectors reflectors, FilterXObject *object) = 0;
+public:
+  FilterXObject *Get(const google::protobuf::Message &message, std::string fieldName)
+  {
+    try
+      {
+        ProtoReflectors reflectors(message, fieldName);
+        return this->FilterXObjectGetter(message, reflectors);
+      }
+    catch(const std::exception &ex)
+      {
+        msg_error("error TODO", evt_tag_str("message", ex.what()));
+        return nullptr;
+      }
+  };
+  bool Set(google::protobuf::Message *message, std::string fieldName, FilterXObject *object)
+  {
+    try
+      {
+        ProtoReflectors reflectors(*message, fieldName);
+        return this->FilterXObjectSetter(message, reflectors, object);
+      }
+    catch(const std::exception &ex)
+      {
+        msg_error("error while TODO", evt_tag_str("message", ex.what()));
+        return false;
+      }
+  }
+protected:
+  virtual FilterXObject *FilterXObjectGetter(const google::protobuf::Message &message, ProtoReflectors reflectors) = 0;
+  virtual bool FilterXObjectSetter(google::protobuf::Message *message, ProtoReflectors reflectors,
+                                   FilterXObject *object) = 0;
 };
 
 std::unique_ptr<ProtobufField> *all_protobuf_converters();
