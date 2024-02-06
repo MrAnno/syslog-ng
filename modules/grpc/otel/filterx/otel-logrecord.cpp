@@ -26,6 +26,7 @@
 
 #include "otel-logrecord.hpp"
 #include "otel-logrecord.h"
+#include "protobuf-field.hpp"
 
 #include "compat/cpp-start.h"
 
@@ -38,6 +39,49 @@
 #include "compat/cpp-end.h"
 
 using namespace syslogng::grpc::otel;
+
+/* C++ Implementations */
+class OtelConverter : public ProtobufField {
+    public:
+        FilterXObject *FilterXObjectGetter(const google::protobuf::Message &message, ProtoReflectors reflectors) {
+          std::string fieldName = reflectors.fieldDescriptor->name();
+          if (fieldName.compare("time_unix_nano") == 0 ||
+              fieldName.compare("observed_time_unix_nano") == 0) {
+                uint64_t val = reflectors.reflection->GetUInt64(message, reflectors.fieldDescriptor);
+                UnixTime utime = unixtime_from_unix_epoch(val);
+                return filterx_datetime_new(&utime);
+              }
+
+          ProtobufField *converter = protobuf_converter_by_type(reflectors.fieldType);
+          if (converter) {
+            return converter->Get(message, fieldName);
+          } else {
+            msg_error("field type not yet implemented", evt_tag_str("name", fieldName.c_str()), evt_tag_int("type", reflectors.fieldType));
+          }
+          return nullptr;
+        }
+        bool FilterXObjectSetter(google::protobuf::Message *message, ProtoReflectors reflectors, FilterXObject *object) {
+          std::string fieldName = reflectors.fieldDescriptor->name();
+          if (fieldName.compare("time_unix_nano") == 0 ||
+          fieldName.compare("observed_time_unix_nano") == 0) {
+            if (filterx_object_is_type(object, &FILTERX_TYPE_NAME(datetime))) {
+              const UnixTime utime = filterx_datetime_get_value(object);
+              uint64_t unix_epoch = unixtime_to_unix_epoch(utime);
+              reflectors.reflection->SetUInt64(message, reflectors.fieldDescriptor, unix_epoch);
+              return true;
+            }
+          }
+          ProtobufField *converter = protobuf_converter_by_type(reflectors.fieldType);
+          if (converter) {
+            return converter->Set(message, fieldName, object);
+          } else {
+            msg_error("field type not yet implemented", evt_tag_str("name", fieldName.c_str()), evt_tag_int("type", reflectors.fieldType));
+          }
+          return false;
+        }
+};
+
+static OtelConverter otel_converter;
 
 OtelLogRecordCpp::OtelLogRecordCpp(FilterXOtelLogRecord *folr) : super(folr)
 {
@@ -61,15 +105,15 @@ OtelLogRecordCpp::Marshal(void)
 
 bool OtelLogRecordCpp::SetField(const gchar *attribute, FilterXObject *value)
 {
-  // TODO
-  return false;
+  std::string fieldName(attribute);
+  return otel_converter.Set(&this->logRecord, fieldName, value);
 }
 
 FilterXObject *
 OtelLogRecordCpp::GetField(const gchar *attribute)
 {
-  // TODO
-  return nullptr;
+  std::string fieldName(attribute);
+  return otel_converter.Get(this->logRecord, fieldName);
 }
 
 /* C Wrappers */
