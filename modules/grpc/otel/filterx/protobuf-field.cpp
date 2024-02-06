@@ -204,7 +204,7 @@ class BytesField : public ProtobufField {
             return false;
           }
           gsize value_len = -1;
-          const gchar *str = filterx_string_get_value(object, &value_len);
+          const gchar *str = filterx_bytes_get_value(object, &value_len);
           std::string stdString(str);
           reflectors.reflection->SetString(message, reflectors.fieldDescriptor, stdString);
           return true;
