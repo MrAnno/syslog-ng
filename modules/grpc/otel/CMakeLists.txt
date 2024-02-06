@@ -48,4 +48,7 @@ add_module(
   SOURCES ${OTEL_SOURCES}
 )
 
+add_subdirectory(filterx)
+target_link_libraries(otel PRIVATE otel_filterx_logrecord_cpp)
+
 add_test_subdirectory(tests)
