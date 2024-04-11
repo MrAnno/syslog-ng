@@ -13,7 +13,7 @@ jobs:
         build-tool: [autotools, cmake]
       fail-fast: false
 
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout syslog-ng source
